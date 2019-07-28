@@ -1,0 +1,10 @@
+# .gitignore
+
+*.pyc
+*.c
+*.so
+/dist/
+/build/
+/*.egg-info
+/*.egg
+
