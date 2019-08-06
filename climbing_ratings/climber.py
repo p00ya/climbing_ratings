@@ -249,8 +249,8 @@ class Climber:
 
         Returns
         -------
-        ratings : ndarray of length N
-            The revised ratings.
+        ratings : ndarray
+            Deltas to subtract from the current ratings.
         """
         gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
         return invert_h_dot_g(hessian, gradient)
