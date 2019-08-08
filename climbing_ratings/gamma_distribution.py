@@ -28,15 +28,15 @@ class GammaDistribution:
     """
     shape = 2.
 
-    def __init__(self, mean):
+    def __init__(self, mode):
         """
         Parameters
         ----------
-        mean : array_like
-            Mean of the distribution(s).
+        mode : array_like
+            Mode of the distribution(s).
         """
         # Theta is the conventional "scale" parameter for the distribution.
-        self._theta = mean / GammaDistribution.shape
+        self._theta = mode / (GammaDistribution.shape - 1.)
 
     def get_derivatives(self, x):
         """Return the first and second derivative of the log-likelihood.

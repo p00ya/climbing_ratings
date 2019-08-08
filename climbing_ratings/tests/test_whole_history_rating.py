@@ -72,6 +72,6 @@ class TestWholeHistoryRating(unittest.TestCase):
         """Test WholeHistoryRating.update_ratings"""
         self.whr.update_ratings()
         self.assert_close(
-            [0.73565867, 1.54789076], self.whr.page_ratings, 'page_ratings')
+            [1.13052262, 1.29970319], self.whr.page_ratings, 'page_ratings')
         self.assert_close(
-            [1., 1.77260978], self.whr.route_ratings, 'route_ratings')
+            [1., 3.3432814], self.whr.route_ratings, 'route_ratings')

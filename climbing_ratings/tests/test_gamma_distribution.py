@@ -27,20 +27,20 @@ class TestGammaDistribution(unittest.TestCase):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
         
-    def test_get_derivatives(self):
-        """Test GammaDistribution.get_derivatives with mean 1"""
+    def test_get_derivatives_mode_1(self):
+        """Test GammaDistribution(1).get_derivatives()"""
         mu = np.array([1., 1., 1.])
         x = np.array([1., 2., 3.])
         g = GammaDistribution(mu)
         d1, d2 = g.get_derivatives(x)
-        self.assert_close([-1., -3., -5.], d1, 'd1')
-        self.assert_close([-2., -4., -6.], d2, 'd2')
+        self.assert_close([0., -1., -2.], d1, 'd1')
+        self.assert_close([-1., -2., -3.], d2, 'd2')
 
-    def test_get_derivatives(self):
-        """Test GammaDistribution.get_derivatives with mean 1"""
+    def test_get_derivatives_mode_2(self):
+        """Test GammaDistribution(2).get_derivatives()"""
         mu = np.array([2., 2., 2.])
         x = np.array([1., 2., 3.])
         g = GammaDistribution(mu)
         d1, d2 = g.get_derivatives(x)
-        self.assert_close([-0., -1., -2.], d1, 'd1')
-        self.assert_close([-1., -2., -3.], d2, 'd2')
+        self.assert_close([0.5, 0., -0.5], d1, 'd1')
+        self.assert_close([-0.5, -1., -1.5], d2, 'd2')
