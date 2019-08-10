@@ -179,6 +179,9 @@ class WholeHistoryRating:
         routes_grade : list
             Normalized grades of each route.  The first route has an implied
             grade of 1.
+        pages_gap : array_like of float
+            Interval of time between each page and the next page.  The gap for
+            the last page of each climber is not used.
         """
         num_pages = len(ascents_page_slices)
         self.route_ratings = np.array(routes_grade, dtype=np.float64)

@@ -49,29 +49,36 @@ class TestWholeHistoryRating(unittest.TestCase):
     def setUp(self):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
-        # 1 climber, 2 routes, 2 pages, 4 ascents.
-        ascents_route = [0, 1, 0, 1]
-        ascents_clean = np.array([1, 0, 1, 0], dtype=np.intp)
-        ascents_page_slices = [(0, 2), (2, 4)]
-        page_climber_slices = [(0, 2)]
-        route_grades = [1., 2.]
-        page_gaps = np.array([1.])
+        # 1 climber, 1 page, 3 routes at grade "1", all with 1 clean and 1
+        # non-clean ascent.
+        ascents_route = [0, 0, 1, 1, 2, 2]
+        ascents_clean = np.array([1., 0., 1., 0., 1., 0.])
+        ascents_page_slices = [(0, 6)]
+        pages_climber_slices = [(0, 1)]
+        routes_grade = [1., 1., 1.]
+        pages_gap = np.array([0.])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route, ascents_clean, ascents_page_slices,
-            page_climber_slices, route_grades, page_gaps)
+            pages_climber_slices, routes_grade, pages_gap)
 
     def test_initialization(self):
         """Test WholeHistoryRating initialization"""
         route_ratings = self.whr.route_ratings
-        self.assert_close([1., 2.], route_ratings, 'route_ratings')
+        self.assert_close([1., 1., 1.], route_ratings, 'route_ratings')
 
         page_ratings = self.whr.page_ratings
-        self.assert_close([1., 1.], page_ratings, 'page_ratings')
+        self.assert_close([1.], page_ratings, 'page_ratings')
 
-    def test_update_ratings(self):
-        """Test WholeHistoryRating.update_ratings"""
-        self.whr.update_ratings()
+    def test_update_page_ratings(self):
+        """Test WholeHistoryRating.update_page_ratings"""
+        self.whr.update_page_ratings()
         self.assert_close(
-            [1.13052262, 1.29970319], self.whr.page_ratings, 'page_ratings')
+            [1., 1.], self.whr.page_ratings, 'page_ratings')
+
+    def test_update_route_ratings(self):
+        """Test WholeHistoryRating.update_route_ratings"""
+        self.whr.update_route_ratings()
+        # Ratings should not change: both ascents had a 50% probability assuming
+        # the initial ratings.
         self.assert_close(
-            [1., 3.3432814], self.whr.route_ratings, 'route_ratings')
+            [1., 1., 1.], self.whr.route_ratings, 'route_ratings')
