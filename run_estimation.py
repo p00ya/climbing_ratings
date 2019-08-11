@@ -91,6 +91,7 @@ def read_ascents(filename):
 
         for i, line in enumerate(reader):
             if i == 0:
+                assert line == ['route', 'clean', 'page']
                 continue
             route, clean, page = line
             routes.append(int(route))
@@ -109,6 +110,7 @@ def read_routes(filename):
 
         for i, line in enumerate(reader):
             if i == 0:
+                assert line == ['route', 'grade']
                 continue
             name, grade = line
             names.append(name)
@@ -126,6 +128,7 @@ def read_pages(filename):
 
         for i, line in enumerate(reader):
             if i == 0:
+                assert line == ['climber', 'gap']
                 continue
             climber, gap = line
             climbers.append(int(climber))
