@@ -144,6 +144,12 @@ class Climber:
     wiener_variance = 1.
     gamma_distribution = GammaDistribution(1.)
 
+    # Private attributes
+    # -------------------
+    # one_on_sigma_sq : array of float
+    #     The Wiener variance between each page and the next page.  The length
+    #     is 1 fewer than the number of pages.
+
     def __init__(self, gaps):
         """Initializes a Climber.
 
@@ -152,9 +158,8 @@ class Climber:
         gaps : ndarray
             gaps[i] is the time interval between the page i and page i + 1.
             Must be consistent with the time scale for Climber.wiener_variance.
-            The length of gaps should be 1 less than the number of pages.
+            The length of gaps should be 1 fewer than the number of pages.
         """
-        self.gaps = gaps
         s = np.full_like(gaps, Climber.wiener_variance)
         s *= gaps
         np.reciprocal(s, s)
@@ -180,7 +185,7 @@ class Climber:
         np.subtract(r[1:], r[:-1], d)
         d *= self.one_on_sigma_sq
         gradient[:-1] += d
-        gradient[1:] += d
+        gradient[1:] -= d
 
     def get_derivatives(self, ratings, bt_d1, bt_d2):
         """Return the Hessian and gradient at the given ratings point.

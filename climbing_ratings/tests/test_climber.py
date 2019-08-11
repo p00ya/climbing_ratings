@@ -71,6 +71,7 @@ class TestClimber(unittest.TestCase):
     def setUp(self):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
+        climber.Climber.wiener_variance = 1.
 
     def test_one_on_sigma_sq(self):
         """Test Climber.one_on_sigma_sq"""
@@ -80,6 +81,15 @@ class TestClimber(unittest.TestCase):
         one_on_sigma_sq = c.one_on_sigma_sq
         self.assert_close([0.1, 0.05], one_on_sigma_sq, 'one_on_sigma_sq')
 
+    def test_add_wiener_gradient(self):
+        """Test Climber.add_wiener_gradient"""
+        gaps = np.array([1.])
+        c = climber.Climber(gaps)
+        ratings = np.exp([1., 2.])
+        gradient = np.zeros(2)
+        c.add_wiener_gradient(ratings, gradient)
+        self.assert_close([1., -1.], gradient, 'gradient')
+
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
         gaps = np.array([1.])
@@ -88,4 +98,4 @@ class TestClimber(unittest.TestCase):
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(gaps)
         delta = c.get_ratings_adjustment(ratings, bt_d1, bt_d2)
-        self.assert_close([0.68422919, 0.0551964], delta, 'delta')
+        self.assert_close([0.60901247, -0.4901247], delta, 'delta')
