@@ -88,4 +88,4 @@ class TestClimber(unittest.TestCase):
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(gaps)
         delta = c.get_ratings_adjustment(ratings, bt_d1, bt_d2)
-        self.assert_close([0.20977238, -3.38461538], delta, 'delta')
+        self.assert_close([0.68422919, 0.0551964], delta, 'delta')
