@@ -26,6 +26,14 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
 
+    def test_get_bt_summation_terms(self):
+        """Test get_bt_summation_terms()"""
+        gamma = np.array([1., 1., 1., 1.])
+        adversary_gamma = np.array([1., 1., 1., 1.])
+        d1, d2 = bradley_terry.get_bt_summation_terms(gamma, adversary_gamma)
+        self.assert_close([0.5, 1., 1.5, 2.], d1, 'd1')
+        self.assert_close([0.25, 0.5, 0.75, 1.], d2, 'd2')
+
     def test_get_bt_derivatives_single_win(self):
         """Test get_bt_derivatives() with a single win"""
         slices = [(0, 1)]

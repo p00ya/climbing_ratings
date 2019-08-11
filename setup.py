@@ -20,7 +20,13 @@ from Cython.Build import cythonize
 
 CYTHON_CFLAGS = [
     "-Ofast", "-march=native", "-mtune=native",
-    "-ffast-math", "-fno-math-errno"]
+    "-ffast-math", "-fno-math-errno",
+    "-Rpass=loop-vectorize"]
+
+bradley_terry = Extension(
+    "climbing_ratings.bradley_terry",
+    ["climbing_ratings/bradley_terry.pyx"],
+    extra_compile_args=CYTHON_CFLAGS)
 
 loop_helpers = Extension(
     "climbing_ratings.loop_helpers",
@@ -37,7 +43,7 @@ if __name__ == '__main__':
         test_suite='climbing_ratings.tests.test_suite',
         tests_require=['numpy'],
         ext_modules=cythonize(
-            [loop_helpers],
+            [bradley_terry, loop_helpers],
             compiler_directives={
                 'language_level': 3,
                 'boundscheck': False,
