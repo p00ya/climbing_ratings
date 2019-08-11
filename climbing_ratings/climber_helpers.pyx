@@ -1,13 +1,20 @@
-"""Cython helpers for unvectorizable loops"""
+"""Cython helpers for the climber module.
+
+WHR uses some specialized matrix algorithms that are not easily vectorizable.
+These arise in relation to the pages of a climber.
+
+By compiling these algorithms via Cython, the high overhead of single-element
+access to numpy arrays is avoided.
+"""
 
 # Copyright 2019 Dean Scarff
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +29,7 @@ def lu_decomposition_helper(double[::1] c, double[::1] hd):
 
     Computes the array "d" following the recurrence:
     d[i] = hd[i] - c[i] / d[i-1]
-    
+
     Parameters
     ----------
     c : contiguous ndarray with length N
@@ -91,10 +98,10 @@ def ux_helper(double[::1] b, double[::1] d, double[::1] y):
         the output array for the computed "x" terms.
     """
     cdef Py_ssize_t end = y.shape[0] - 1
-    
+
     cdef double x_next = y[end] / d[end]
     y[end] = x_next
-    
+
     cdef double t
     # Note: gcc is known to be bad at auto-vectorizing down-loops.
     # https://stackoverflow.com/questions/7919304#36772982

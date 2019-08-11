@@ -1,4 +1,4 @@
-"""Tests for the loop_helpers extension"""
+"""Tests for the climber_helpers extension"""
 
 # Copyright 2019 Dean Scarff
 #
@@ -16,12 +16,12 @@
 
 import numpy as np
 import unittest
-import climbing_ratings.loop_helpers as loop_helpers
+import climbing_ratings.climber_helpers as climber_helpers
 from climbing_ratings.tests.assertions import assert_close
 
 
-class TestLoopHelpers(unittest.TestCase):
-    """Tests for the loop_helpers extension."""
+class TestClimberHelpers(unittest.TestCase):
+    """Tests for the climber_helpers extension."""
     def setUp(self):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
@@ -30,7 +30,7 @@ class TestLoopHelpers(unittest.TestCase):
         """Test the lu_decomposition_helper function"""
         c = np.array([0., 1., -3.])
         hd = np.array([1., 2., 11.])
-        loop_helpers.lu_decomposition_helper(c, hd)
+        climber_helpers.lu_decomposition_helper(c, hd)
         d = hd  # output parameter
         self.assert_close([1., 3., 10.], d, 'd')
 
@@ -38,7 +38,7 @@ class TestLoopHelpers(unittest.TestCase):
         """Test the ly_helper function"""
         g = np.array([10., 5., 32.])
         a = np.array([0., -0.1, 2.])
-        loop_helpers.ly_helper(g, a)
+        climber_helpers.ly_helper(g, a)
         y = a  # output parameter
         self.assert_close([10., 4., 40.], y, 'y')
 
@@ -47,6 +47,6 @@ class TestLoopHelpers(unittest.TestCase):
         b = np.array([-2, 1.])
         d = np.array([1., 3., 10.])
         y = np.array([10., 4., 40.])
-        loop_helpers.ux_helper(b, d, y)
+        climber_helpers.ux_helper(b, d, y)
         x = y  # output parameter
         self.assert_close([10., 0., 4.], x, 'x')

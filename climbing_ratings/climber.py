@@ -17,7 +17,7 @@
 import collections
 import numpy as np
 from climbing_ratings.gamma_distribution import GammaDistribution
-import climbing_ratings.loop_helpers as loop_helpers
+import climbing_ratings.climber_helpers as climber_helpers
 
 
 class TriDiagonal(collections.namedtuple('TriDiagonal', ['d', 'u', 'l'])):
@@ -91,7 +91,7 @@ def lu_decomposition(tri_diagonal):
     np.multiply(hu, hl, c[1:])
     np.negative(c, c)
     d = hd.copy()
-    loop_helpers.lu_decomposition_helper(c, d)
+    climber_helpers.lu_decomposition_helper(c, d)
 
     # a[i] = hl[i] / d[i]
     a = np.divide(hl, d[:-1])
@@ -119,10 +119,10 @@ def invert_h_dot_g(lu, g):
     a1[1:] = np.negative(a)
 
     y = a1  # output parameter
-    loop_helpers.ly_helper(g, a1)
+    climber_helpers.ly_helper(g, a1)
 
     x = y  # output parameter
-    loop_helpers.ux_helper(b, d, y)
+    climber_helpers.ux_helper(b, d, y)
     return x
 
 
