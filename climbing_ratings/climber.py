@@ -17,7 +17,7 @@
 import collections
 import numpy as np
 from climbing_ratings.gamma_distribution import GammaDistribution
-import climbing_ratings.climber_helpers as climber_helpers
+from climbing_ratings.climber_helpers import solve_d, solve_y, solve_x
 
 
 class TriDiagonal(collections.namedtuple('TriDiagonal', ['d', 'u', 'l'])):
@@ -53,7 +53,7 @@ class TriDiagonalLU(collections.namedtuple('TriDiagonalLU', ['d', 'b', 'a'])):
     """
 
 
-def lu_decomposition(tri_diagonal):
+def lu_decompose(tri_diagonal):
     """Decompose a tri-diagonal matrix into LU form.
 
     Parameters
@@ -91,7 +91,7 @@ def lu_decomposition(tri_diagonal):
     np.multiply(hu, hl, c[1:])
     np.negative(c, c)
     d = hd.copy()
-    climber_helpers.lu_decomposition_helper(c, d)
+    solve_d(c, d)
 
     # a[i] = hl[i] / d[i]
     a = np.divide(hl, d[:-1])
@@ -119,10 +119,10 @@ def invert_h_dot_g(lu, g):
     a1[1:] = np.negative(a)
 
     y = a1  # output parameter
-    climber_helpers.ly_helper(g, a1)
+    solve_y(g, a1)
 
     x = y  # output parameter
-    climber_helpers.ux_helper(b, d, y)
+    solve_x(b, d, y)
     return x
 
 
@@ -258,5 +258,5 @@ class Climber:
             Deltas to subtract from the current ratings.
         """
         gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
-        lu = lu_decomposition(hessian)
+        lu = lu_decompose(hessian)
         return invert_h_dot_g(lu, gradient)

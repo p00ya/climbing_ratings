@@ -16,7 +16,7 @@
 
 import numpy as np
 import unittest
-import climbing_ratings.climber_helpers as climber_helpers
+from climbing_ratings.climber_helpers import solve_d, solve_y, solve_x
 from climbing_ratings.tests.assertions import assert_close
 
 
@@ -26,27 +26,27 @@ class TestClimberHelpers(unittest.TestCase):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
         
-    def test_lu_decomposition_helper(self):
-        """Test the lu_decomposition_helper function"""
+    def test_solve_d(self):
+        """Test solve_d()"""
         c = np.array([0., 1., -3.])
         hd = np.array([1., 2., 11.])
-        climber_helpers.lu_decomposition_helper(c, hd)
+        solve_d(c, hd)
         d = hd  # output parameter
         self.assert_close([1., 3., 10.], d, 'd')
 
-    def test_ly_helper(self):
-        """Test the ly_helper function"""
+    def test_solve_y(self):
+        """Test solve_y()"""
         g = np.array([10., 5., 32.])
         a = np.array([0., -0.1, 2.])
-        climber_helpers.ly_helper(g, a)
+        solve_y(g, a)
         y = a  # output parameter
         self.assert_close([10., 4., 40.], y, 'y')
 
-    def test_ux_helper(self):
-        """Test the ux_helper function"""
+    def test_solve_x(self):
+        """Test solve_x()"""
         b = np.array([-2, 1.])
         d = np.array([1., 3., 10.])
         y = np.array([10., 4., 40.])
-        climber_helpers.ux_helper(b, d, y)
+        solve_x(b, d, y)
         x = y  # output parameter
         self.assert_close([10., 0., 4.], x, 'x')

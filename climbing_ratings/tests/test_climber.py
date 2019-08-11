@@ -27,8 +27,8 @@ class TestClimberFunctions(unittest.TestCase):
         np.seterr(all='raise')
         self.assert_close = assert_close.__get__(self, self.__class__)
         
-    def test_lu_decomposition(self):
-        """Test that for (L, U) = lu_decomposition(M), LU = M"""
+    def test_lu_decompose(self):
+        """Test that for (L, U) = lu_decompose(M), LU = M"""
         m = np.array([
             1., -2., 0.,
             0.5, 2., 1.,
@@ -38,7 +38,7 @@ class TestClimberFunctions(unittest.TestCase):
         mu = np.diag(m, 1)
         ml = np.diag(m, -1)
         tri_diagonal = climber.TriDiagonal(md, mu, ml)
-        lu = climber.lu_decomposition(tri_diagonal)
+        lu = climber.lu_decompose(tri_diagonal)
 
         # Reconstruct the L and U matrices.
         u_matrix = np.diagflat(lu.d) + np.diagflat(lu.b, 1)

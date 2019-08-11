@@ -24,7 +24,7 @@ access to numpy arrays is avoided.
 cimport cython
 
 
-def lu_decomposition_helper(double[::1] c, double[::1] hd):
+def solve_d(double[::1] c, double[::1] hd):
     """Compute the U-diagonal in the LU decomposition of a tri-diagonal matrix.
 
     Computes the array "d" following the recurrence:
@@ -50,7 +50,7 @@ def lu_decomposition_helper(double[::1] c, double[::1] hd):
         d_prev = t
 
 
-def ly_helper(double[::1] g, double[::1] a):
+def solve_y(double[::1] g, double[::1] a):
     """Compute the vector Y in LY = G, where L is from the LU decomposition.
 
     Computes the array "y" following the recurrence:
@@ -79,7 +79,7 @@ def ly_helper(double[::1] g, double[::1] a):
         y_prev = t
 
 
-def ux_helper(double[::1] b, double[::1] d, double[::1] y):
+def solve_x(double[::1] b, double[::1] d, double[::1] y):
     """Compute the vector X in UX = Y, where U is from the LU decomposition.
 
     Computes the array "x" following the recurrence:
