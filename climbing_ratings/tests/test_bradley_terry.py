@@ -16,8 +16,8 @@
 
 import numpy as np
 import unittest
-import climbing_ratings.bradley_terry as bradley_terry
-from climbing_ratings.tests.assertions import assert_close
+from ..bradley_terry import get_bt_summation_terms, get_bt_derivatives
+from .assertions import assert_close
 
 class TestBradleyTerryFunctions(unittest.TestCase):
     """Tests for functions in the bradley_terry module"""
@@ -30,7 +30,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         """Test get_bt_summation_terms()"""
         gamma = np.array([1., 1., 1., 1.])
         adversary_gamma = np.array([1., 1., 1., 1.])
-        d1, d2 = bradley_terry.get_bt_summation_terms(gamma, adversary_gamma)
+        d1, d2 = get_bt_summation_terms(gamma, adversary_gamma)
         self.assert_close([0.5, 1., 1.5, 2.], d1, 'd1')
         self.assert_close([0.25, 0.5, 0.75, 1.], d2, 'd2')
 
@@ -40,7 +40,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         wins = np.array([1.])
         gamma = np.array([1.])
         adversary_gamma = np.array([1.])
-        d1, d2 = bradley_terry.get_bt_derivatives(
+        d1, d2 = get_bt_derivatives(
             slices, wins, gamma, adversary_gamma)
         self.assert_close([0.5], d1, 'd1')
         self.assert_close([-0.25], d2, 'd2')
@@ -51,7 +51,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         wins = np.array([0.])
         gamma = np.array([1.])
         adversary_gamma = np.array([1.])
-        d1, d2 = bradley_terry.get_bt_derivatives(
+        d1, d2 = get_bt_derivatives(
             slices, wins, gamma, adversary_gamma)
         self.assert_close([-0.5], d1, 'd1')
         self.assert_close([-0.25], d2, 'd2')
@@ -62,7 +62,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         wins = np.array([0.])
         gamma = np.array([4., 4., 4., 4.])
         adversary_gamma = np.array([1., 1., 1., 1.])
-        d1, d2 = bradley_terry.get_bt_derivatives(
+        d1, d2 = get_bt_derivatives(
             slices, wins, gamma, adversary_gamma)
         self.assert_close([-3.2], d1, 'd1')
         self.assert_close([-0.64], d2, 'd2')
@@ -73,7 +73,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         wins = np.array([1., 2.])
         gamma = np.array([6., 4., 4., 4.])
         adversary_gamma = np.array([6., 4., 12., 12.])
-        d1, d2 = bradley_terry.get_bt_derivatives(
+        d1, d2 = get_bt_derivatives(
             slices, wins, gamma, adversary_gamma)
         self.assert_close([0.5, 1.], d1, 'd1')
         self.assert_close([-0.25, -0.625], d2, 'd2')

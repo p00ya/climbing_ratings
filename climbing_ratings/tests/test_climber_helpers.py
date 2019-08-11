@@ -16,8 +16,8 @@
 
 import numpy as np
 import unittest
-from climbing_ratings.climber_helpers import solve_d, solve_y, solve_x
-from climbing_ratings.tests.assertions import assert_close
+from ..climber_helpers import solve_d, solve_y, solve_x
+from .assertions import assert_close
 
 
 class TestClimberHelpers(unittest.TestCase):

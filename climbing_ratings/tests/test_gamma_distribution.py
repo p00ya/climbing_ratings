@@ -16,8 +16,8 @@
 
 import numpy as np
 import unittest
-from climbing_ratings.gamma_distribution import GammaDistribution
-from climbing_ratings.tests.assertions import assert_close
+from ..gamma_distribution import GammaDistribution
+from .assertions import assert_close
 
 
 class TestGammaDistribution(unittest.TestCase):

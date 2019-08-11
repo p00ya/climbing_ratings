@@ -16,8 +16,8 @@
 
 import collections
 import numpy as np
-from climbing_ratings.gamma_distribution import GammaDistribution
-from climbing_ratings.climber_helpers import solve_d, solve_y, solve_x
+from .climber_helpers import solve_d, solve_y, solve_x
+from .gamma_distribution import GammaDistribution
 
 
 class TriDiagonal(collections.namedtuple('TriDiagonal', ['d', 'u', 'l'])):

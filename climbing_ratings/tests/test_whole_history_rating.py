@@ -16,8 +16,8 @@
 
 import unittest
 import numpy as np
-import climbing_ratings.whole_history_rating as whole_history_rating
-from climbing_ratings.tests.assertions import assert_close
+from .. import whole_history_rating
+from .assertions import assert_close
 
 
 class TestWholeHistoryRatingFunctions(unittest.TestCase):

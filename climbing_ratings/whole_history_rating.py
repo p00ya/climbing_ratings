@@ -17,9 +17,9 @@
 
 import collections
 import numpy as np
-from climbing_ratings.bradley_terry import get_bt_derivatives
-from climbing_ratings.gamma_distribution import GammaDistribution
-from climbing_ratings.climber import Climber
+from .bradley_terry import get_bt_derivatives
+from .climber import Climber
+from .gamma_distribution import GammaDistribution
 
 
 def expand_to_slices(values, slices, dtype=None):

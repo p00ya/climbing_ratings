@@ -16,8 +16,8 @@
 
 import unittest
 import numpy as np
-import climbing_ratings.climber as climber
-from climbing_ratings.tests.assertions import assert_close
+from .. import climber
+from .assertions import assert_close
 
 
 class TestClimberFunctions(unittest.TestCase):
