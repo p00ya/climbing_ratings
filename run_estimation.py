@@ -49,8 +49,8 @@ Output file.
 
 route
     Tag from routes.csv
-rating
-    WHR (gamma) rating for each route.
+gamma
+    WHR gamma-rating for each route.
 
 
 page_ratings.csv
@@ -59,8 +59,8 @@ Output file.
 
 climber
     0-based climber ID for each page.  Consistent with pages.csv.
-rating
-    WHR (gamma) rating for each page.
+gamma
+    WHR gamma-rating for each page.
 var
     Variance of the natural (log gamma) rating for each page.
 """
@@ -163,7 +163,7 @@ def write_route_ratings(dirname, routes_name, route_ratings):
     filename = "%s/route_ratings.csv" % dirname
     with open(filename, 'w', newline='') as fp:
         writer = csv.writer(fp, delimiter=',')
-        writer.writerow(['route', 'rating'])
+        writer.writerow(['route', 'gamma'])
         for route, rating in zip(routes_name, route_ratings):
             writer.writerow([route, rating])
 
@@ -172,7 +172,7 @@ def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
     filename = "%s/page_ratings.csv" % dirname
     with open(filename, 'w', newline='') as fp:
         writer = csv.writer(fp, delimiter=',')
-        writer.writerow(['climber', 'rating', 'var'])
+        writer.writerow(['climber', 'gamma', 'var'])
         for climber, rating, var in zip(pages_climber, page_ratings, page_var):
             writer.writerow([climber, rating, var])
 
