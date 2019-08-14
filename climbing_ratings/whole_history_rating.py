@@ -139,6 +139,12 @@ class WholeHistoryRating:
     route_ratings : ndarray
         Current estimate of the rating of each route.  route_ratings[0] is
         always 1.
+    page_var : ndarray
+        Estimate of the variance of the natural rating of each page.
+    page_cov : ndarray
+        Estimate of the covariance between the natural rating of each page and
+        the next page.  The covariance for the last page of each climber is
+        not meaningful.
     """
 
     # Minimum and maximum ratings.
@@ -186,6 +192,8 @@ class WholeHistoryRating:
         num_pages = len(ascents_page_slices)
         self.route_ratings = np.array(routes_grade, dtype=np.float64)
         self.page_ratings = np.full(num_pages, 1.)
+        self.page_var = np.empty(num_pages)
+        self.page_cov = np.empty(num_pages)
         self._pages_climber_slices = pages_climber_slices
 
         page_wins = []
@@ -205,8 +213,15 @@ class WholeHistoryRating:
         for start, end in pages_climber_slices:
             self._climbers.append(Climber(pages_gap[start:end-1]))
 
-    def update_page_ratings(self):
-        """Update the ratings of all pages"""
+    def update_page_ratings(self, should_update_covariance=False):
+        """Update the ratings of all pages.
+
+        Parameters
+        ----------
+        should_update_covariance : boolean
+            If true, updates the "page_var" and "page_cov" attributes.
+            This has no effect on rating estimation.
+        """
 
         ascent_page_ratings = expand_to_slices(
             self.page_ratings, self._page_ascents.slices)
@@ -226,6 +241,12 @@ class WholeHistoryRating:
             np.negative(delta, delta)
             np.exp(delta, delta)
             self.page_ratings[start:end] *= delta
+
+            if should_update_covariance:
+                climber.get_covariance(
+                    self.page_ratings[start:end],
+                    bt_d1[start:end], bt_d2[start:end],
+                    self.page_var[start:end], self.page_cov[start:end-1])
 
         clip_ratings(self.page_ratings)
 

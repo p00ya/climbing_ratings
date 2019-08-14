@@ -16,7 +16,7 @@
 
 import collections
 import numpy as np
-from .climber_helpers import solve_d, solve_y, solve_x
+from .climber_helpers import solve_lu_d, solve_ul_d, solve_y, solve_x
 from .gamma_distribution import GammaDistribution
 
 
@@ -50,6 +50,20 @@ class TriDiagonalLU(collections.namedtuple('TriDiagonalLU', ['d', 'b', 'a'])):
     M = LU = |  0 a1  1  . 0 | |  0  0 d2 `.  : |
              |  :  . `. `. : | |  :  .  . `. bm |
              |  0  0  . am 1 | |  0  0  0 .. dn |
+
+    Similarly, for UL decompositions:
+    - d (main diagonal of L' matrix)
+    - b (lower sub-diagonal of L' matrix)
+    - a (upper sub-diagonal of U' matrix)
+
+               |  1 a0  0 ..  0 | | d0  0  0 ..  0 |
+               |  0  1 a1 ..  0 | | b0 d1  0 ..  0 |
+    M = U'L' = |  0  0  1 `.  0 | |  0 b1 d2 ..  0 |
+               |  :  .  . `. am | |  :  . `. `.  : |
+               |  0  0  0 ..  1 | |  0  0  0 bm dn |
+
+    Note the indices are always 0-based (in WHR the indices are the 1-based row
+    number).
     """
 
 
@@ -76,7 +90,7 @@ def lu_decompose(tri_diagonal):
     # We want to vectorize the calculation of d and a as much as possible,
     # instead of using WHR's iterative algorithm directly.
     #
-    # Substitute a[i] into the expression for d[i+1] to get a recurrence
+    # Substitute a[i-1] into the expression for d[i] to get a recurrence
     # relation for d:
     #
     #   d[i] = hd[i] - hu[i-1] a[i-1]
@@ -91,14 +105,54 @@ def lu_decompose(tri_diagonal):
     np.multiply(hu, hl, c[1:])
     np.negative(c, c)
     d = hd.copy()
-    solve_d(c, d)
+    solve_lu_d(c, d)
 
     # a[i] = hl[i] / d[i]
     a = np.divide(hl, d[:-1])
     return TriDiagonalLU(d, b, a)
 
 
-def invert_h_dot_g(lu, g):
+def ul_decompose(tri_diagonal):
+    """Decompose a tri-diagonal matrix into U'L' form.
+
+    Parameters
+    ----------
+    tri_diagonal : TriDiagonal
+        Represents the matrix to decompose.
+    """
+    # WHR Appendix B.2
+    # d'[n] = hd[n]
+    # b'[i] = hl[i]
+
+    hd, hu, hl = tri_diagonal
+    b = hl
+
+    # We want to vectorize the calculation of d and a as much as possible,
+    # instead of using WHR's iterative algorithm directly.
+    #
+    # Substitute a'[i] into the expression for d'[i] to get a recurrence
+    # relation for d':
+    #
+    #   d'[i] = hd[i] - b'[i] * a'[i]
+    #         = hd[i] - hl[i] * hu[i] / d'[i+1]
+    #
+    # Let c[i] = hl[i] * hu[i].
+    # c[-1] = 0, which is meaningless but convenient for the helper.
+    #
+    #   d'[i] = hd[i] - c[i] / d'[i+1]
+    c = np.empty_like(hd)
+    c[-1] = 0.
+    np.multiply(hl, hu, c[:-1])
+    np.negative(c, c)
+    d = hd.copy()
+    solve_ul_d(c, d)
+
+    # a'[i] = hu[i] / d'[i+1]
+    a = np.divide(hu, d[1:])
+    return TriDiagonalLU(d, b, a)
+
+
+def invert_lu_dot_g(lu, g):
     """Compute M^-1 G.
 
     Where M = LU, and LU X = G, this is equivalent to solving X.
@@ -107,7 +161,7 @@ def invert_h_dot_g(lu, g):
 
     Parameters
     ----------
-    lu : TriDiagonal
+    lu : TriDiagonalLU
         The tri-diagonal LU decomposition for a square matrix of shape (N, N)
     g : contiguous ndarray with length N
     """
@@ -124,6 +178,48 @@ def invert_h_dot_g(lu, g):
     x = y  # output parameter
     solve_x(b, d, y)
     return x
+
+
+def invert_lu(lu, ul, d_arr, l_arr):
+    """Compute -M^-1.
+
+    For the square matrix M = LU = U'L', solve the diagonal and lower
+    sub-diagonal of the negative inverse of M.
+
+    Parameters
+    ----------
+    lu : TriDiagonalLU
+        The tri-diagonal LU decomposition for the square matrix M
+    ul : TriDiagonalLU
+        The tri-diagonal UL decomposition for the square matrix M.
+    d : array_like
+        The output array for the diagonal of the negative inverse of M.
+    l : array_like
+        The output array for the lower sub-diagonal of the negative inverse
+        of M.
+    """
+    # WHR Appendix B.2: Computing Diagonal and Sub-diagonal Terms of H^-1
+    d = d_arr[:-1]
+    d_ul = ul.d[1:]
+
+    # d[i] d'[i+1]
+    np.copyto(d_arr, lu.d)
+    np.multiply(d, d_ul, d)
+
+    # b[i] b'[i]
+    b = np.multiply(lu.b, ul.b, l_arr)
+
+    # 1 / (b[i] b'[i] - d[i] d'[i+1])
+    np.subtract(b, d, d)
+    np.reciprocal(d_arr, d_arr)
+    d_arr[-1] *= -1.
+
+    # diagonal[i] = d'[i+1] / (b[i] b'[i] - d[i] d'[i+1])
+    np.multiply(d, d_ul, d)
+
+    # subdiagonal[i] = -a[i] diagonal[i+1]
+    np.multiply(lu.a, d_arr[1:], b)
+    np.negative(b, b)
 
 
 class Climber:
@@ -259,4 +355,26 @@ class Climber:
         """
         gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
-        return invert_h_dot_g(lu, gradient)
+        return invert_lu_dot_g(lu, gradient)
+
+    def get_covariance(self, ratings, bt_d1, bt_d2, var, cov):
+        """Return the covariance matrix for the ratings.
+
+        Parameters
+        ----------
+        ratings : ndarray
+            The rating (gamma) for each of the climber's pages.
+        bt_d1 : ndarray
+            First derivative from the Bradley-Terry model.
+        bt_d2 : ndarray
+            Second derivative from the Bradley-Terry model.
+        var : array_like
+            The output array for the variance for each of the natural ratings.
+        cov : array_like
+            The output array for the covariance between the natural ratings of
+            each page the next page.
+        """
+        _, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
+        lu = lu_decompose(hessian)
+        ul = ul_decompose(hessian)
+        return invert_lu(lu, ul, var, cov)

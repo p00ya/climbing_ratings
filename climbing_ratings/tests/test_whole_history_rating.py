@@ -73,9 +73,10 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings"""
-        self.whr.update_page_ratings()
+        self.whr.update_page_ratings(True)
         self.assert_close(
             [1., 1.], self.whr.page_ratings, 'page_ratings')
+        self.assert_close([0.4], self.whr.page_var, 'page_var')
 
     def test_update_route_ratings(self):
         """Test WholeHistoryRating.update_route_ratings is stable"""
@@ -108,9 +109,10 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings is stable"""
-        self.whr.update_page_ratings()
+        self.whr.update_page_ratings(True)
         self.assert_close(
             [1., 1.], self.whr.page_ratings, 'page_ratings')
+        self.assert_close([0.5, 0.625], self.whr.page_var, 'page_var')
 
 
 class TestWholeHistoryRatingUpdates(unittest.TestCase):
@@ -135,9 +137,10 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings converges"""
         for _ in range(4):
-            self.whr.update_page_ratings()
+            self.whr.update_page_ratings(True)
         self.assert_close(
             [2.64575131], self.whr.page_ratings, 'page_ratings')
+        self.assert_close([0.26041301], self.whr.page_var, 'page_var')
 
 
 class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
@@ -162,9 +165,10 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings"""
         for _ in range(4):
-            self.whr.update_page_ratings()
+            self.whr.update_page_ratings(True)
         self.assert_close(
             [3.06951799], self.whr.page_ratings, 'page_ratings')
+        self.assert_close([0.22751215], self.whr.page_var, 'page_var')
 
 
 class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
@@ -189,6 +193,8 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings converges"""
         for _ in range(4):
-            self.whr.update_page_ratings()
+            self.whr.update_page_ratings(True)
         self.assert_close(
             [2.54225096, 3.84231624], self.whr.page_ratings, 'page_ratings')
+        self.assert_close(
+            [0.27781627, 0.9107634], self.whr.page_var, 'page_var')

@@ -58,6 +58,8 @@ climber
     0-based climber ID for each page.  Consistent with pages.csv.
 rating
     WHR (gamma) rating for each page.
+var
+    Variance of the natural (log gamma) rating for each page.
 """
 
 # Copyright 2019 Dean Scarff
@@ -159,12 +161,12 @@ def write_route_ratings(filename, routes_name, route_ratings):
             writer.writerow([route, rating])
 
 
-def write_page_ratings(filename, pages_climber, page_ratings):
+def write_page_ratings(filename, pages_climber, page_ratings, page_var):
     with open(filename, 'w', newline='') as fp:
         writer = csv.writer(fp, delimiter=',')
-        writer.writerow(['climber', 'rating'])
-        for climber, rating in zip(pages_climber, page_ratings):
-            writer.writerow([climber, rating])
+        writer.writerow(['climber', 'rating', 'var'])
+        for climber, rating, var in zip(pages_climber, page_ratings, page_var):
+            writer.writerow([climber, rating, var])
 
 
 def main(argv):
@@ -188,8 +190,10 @@ def main(argv):
     for _ in range(100):
         whr.update_ratings()
 
+    whr.update_page_ratings(should_update_covariance=True)
+
     write_route_ratings(argv[4], routes_name, whr.route_ratings)
-    write_page_ratings(argv[5], pages_climber, whr.page_ratings)
+    write_page_ratings(argv[5], pages_climber, whr.page_ratings, whr.page_var)
 
 
 if __name__ == "__main__":

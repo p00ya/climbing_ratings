@@ -24,7 +24,7 @@ access to numpy arrays is avoided.
 cimport cython
 
 
-def solve_d(double[::1] c, double[::1] hd):
+def solve_lu_d(double[::1] c, double[::1] hd):
     """Compute the U-diagonal in the LU decomposition of a tri-diagonal matrix.
 
     Computes the array "d" following the recurrence:
@@ -48,6 +48,32 @@ def solve_d(double[::1] c, double[::1] hd):
         t += hd[i]
         hd[i] = t
         d_prev = t
+
+
+def solve_ul_d(double[::1] c, double[::1] hd):
+    """Compute the L'-diagonal in the UL decomposition of a tri-diagonal matrix.
+
+    Computes the array "d" following the recurrence:
+    d[i] = hd[i] - c[i] / d[i+1]
+
+    Parameters
+    ----------
+    c : contiguous ndarray with length N
+        The "c" term from the recurrence.
+    hd : contiguous ndarray with length N
+        The input is used as the "hd" term from the recurrence.  Also used as
+        the output array for the computed "d" terms.
+    """
+    cdef Py_ssize_t end = c.shape[0] - 1
+
+    cdef double d_next = hd[end]
+    cdef double t
+    for i in range(end, -1, -1):
+        t = c[i]
+        t /= d_next
+        t += hd[i]
+        hd[i] = t
+        d_next = t
 
 
 def solve_y(double[::1] g, double[::1] a):
