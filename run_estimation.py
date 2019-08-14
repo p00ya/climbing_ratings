@@ -4,8 +4,11 @@
 
 Should be called as:
 
-    run_estimation.py ascents.csv routes.csv pages.csv \
-        route_ratings.csv page_ratings.csv
+    run_estimation.py DATA
+
+DATA should be a directory containing the files 'ascents.csv', 'routes.csv',
+'pages.csv'.  The two files 'route_ratings.csv' and 'page_ratings.csv' will be
+written to the directory.  Each of the files are described below.
 
 The first line of each of the CSV files is assumed to be a header.
 
@@ -83,8 +86,9 @@ from climbing_ratings.climber import Climber
 from climbing_ratings.whole_history_rating import WholeHistoryRating
 
 
-def read_ascents(filename):
+def read_ascents(dirname):
     """Read the ascents table."""
+    filename = "%s/ascents.csv" % dirname
     routes = []
     cleans = []
     pages = []
@@ -103,8 +107,9 @@ def read_ascents(filename):
     return (routes, cleans, pages)
 
 
-def read_routes(filename):
+def read_routes(dirname):
     """Read the routes table."""
+    filename = "%s/routes.csv" % dirname
     names = []
     grades = []
     with open(filename, newline='') as fp:
@@ -121,8 +126,9 @@ def read_routes(filename):
     return names, grades
 
 
-def read_pages(filename):
+def read_pages(dirname):
     """Read the pages table."""
+    filename = "%s/pages.csv" % dirname
     climbers = []
     gaps = []
     with open(filename, newline='') as fp:
@@ -153,7 +159,8 @@ def extract_slices(values):
     return slices
 
 
-def write_route_ratings(filename, routes_name, route_ratings):
+def write_route_ratings(dirname, routes_name, route_ratings):
+    filename = "%s/route_ratings.csv" % dirname
     with open(filename, 'w', newline='') as fp:
         writer = csv.writer(fp, delimiter=',')
         writer.writerow(['route', 'rating'])
@@ -161,7 +168,8 @@ def write_route_ratings(filename, routes_name, route_ratings):
             writer.writerow([route, rating])
 
 
-def write_page_ratings(filename, pages_climber, page_ratings, page_var):
+def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
+    filename = "%s/page_ratings.csv" % dirname
     with open(filename, 'w', newline='') as fp:
         writer = csv.writer(fp, delimiter=',')
         writer.writerow(['climber', 'rating', 'var'])
@@ -171,12 +179,14 @@ def write_page_ratings(filename, pages_climber, page_ratings, page_var):
 
 def main(argv):
     """Read tables and perform estimation."""
-    ascents_route, ascents_clean, ascents_page = read_ascents(argv[1])
+    data = argv[1]
+
+    ascents_route, ascents_clean, ascents_page = read_ascents(data)
     ascents_page_slices = extract_slices(ascents_page)
 
-    routes_name, routes_grade = read_routes(argv[2])
+    routes_name, routes_grade = read_routes(data)
 
-    pages_climber, pages_gap = read_pages(argv[3])
+    pages_climber, pages_gap = read_pages(data)
     pages_climber_slices = extract_slices(pages_climber)
 
     # Assume a variance over 1 year of 1 point, and pages at 1-week intervals.
@@ -192,8 +202,8 @@ def main(argv):
 
     whr.update_page_ratings(should_update_covariance=True)
 
-    write_route_ratings(argv[4], routes_name, whr.route_ratings)
-    write_page_ratings(argv[5], pages_climber, whr.page_ratings, whr.page_var)
+    write_route_ratings(data, routes_name, whr.route_ratings)
+    write_page_ratings(data, pages_climber, whr.page_ratings, whr.page_var)
 
 
 if __name__ == "__main__":
