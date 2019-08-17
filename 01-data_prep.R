@@ -19,19 +19,21 @@ library(dplyr)
 period_length <- 604800 # seconds in 1 week
 
 # Classifies tick types like "dog" into either 1 (clean), 0 (not clean) or NA.
-# Note that we have pessimistic interpretations of some tick types that are
-# ambiguous in practice, e.g. a plain "tick" is not counted as clean.
-# Note top-rope ascents can be considered clean.
+# Note that we are optimistic about tick types that are ambiguous in practice,
+# e.g. a plain "tick" is dropped.
+# Also note that no tick shift is applied - a clean top rope ascent is
+# equivalent to an onsight.
 IsTickClean <- function(ticktype) {
   # See https://www.thecrag.com/en/article/ticktypes
   case_when(
     ticktype %in% c(
       "onsight", "flash", "redpoint", "groundupredpoint",
       "pinkpoint", "clean", "onsightsolo", "topropeonsight", "topropeflash",
-      "topropeclean", "secondclean", "leadsolo", "firstfreeascent"
+      "topropeclean", "secondclean", "leadsolo", "firstfreeascent",
+      "tick", "second"
     ) ~ 1,
     ticktype %in% c(
-      "tick", "second", "dog", "attempt", "retreat", "working",
+      "dog", "attempt", "retreat", "working",
       "allfreewithrest", "toproperest", "ghost", "secondrest"
     ) ~ 0
   )
