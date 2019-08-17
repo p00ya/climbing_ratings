@@ -16,7 +16,7 @@
 
 library(dplyr)
 
-period_length <- 604800  # seconds in 1 week
+period_length <- 604800 # seconds in 1 week
 
 # Classifies tick types like "dog" into either 1 (clean), 0 (not clean) or NA.
 # Note that we have pessimistic interpretations of some tick types that are
@@ -25,11 +25,15 @@ period_length <- 604800  # seconds in 1 week
 IsTickClean <- function(ticktype) {
   # See https://www.thecrag.com/en/article/ticktypes
   case_when(
-    ticktype %in% c("onsight", "flash", "redpoint", "groundupredpoint",
-        "pinkpoint", "clean", "onsightsolo", "topropeonsight", "topropeflash",
-        "topropeclean", "secondclean", "leadsolo", "firstfreeascent") ~ 1,
-    ticktype %in% c("tick", "second", "dog", "attempt", "retreat", "working",
-        "allfreewithrest", "toproperest", "ghost", "secondrest") ~ 0
+    ticktype %in% c(
+      "onsight", "flash", "redpoint", "groundupredpoint",
+      "pinkpoint", "clean", "onsightsolo", "topropeonsight", "topropeflash",
+      "topropeclean", "secondclean", "leadsolo", "firstfreeascent"
+    ) ~ 1,
+    ticktype %in% c(
+      "tick", "second", "dog", "attempt", "retreat", "working",
+      "allfreewithrest", "toproperest", "ghost", "secondrest"
+    ) ~ 0
   )
 }
 
@@ -46,30 +50,34 @@ NormalizeTables <- function(df_raw) {
     mutate(route = droplevels(route), climber = droplevels(climber))
 
   # Summarize the tick counts.
-  print(paste(nrow(df), "ascents by",
-      nlevels(df$climber), "climbers over",
-      nlevels(df$route), "routes."))
+  print(paste(
+    nrow(df), "ascents by",
+    nlevels(df$climber), "climbers over",
+    nlevels(df$route), "routes."
+  ))
 
   # Find the most popular routes:
-  top_routes <- df %>% count(route, sort=TRUE)
+  top_routes <- count(df, route, sort = TRUE)
 
   # Make the route with the most ascents the "first" route.  This means it
   # will be used as the reference route (rating of 1).  Having lots of ascents
   # means it is (hopefully) a good reference point for comparing climbers.
-  df$route <- relevel(df$route, ref=as.character(top_routes[[1,1]]))
+  df$route <- relevel(df$route, ref = as.character(top_routes[[1, 1]]))
 
   df_routes <- df %>%
     group_by(route) %>%
-    summarise(ewbank=floor(median(grade)))
+    summarise(ewbank = floor(median(grade)))
 
   df_ascents <- df %>%
     mutate(t = (timestamp - min(df$timestamp)) %/% period_length) %>%
     arrange(climber, t)
 
-  df_pages <- df_ascents %>% group_by(climber, t) %>% summarise()
+  df_pages <- df_ascents %>%
+    group_by(climber, t) %>%
+    summarise()
   # Set first_page[c] to be the index in df_pages of the first page for climber c.
-  first_page <- (df_pages %>% group_by(climber) %>% summarise(n=n()) %>%
-      mutate(idx=head(cumsum(c(1, n)), -1)))$idx
+  first_page <- (df_pages %>% group_by(climber) %>% summarise(n = n()) %>%
+    mutate(idx = head(cumsum(c(1, n)), -1)))$idx
 
   # time relative to the first ascent from the same climber
   df_pages$rel_t <- df_pages$t - df_pages$t[first_page[df_pages$climber]]
@@ -80,15 +88,15 @@ NormalizeTables <- function(df_raw) {
   df_pages <- df_pages %>%
     select(climber, t, gap) %>%
     ungroup() %>%
-    mutate(page=row_number())
+    mutate(page = row_number())
 
   df_ascents <- df_ascents %>%
-    inner_join(df_pages, by=c("climber", "t")) %>%
+    inner_join(df_pages, by = c("climber", "t")) %>%
     select("route", "climber", "clean", "page")
 
-  df_ascents <- as_tibble(df_ascents)
+  df_ascents <- tibble::as_tibble(df_ascents)
 
-  return(list(ascents=df_ascents, pages=df_pages, routes=df_routes))
+  list(ascents = df_ascents, pages = df_pages, routes = df_routes)
 }
 
 # Write normalized tables to CSV files.
@@ -100,23 +108,31 @@ NormalizeTables <- function(df_raw) {
 # "pages"; like what NormalizeTables returns.
 WriteNormalizedTables <- function(dfs, dir) {
   write.csv(dfs$ascents %>%
-      mutate(route=as.integer(route)-1, page=page-1) %>%
-      select(-climber),
-      file.path(dir, "ascents.csv"), row.names=FALSE)
+    mutate(route = as.integer(route) - 1, page = page - 1) %>%
+    select(-climber),
+  file.path(dir, "ascents.csv"),
+  row.names = FALSE
+  )
   write.csv(dfs$routes %>%
-      mutate(grade=pmax(1, 1 + ewbank - ewbank[[1]])) %>%
-      select(-ewbank),
-      file.path("data", "routes.csv"), row.names=FALSE)
+    mutate(grade = pmax(1, 1 + ewbank - ewbank[[1]])) %>%
+    select(-ewbank),
+  file.path(dir, "routes.csv"),
+  row.names = FALSE
+  )
   write.csv(dfs$pages %>%
-      select(climber, gap) %>%
-      mutate(climber=as.integer(climber) - 1),
-      file.path("data", "pages.csv"), row.names=FALSE)
+    select(climber, gap) %>%
+    mutate(climber = as.integer(climber) - 1),
+  file.path(dir, "pages.csv"),
+  row.names = FALSE
+  )
 }
 
 # Read in the ascents table.
-df_raw <- read.csv("data/raw_ascents.csv",
+df_raw <- read.csv(
+  file.path(data_dir, "raw_ascents.csv"),
   comment.char = "#",
-  colClasses=c("integer", "factor", "factor", "factor", "integer", "integer"))
+  colClasses = c("integer", "factor", "factor", "factor", "integer", "integer")
+)
 
 dfs <- NormalizeTables(df_raw)
-WriteNormalizedTables(dfs, "data")
+WriteNormalizedTables(dfs, data_dir)

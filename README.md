@@ -38,24 +38,28 @@ python3 setup.py test
 
 ### Estimation script
 
-The Python script `run_estimation.py` reads in set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
+The Python script `02-run_estimation.py` reads in set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
 
 ```
-python3 run_estimation.py data/
+python3 02-run_estimation.py data
 ```
 
 It will typically take seconds (measured on an Intel Core i5) for every ten thousand ascents.
 
 ### Data preparation and results analysis
 
-The `data_prep.R` script creates appropriate input CSV files for `run_estimation.py`.  With the file `data/raw_ascents.csv` already present, it
-can be sourced from R:
+The `01-data_prep.R` script creates appropriate input CSV files for `02-run_estimation.py`.
+
+The `03-post_estimation.R` script merges the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
+
+With the file `data/raw_ascents.csv` already present, the entire pipeline can be run from R:
 
 ```
-source('data_prep.R')
+data_dir <- "data"
+source("01-data_prep.R")
+system("python3 02-run_estimation.py data")
+source("03-post_estimation.R")
 ```
-
-The `post_estimation.R` script merges the estimation results with the data frames created by `data_prep.R`, and produces some plots that can be used to analyze the model fit.
 
 ## Interpreting ratings
 

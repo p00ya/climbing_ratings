@@ -20,17 +20,20 @@ library(ggplot2)
 # Returns the probability an ascent is clean according to the Bradley-Terry
 # model.
 PredictBradleyTerry <- function(dfs) {
-    page_gamma <- dfs$pages$gamma[dfs$ascents$page]
-    route_gamma <- dfs$routes$gamma[dfs$ascents$route]
-    return(page_gamma / (page_gamma + route_gamma))
+  page_gamma <- dfs$pages$gamma[dfs$ascents$page]
+  route_gamma <- dfs$routes$gamma[dfs$ascents$route]
+  page_gamma / (page_gamma + route_gamma)
 }
 
+# Updates the data frames in "dfs" with ratings results from "dir".
 MergeWithRatings <- function(dfs, dir) {
   df_page_ratings <- read.csv(file.path(dir, "page_ratings.csv"),
-      colClasses=c("integer", "numeric", "numeric"))
+    colClasses = c("integer", "numeric", "numeric")
+  )
 
   df_route_ratings <- read.csv(file.path(dir, "route_ratings.csv"),
-      colClasses=c("factor", "numeric"))
+    colClasses = c("factor", "numeric")
+  )
 
   dfs$pages$gamma <- df_page_ratings$gamma
   dfs$pages$var <- df_page_ratings$var
@@ -39,26 +42,30 @@ MergeWithRatings <- function(dfs, dir) {
   dfs$ascents$predicted <- PredictBradleyTerry(dfs)
   dfs$routes$r <- log(dfs$routes$gamma)
   dfs$pages$r <- log(dfs$pages$gamma)
-  return(dfs)
+  dfs
 }
 
 GetTimestampForPeriod <- function(t) {
-  as.POSIXct(t * period_length + min(df_raw$timestamp), origin="1970-01-01");
+  as.POSIXct(t * period_length + min(df_raw$timestamp), origin = "1970-01-01")
 }
 
 # Plots the timeseries of rating estimates for a set of climbers.  The "friends"
 # parameter should be a named vector where the names are the climber levels and
 # the values are corresponding labels to apply in the plot.
 PlotProgression <- function(df_pages, friends) {
-    df_friends <- df_pages %>%
-        filter(climber %in% names(friends)) %>%
-        mutate(date=GetTimestampForPeriod(t),
-               climber=recode(climber, !!!friends),
-               r=log(gamma),
-               r_upper=r+qnorm(0.25)*sqrt(var),
-               r_lower=r-qnorm(0.25)*sqrt(var))
-    ggplot(df_friends, aes(date, r, color=climber)) +
-        geom_smooth(aes(ymin=r_lower, ymax=r_upper, fill=climber), stat="identity")
+  df_friends <- df_pages %>%
+    filter(climber %in% names(friends)) %>%
+    mutate(
+      date = GetTimestampForPeriod(t),
+      climber = recode(climber, !!!friends),
+      r = log(gamma),
+      r_upper = r + qnorm(0.25) * sqrt(var),
+      r_lower = r - qnorm(0.25) * sqrt(var)
+    )
+  ggplot(df_friends, aes(date, r, color = climber)) +
+    geom_smooth(aes(ymin = r_lower, ymax = r_upper, fill = climber),
+      stat = "identity"
+    )
 }
 
 # Generates outlier labels for the route plot.
@@ -66,33 +73,47 @@ GetOutliers <- function(df_routes) {
   m <- loess(r ~ ewbank, df_routes)
   e <- residuals(m)
   e <- e / sd(e)
-  return(ifelse(abs(e) > 1.65, as.character(df_routes$route), NA))
+  ifelse(abs(e) > 1.65, as.character(df_routes$route), NA)
 }
 
-# Assume data_prep.R has already been sourced.
-dfs <- MergeWithRatings(dfs, "data")
-
-png(width=1024, res=120)
+# Assume 01-data_prep.R has already been sourced and 02-run_estimation.py has
+# already been run.
+dfs <- MergeWithRatings(dfs, data_dir)
 
 # Plots the "predicted" probability of clean ascents vs the actual proportion
 # of clean ascents.  Ideally the fit follows the y=x line.
-ggplot(dfs$ascents, aes(predicted, clean)) + geom_smooth() +
-    geom_abline(slope=1)
+accuracy_plot <- ggplot(dfs$ascents, aes(predicted, clean)) + geom_smooth() +
+  geom_abline(slope = 1)
 
 # Plots the residuals vs the conventional grade of routes.  Ideally the fit
 # follows the y=0 line.
-ggplot(dfs$ascents %>% inner_join(dfs$routes, by="route"),
-    aes(ewbank, predicted - clean)) + geom_smooth()
+residuals_ewbank_plot <- ggplot(
+  dfs$ascents %>% inner_join(dfs$routes, by = "route"),
+  aes(ewbank, predicted - clean)
+) + geom_smooth()
 
 # Plots the residuals vs the estimated natural route rating.  Ideally the fit
 # follows the y=0 line.
-ggplot(dfs$ascents %>% inner_join(dfs$routes, by="route"),
-    aes(r, predicted - clean)) + geom_smooth()
+residuals_route_rating_plot <- ggplot(
+  dfs$ascents %>% inner_join(dfs$routes, by = "route"),
+  aes(r, predicted - clean)
+) + geom_smooth()
 
 # Plots conventional grades vs the estimated "natural rating" of routes.
 # Outliers are labeled.
-ggplot(dfs$routes %>% mutate(outlier=GetOutliers(dfs$routes)), aes(ewbank, r)) +
-    geom_point(alpha=0.1, size=0.5, color="red") +
-    geom_smooth() +
-    geom_text(aes(label=outlier), na.rm=TRUE, size=2, check_overlap=TRUE,
-        hjust=0, nudge_x=0.1, vjust="outward")
+route_rating_plot <- ggplot(
+  dfs$routes %>% mutate(outlier = GetOutliers(dfs$routes)),
+  aes(ewbank, r)
+) + geom_point(alpha = 0.1, size = 0.5, color = "red") +
+  geom_smooth() +
+  geom_text(aes(label = outlier),
+    na.rm = TRUE, size = 2, check_overlap = TRUE,
+    hjust = 0, nudge_x = 0.1, vjust = "outward"
+  )
+
+png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, res = 120)
+print(accuracy_plot)
+print(residuals_ewbank_plot)
+print(residuals_route_rating_plot)
+print(route_rating_plot)
+dev.off()
