@@ -16,6 +16,7 @@
 
 library(dplyr)
 library(ggplot2)
+library(grid)
 
 # Returns the probability an ascent is clean according to the Bradley-Terry
 # model.
@@ -80,10 +81,22 @@ GetOutliers <- function(df_routes) {
 # already been run.
 dfs <- MergeWithRatings(dfs, data_dir)
 
+total_accuracy <-
+  NROW(filter(
+    dfs$ascents,
+    (predicted > 0.5 & clean == 1) | (predicted < 0.5 & clean == 0)
+  )) /
+    NROW(dfs$ascents)
+
 # Plots the "predicted" probability of clean ascents vs the actual proportion
 # of clean ascents.  Ideally the fit follows the y=x line.
 accuracy_plot <- ggplot(dfs$ascents, aes(predicted, clean)) + geom_smooth() +
   geom_abline(slope = 1)
+
+# Indicates the relative frequency of different prediction values.  A weak
+# model would have a mode near the "average" number of clean ascents; i.e.
+# it isn't adding much value over summary statistics.
+prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) + geom_density()
 
 # Plots the residuals vs the conventional grade of routes.  Ideally the fit
 # follows the y=0 line.
@@ -112,7 +125,12 @@ route_rating_plot <- ggplot(
   )
 
 png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, res = 120)
-print(accuracy_plot)
+print(sprintf("Total accuracy was %0.2f%%", total_accuracy * 100.0))
+print(grid.draw(rbind(
+  ggplotGrob(accuracy_plot),
+  ggplotGrob(prediction_density_plot),
+  size = "last"
+)))
 print(residuals_ewbank_plot)
 print(residuals_route_rating_plot)
 print(route_rating_plot)

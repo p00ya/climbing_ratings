@@ -57,6 +57,7 @@ NormalizeTables <- function(df_raw) {
     nlevels(df$climber), "climbers over",
     nlevels(df$route), "routes."
   ))
+  print(sprintf("%0.2f%% clean ascents", mean(df$clean) * 100.0))
 
   # Find the most popular routes:
   top_routes <- count(df, route, sort = TRUE)
