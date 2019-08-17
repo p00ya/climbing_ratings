@@ -40,7 +40,7 @@ def solve_lu_d(double[::1] c, double[::1] hd):
     """
     cdef Py_ssize_t n = c.shape[0]
 
-    cdef double d_prev = 1.
+    cdef double d_prev = 1.0
     cdef double t
     for i in range(n):
         t = c[i]
@@ -95,7 +95,7 @@ def solve_y(double[::1] g, double[::1] a):
     """
     cdef Py_ssize_t n = g.shape[0]
 
-    cdef double y_prev = 0.
+    cdef double y_prev = 0.0
     cdef double t
     for i in range(n):
         t = a[i]
@@ -118,7 +118,7 @@ def solve_x(double[::1] b, double[::1] d, double[::1] y):
     b : contiguous ndarray with length N - 1
         The "b" term from the recurrence.
     d : contiguous ndarray with length N
-        The input is used as the "d" term from the recurrence.  
+        The input is used as the "d" term from the recurrence.
     y : contiguous ndarray with length N
         The "y" term from the recurrence.  Also used as
         the output array for the computed "x" terms.
@@ -134,7 +134,7 @@ def solve_x(double[::1] b, double[::1] d, double[::1] y):
     for i in range(end - 1, -1, -1):
         t = x_next
         t *= b[i]
-        t *= -1.
+        t *= -1.0
         t += y[i]
         t /= d[i]
         y[i] = t

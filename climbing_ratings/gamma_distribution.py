@@ -26,7 +26,8 @@ class GammaDistribution:
     shape : float
         Shape parameter of the gamma distribution.
     """
-    shape = 2.
+
+    shape = 2.0
 
     def __init__(self, mode):
         """
@@ -36,7 +37,7 @@ class GammaDistribution:
             Mode of the distribution(s).
         """
         # Theta is the conventional "scale" parameter for the distribution.
-        self._theta = mode / (GammaDistribution.shape - 1.)
+        self._theta = mode / (GammaDistribution.shape - 1.0)
 
     def get_derivatives(self, x):
         """Return the first and second derivative of the log-likelihood.

@@ -20,7 +20,7 @@ from .climber_helpers import solve_lu_d, solve_ul_d, solve_y, solve_x
 from .gamma_distribution import GammaDistribution
 
 
-class TriDiagonal(collections.namedtuple('TriDiagonal', ['d', 'u', 'l'])):
+class TriDiagonal(collections.namedtuple("TriDiagonal", ["d", "u", "l"])):
     """Stores a tri-diagonal matrix.
 
     We decompose the matrix into three arrays:
@@ -37,7 +37,7 @@ class TriDiagonal(collections.namedtuple('TriDiagonal', ['d', 'u', 'l'])):
     """
 
 
-class TriDiagonalLU(collections.namedtuple('TriDiagonalLU', ['d', 'b', 'a'])):
+class TriDiagonalLU(collections.namedtuple("TriDiagonalLU", ["d", "b", "a"])):
     """Stores the LU-decomposition of a tri-diagonal matrix.
 
     We decompose the LU matrices into 3 arrays:
@@ -101,7 +101,7 @@ def lu_decompose(tri_diagonal):
     #
     #   d[i] = hd[i] - c[i] / d[i-1]
     c = np.empty_like(hd)
-    c[0] = 0.
+    c[0] = 0.0
     np.multiply(hu, hl, c[1:])
     np.negative(c, c)
     d = hd.copy()
@@ -141,7 +141,7 @@ def ul_decompose(tri_diagonal):
     #
     #   d'[i] = hd[i] - c[i] / d'[i+1]
     c = np.empty_like(hd)
-    c[-1] = 0.
+    c[-1] = 0.0
     np.multiply(hl, hu, c[:-1])
     np.negative(c, c)
     d = hd.copy()
@@ -169,7 +169,7 @@ def invert_lu_dot_g(lu, g):
 
     # Create a copy of "a", negated and padded with a leading 0.
     a1 = np.empty_like(d)
-    a1[0] = 0.
+    a1[0] = 0.0
     a1[1:] = np.negative(a)
 
     y = a1  # output parameter
@@ -212,7 +212,7 @@ def invert_lu(lu, ul, d_arr, l_arr):
     # 1 / (b[i] b'[i] - d[i] d'[i+1])
     np.subtract(b, d, d)
     np.reciprocal(d_arr, d_arr)
-    d_arr[-1] *= -1.
+    d_arr[-1] *= -1.0
 
     # diagonal[i] = d'[i+1] / (b[i] b'[i] - d[i] d'[i+1])
     np.multiply(d, d_ul, d)
@@ -237,8 +237,9 @@ class Climber:
     gamma_distribution : GammaDistribution
         Prior distribution for the climbers' initial rating.
     """
-    wiener_variance = 1.
-    gamma_distribution = GammaDistribution(1.)
+
+    wiener_variance = 1.0
+    gamma_distribution = GammaDistribution(1.0)
 
     # Private attributes
     # -------------------
@@ -329,8 +330,7 @@ class Climber:
         hd += bt_d2
 
         # Gamma terms.
-        gamma_d1, gamma_d2 = Climber.gamma_distribution.get_derivatives(
-            ratings[0])
+        gamma_d1, gamma_d2 = Climber.gamma_distribution.get_derivatives(ratings[0])
         gradient[0] += gamma_d1
         hessian.d[0] += gamma_d2
 

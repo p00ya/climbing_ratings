@@ -40,8 +40,7 @@ def expand_to_slices(values, slices, dtype=None):
     return expanded
 
 
-class Ascents(collections.namedtuple('Ascents',
-                                     ['wins', 'slices', 'adversary'])):
+class Ascents(collections.namedtuple("Ascents", ["wins", "slices", "adversary"])):
     """Stores ascents organized into contiguous slices.
 
     Ascents are organized into player-order, where the player is a route or
@@ -88,7 +87,7 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
 
     prev_route = 0
     start = 0
-    wins = 0.
+    wins = 0.0
     for ra, (route, a) in enumerate(permutation):
         ascent_to_rascent[a] = ra
         if route != prev_route:
@@ -96,11 +95,11 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
             rascents_route_slices.append((start, ra))
             route_wins.append(wins)
             # Start a new block.
-            wins = 0.
+            wins = 0.0
             start = ra
             prev_route = route
 
-        wins += 1. - ascents_clean[a]
+        wins += 1.0 - ascents_clean[a]
 
     rascents_route_slices.append((start, num_ascents))
     route_wins.append(wins)
@@ -109,16 +108,21 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
         for a in range(start, end):
             rascents_page[ascent_to_rascent[a]] = page
 
-    return Ascents(np.array(route_wins, dtype=np.float64),
-                   rascents_route_slices,
-                   np.array(rascents_page, dtype=np.intp))
+    return Ascents(
+        np.array(route_wins, dtype=np.float64),
+        rascents_route_slices,
+        np.array(rascents_page, dtype=np.intp),
+    )
 
 
 def clip_ratings(ratings):
     """Clip ratings to range."""
     np.clip(
-        ratings, WholeHistoryRating.clip_ratings[0],
-        WholeHistoryRating.clip_ratings[1], ratings)
+        ratings,
+        WholeHistoryRating.clip_ratings[0],
+        WholeHistoryRating.clip_ratings[1],
+        ratings,
+    )
 
 
 class WholeHistoryRating:
@@ -148,7 +152,7 @@ class WholeHistoryRating:
     """
 
     # Minimum and maximum ratings.
-    clip_ratings = (1. / 1024., 1024.)
+    clip_ratings = (1.0 / 1024.0, 1024.0)
 
     # Private Attributes
     # ------------------
@@ -165,8 +169,15 @@ class WholeHistoryRating:
     # _climbers : list of Climber
     #     Climbers (in the same order as _pages_climber_slices).
 
-    def __init__(self, ascents_route, ascents_clean, ascents_page_slices,
-                 pages_climber_slices, routes_grade, pages_gap):
+    def __init__(
+        self,
+        ascents_route,
+        ascents_clean,
+        ascents_page_slices,
+        pages_climber_slices,
+        routes_grade,
+        pages_gap,
+    ):
         """Initialize a WHR model.
 
         Parameters
@@ -191,7 +202,7 @@ class WholeHistoryRating:
         """
         num_pages = len(ascents_page_slices)
         self.route_ratings = np.array(routes_grade, dtype=np.float64)
-        self.page_ratings = np.full(num_pages, 1.)
+        self.page_ratings = np.full(num_pages, 1.0)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.empty(num_pages)
         self._pages_climber_slices = pages_climber_slices
@@ -201,9 +212,11 @@ class WholeHistoryRating:
             page_wins.append(np.add.reduce(ascents_clean[start:end]))
 
         self._page_ascents = Ascents(
-            np.array(page_wins), ascents_page_slices, np.array(ascents_route))
+            np.array(page_wins), ascents_page_slices, np.array(ascents_route)
+        )
         self._route_ascents = make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route)
+            ascents_clean, ascents_page_slices, ascents_route
+        )
 
         self._pages_gap = pages_gap
 
@@ -211,7 +224,7 @@ class WholeHistoryRating:
 
         self._climbers = []
         for start, end in pages_climber_slices:
-            self._climbers.append(Climber(pages_gap[start:end-1]))
+            self._climbers.append(Climber(pages_gap[start : end - 1]))
 
     def update_page_ratings(self, should_update_covariance=False):
         """Update the ratings of all pages.
@@ -224,18 +237,22 @@ class WholeHistoryRating:
         """
 
         ascent_page_ratings = expand_to_slices(
-            self.page_ratings, self._page_ascents.slices)
+            self.page_ratings, self._page_ascents.slices
+        )
         ascent_route_ratings = self.route_ratings[self._page_ascents.adversary]
 
         bt_d1, bt_d2 = get_bt_derivatives(
-            self._page_ascents.slices, self._page_ascents.wins,
-            ascent_page_ratings, ascent_route_ratings)
+            self._page_ascents.slices,
+            self._page_ascents.wins,
+            ascent_page_ratings,
+            ascent_route_ratings,
+        )
 
         for i, (start, end) in enumerate(self._pages_climber_slices):
             climber = self._climbers[i]
             delta = climber.get_ratings_adjustment(
-                self.page_ratings[start:end],
-                bt_d1[start:end], bt_d2[start:end])
+                self.page_ratings[start:end], bt_d1[start:end], bt_d2[start:end]
+            )
             # r2 = r1 - delta
             # gamma2 = exp(log(gamma1) - delta) = gamma exp(-delta)
             np.negative(delta, delta)
@@ -245,8 +262,11 @@ class WholeHistoryRating:
             if should_update_covariance:
                 climber.get_covariance(
                     self.page_ratings[start:end],
-                    bt_d1[start:end], bt_d2[start:end],
-                    self.page_var[start:end], self.page_cov[start:end-1])
+                    bt_d1[start:end],
+                    bt_d2[start:end],
+                    self.page_var[start:end],
+                    self.page_cov[start : end - 1],
+                )
 
         clip_ratings(self.page_ratings)
 
@@ -254,18 +274,21 @@ class WholeHistoryRating:
         """Update the ratings of all routes"""
 
         rascents_route_ratings = expand_to_slices(
-            self.route_ratings, self._route_ascents.slices)
+            self.route_ratings, self._route_ascents.slices
+        )
 
         rascents_page_ratings = self.page_ratings[self._route_ascents.adversary]
 
         # Bradley-Terry terms.
         d1, d2 = get_bt_derivatives(
-            self._route_ascents.slices, self._route_ascents.wins,
-            rascents_route_ratings, rascents_page_ratings)
+            self._route_ascents.slices,
+            self._route_ascents.wins,
+            rascents_route_ratings,
+            rascents_page_ratings,
+        )
 
         # Gamma terms.
-        gamma_d1, gamma_d2 = self._route_priors.get_derivatives(
-            self.route_ratings)
+        gamma_d1, gamma_d2 = self._route_priors.get_derivatives(self.route_ratings)
         d1 += gamma_d1
         d2 += gamma_d2
 

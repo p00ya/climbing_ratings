@@ -16,11 +16,12 @@
 
 import numpy as np
 
+
 def assert_close(test_case, expected, actual, name):
     """Raise an exception if expected does not equal actual.
-    
+
     Equality is checked "approximately".
-    
+
     Parameters
     ----------
     test_case : unittest.TestCase
@@ -35,5 +36,5 @@ def assert_close(test_case, expected, actual, name):
     expected = np.array(expected)
     if np.allclose(expected, actual):
         return
-    msg = 'expected %s = %s, got %s' % (name, expected, actual)
+    msg = "expected %s = %s, got %s" % (name, expected, actual)
     raise test_case.failureException(msg)

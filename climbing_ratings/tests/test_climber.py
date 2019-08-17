@@ -22,16 +22,13 @@ from .assertions import assert_close
 
 class TestClimberFunctions(unittest.TestCase):
     """Tests for functions in the climber module"""
-    m = np.array([
-            1., -2., 0.,
-            0.5, 2., 1.,
-            0., 3., 11.
-        ]).reshape((3, 3))
-    
+
+    m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
+
     def setUp(self):
-        np.seterr(all='raise')
+        np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        
+
     def test_lu_decompose(self):
         """Test that for (L, U) = lu_decompose(M), LU = M"""
         m = self.__class__.m
@@ -46,7 +43,7 @@ class TestClimberFunctions(unittest.TestCase):
         l_matrix = np.eye(3) + np.diagflat(lu.a, -1)
         lu_matrix = np.dot(l_matrix, u_matrix)
         # Test that M = LU.
-        self.assert_close(m, lu_matrix, 'M')
+        self.assert_close(m, lu_matrix, "M")
 
     def test_ul_decompose(self):
         """Test that for (U', L') = ul_decompose(M), U'L' = M"""
@@ -62,14 +59,14 @@ class TestClimberFunctions(unittest.TestCase):
         l_matrix = np.diagflat(ul.d) + np.diagflat(ul.b, -1)
         ul_matrix = np.dot(u_matrix, l_matrix)
         # Test that M = U'L'
-        self.assert_close(m, ul_matrix, 'M')
+        self.assert_close(m, ul_matrix, "M")
 
     def test_invert_lu_dot_g(self):
         """Test that for X = invert_lu_dot_g(LU, G), LU X = G"""
-        g = np.array([10., 5., 32.])
-        d = np.array([1., 3., 10.])
-        b = np.array([-2, 1.])
-        a = np.array([0.1, -2.])
+        g = np.array([10.0, 5.0, 32.0])
+        d = np.array([1.0, 3.0, 10.0])
+        b = np.array([-2, 1.0])
+        a = np.array([0.1, -2.0])
         lu = climber.TriDiagonalLU(d, b, a)
         x = climber.invert_lu_dot_g(lu, g)
 
@@ -79,7 +76,7 @@ class TestClimberFunctions(unittest.TestCase):
 
         # Test that LU X = G.
         lux = np.dot(lu_matrix, x)
-        self.assert_close(g, lux, 'LU X')
+        self.assert_close(g, lux, "LU X")
 
     def test_invert_lu(self):
         """Test invert_lu(LU, U'L') M = -I"""
@@ -92,59 +89,59 @@ class TestClimberFunctions(unittest.TestCase):
         ul = climber.ul_decompose(tri_diagonal)
 
         d = np.empty([3])
-        l = np.empty([2])
-        climber.invert_lu(lu, ul, d, l)
+        ld = np.empty([2])
+        climber.invert_lu(lu, ul, d, ld)
 
         # Test that M^-1 M = -I for the two diagonals
         expected = -np.linalg.inv(m)
-        self.assert_close(np.diag(expected), d, 'd')
-        self.assert_close(np.diag(expected, -1), l, 'l')
+        self.assert_close(np.diag(expected), d, "d")
+        self.assert_close(np.diag(expected, -1), ld, "ld")
 
 
 class TestClimber(unittest.TestCase):
     """Tests for the Climber class"""
-    
+
     def setUp(self):
-        np.seterr(all='raise')
+        np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        climber.Climber.wiener_variance = 1.
+        climber.Climber.wiener_variance = 1.0
 
     def test_one_on_sigma_sq(self):
         """Test Climber.one_on_sigma_sq"""
-        gaps = np.array([1., 2.])
-        climber.Climber.wiener_variance = 10.
+        gaps = np.array([1.0, 2.0])
+        climber.Climber.wiener_variance = 10.0
         c = climber.Climber(gaps)
         one_on_sigma_sq = c.one_on_sigma_sq
-        self.assert_close([0.1, 0.05], one_on_sigma_sq, 'one_on_sigma_sq')
+        self.assert_close([0.1, 0.05], one_on_sigma_sq, "one_on_sigma_sq")
 
     def test_add_wiener_gradient(self):
         """Test Climber.add_wiener_gradient"""
-        gaps = np.array([1.])
+        gaps = np.array([1.0])
         c = climber.Climber(gaps)
-        ratings = np.exp([1., 2.])
+        ratings = np.exp([1.0, 2.0])
         gradient = np.zeros(2)
         c.add_wiener_gradient(ratings, gradient)
-        self.assert_close([1., -1.], gradient, 'gradient')
+        self.assert_close([1.0, -1.0], gradient, "gradient")
 
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
-        gaps = np.array([1.])
-        ratings = np.array([6., 4.])
-        bt_d1 = np.array([0.5, 1.])
+        gaps = np.array([1.0])
+        ratings = np.array([6.0, 4.0])
+        bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(gaps)
         delta = c.get_ratings_adjustment(ratings, bt_d1, bt_d2)
-        self.assert_close([0.60901247, -0.4901247], delta, 'delta')
+        self.assert_close([0.60901247, -0.4901247], delta, "delta")
 
     def test_get_covariance(self):
         """Test Climber.get_covariance"""
-        gaps = np.array([1.])
-        ratings = np.array([6., 4.])
-        bt_d1 = np.array([0.5, 1.])
+        gaps = np.array([1.0])
+        ratings = np.array([6.0, 4.0])
+        bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(gaps)
         var = np.empty(2)
         cov = np.empty(1)
         c.get_covariance(ratings, bt_d1, bt_d2, var, cov)
-        self.assert_close([52. / 345., 232. / 345.], var, 'var')
-        self.assert_close([32. / 345.], cov, 'cov')
+        self.assert_close([52.0 / 345.0, 232.0 / 345.0], var, "var")
+        self.assert_close([32.0 / 345.0], cov, "cov")

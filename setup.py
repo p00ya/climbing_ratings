@@ -19,37 +19,45 @@ from Cython.Build import cythonize
 
 
 CYTHON_CFLAGS = [
-    "-Ofast", "-march=native", "-mtune=native",
-    "-ffast-math", "-fno-math-errno",
-    "-Rpass=loop-vectorize"]
+    "-Ofast",
+    "-march=native",
+    "-mtune=native",
+    "-ffast-math",
+    "-fno-math-errno",
+    "-Rpass=loop-vectorize",
+]
 
 bradley_terry = Extension(
     "climbing_ratings.bradley_terry",
     ["climbing_ratings/bradley_terry.pyx"],
-    extra_compile_args=CYTHON_CFLAGS)
+    extra_compile_args=CYTHON_CFLAGS,
+)
 
 climber_helpers = Extension(
     "climbing_ratings.climber_helpers",
     ["climbing_ratings/climber_helpers.pyx"],
-    extra_compile_args=CYTHON_CFLAGS)
+    extra_compile_args=CYTHON_CFLAGS,
+)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup(
-        name='climbing_ratings',
-        author='Dean Scarff',
-        author_email='dos@scarff.id.au',
-        install_requires=['numpy'],
-        setup_requires=['cython'],
-        test_suite='climbing_ratings.tests.test_suite',
-        tests_require=['numpy'],
+        name="climbing_ratings",
+        author="Dean Scarff",
+        author_email="dos@scarff.id.au",
+        install_requires=["numpy"],
+        setup_requires=["cython"],
+        test_suite="climbing_ratings.tests.test_suite",
+        tests_require=["numpy"],
         ext_modules=cythonize(
             [bradley_terry, climber_helpers],
             compiler_directives={
-                'language_level': 3,
-                'boundscheck': False,
-                'cdivision': True,
-                'embedsignature': True,
-                'initializedcheck': False,
-                'nonecheck': False,
-                'wraparound': False,
-            }))
+                "language_level": 3,
+                "boundscheck": False,
+                "cdivision": True,
+                "embedsignature": True,
+                "initializedcheck": False,
+                "nonecheck": False,
+                "wraparound": False,
+            },
+        ),
+    )

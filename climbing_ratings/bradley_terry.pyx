@@ -30,6 +30,7 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
         Rating of the "player" for each ascent.
     adversary_gamma : contiguous ndarray
         Rating of the adversary for each ascent.
+
     Returns
     -------
     (d1_terms : ndarray, d2_terms : ndarray)
@@ -65,7 +66,7 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     for i in range(n):
         t = gamma[i]
         t += adversary_gamma[i]
-        t = 1. / t
+        t = 1.0 / t
 
         # 1 / (C_ij gamma_i + D_ij)
         d1_terms[i] = t

@@ -92,12 +92,12 @@ def read_ascents(dirname):
     routes = []
     cleans = []
     pages = []
-    with open(filename, newline='') as fp:
+    with open(filename, newline="") as fp:
         reader = csv.reader(fp)
 
         for i, line in enumerate(reader):
             if i == 0:
-                assert line == ['route', 'clean', 'page']
+                assert line == ["route", "clean", "page"]
                 continue
             route, clean, page = line
             routes.append(int(route))
@@ -112,12 +112,12 @@ def read_routes(dirname):
     filename = "%s/routes.csv" % dirname
     names = []
     grades = []
-    with open(filename, newline='') as fp:
+    with open(filename, newline="") as fp:
         reader = csv.reader(fp)
 
         for i, line in enumerate(reader):
             if i == 0:
-                assert line == ['route', 'grade']
+                assert line == ["route", "grade"]
                 continue
             name, grade = line
             names.append(name)
@@ -131,12 +131,12 @@ def read_pages(dirname):
     filename = "%s/pages.csv" % dirname
     climbers = []
     gaps = []
-    with open(filename, newline='') as fp:
+    with open(filename, newline="") as fp:
         reader = csv.reader(fp)
 
         for i, line in enumerate(reader):
             if i == 0:
-                assert line == ['climber', 'gap']
+                assert line == ["climber", "gap"]
                 continue
             climber, gap = line
             climbers.append(int(climber))
@@ -161,18 +161,18 @@ def extract_slices(values):
 
 def write_route_ratings(dirname, routes_name, route_ratings):
     filename = "%s/route_ratings.csv" % dirname
-    with open(filename, 'w', newline='') as fp:
-        writer = csv.writer(fp, delimiter=',')
-        writer.writerow(['route', 'gamma'])
+    with open(filename, "w", newline="") as fp:
+        writer = csv.writer(fp, delimiter=",")
+        writer.writerow(["route", "gamma"])
         for route, rating in zip(routes_name, route_ratings):
             writer.writerow([route, rating])
 
 
 def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
     filename = "%s/page_ratings.csv" % dirname
-    with open(filename, 'w', newline='') as fp:
-        writer = csv.writer(fp, delimiter=',')
-        writer.writerow(['climber', 'gamma', 'var'])
+    with open(filename, "w", newline="") as fp:
+        writer = csv.writer(fp, delimiter=",")
+        writer.writerow(["climber", "gamma", "var"])
         for climber, rating, var in zip(pages_climber, page_ratings, page_var):
             writer.writerow([climber, rating, var])
 
@@ -190,13 +190,18 @@ def main(argv):
     pages_climber_slices = extract_slices(pages_climber)
 
     # Assume a variance over 1 year of 1 point, and pages at 1-week intervals.
-    Climber.wiener_variance = 1. / 52.
+    Climber.wiener_variance = 1.0 / 52.0
 
     whr = WholeHistoryRating(
-        ascents_route, ascents_clean, ascents_page_slices,
-        pages_climber_slices, routes_grade, pages_gap)
+        ascents_route,
+        ascents_clean,
+        ascents_page_slices,
+        pages_climber_slices,
+        routes_grade,
+        pages_gap,
+    )
 
-    np.seterr(all='ignore')
+    np.seterr(all="ignore")
     for _ in range(100):
         whr.update_ratings()
 

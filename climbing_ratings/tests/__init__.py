@@ -19,4 +19,4 @@ import unittest
 
 def test_suite():
     test_loader = unittest.TestLoader()
-    return test_loader.discover('.')
+    return test_loader.discover(".")
