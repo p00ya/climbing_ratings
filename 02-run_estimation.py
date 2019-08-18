@@ -203,7 +203,7 @@ def main(argv):
     )
 
     np.seterr(all="ignore")
-    for _ in range(100):
+    for _ in range(32):
         whr.update_ratings()
 
     whr.update_page_ratings(should_update_covariance=True)
