@@ -33,7 +33,7 @@ MergeWithRatings <- function(dfs, dir) {
   )
 
   df_route_ratings <- read.csv(file.path(dir, "route_ratings.csv"),
-    colClasses = c("factor", "numeric")
+    colClasses = c("factor", "numeric", "numeric")
   )
 
   dfs$pages$gamma <- df_page_ratings$gamma

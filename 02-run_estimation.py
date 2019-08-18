@@ -51,7 +51,8 @@ route
     Tag from routes.csv
 gamma
     WHR gamma-rating for each route.
-
+var
+    Variance of the natural (log gamma) rating for each route.
 
 page_ratings.csv
 ----------------
@@ -159,13 +160,13 @@ def extract_slices(values):
     return slices
 
 
-def write_route_ratings(dirname, routes_name, route_ratings):
+def write_route_ratings(dirname, routes_name, route_ratings, route_var):
     filename = "%s/route_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, delimiter=",")
-        writer.writerow(["route", "gamma"])
-        for route, rating in zip(routes_name, route_ratings):
-            writer.writerow([route, rating])
+        writer.writerow(["route", "gamma", "var"])
+        for route, rating, var in zip(routes_name, route_ratings, route_var):
+            writer.writerow([route, rating, var])
 
 
 def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
@@ -206,8 +207,9 @@ def main(argv):
         whr.update_ratings()
 
     whr.update_page_ratings(should_update_covariance=True)
+    whr.update_route_ratings(should_update_variance=True)
 
-    write_route_ratings(data, routes_name, whr.route_ratings)
+    write_route_ratings(data, routes_name, whr.route_ratings, whr.route_var)
     write_page_ratings(data, pages_climber, whr.page_ratings, whr.page_var)
 
 

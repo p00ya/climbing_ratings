@@ -149,6 +149,9 @@ class WholeHistoryRating:
         Estimate of the covariance between the natural rating of each page and
         the next page.  The covariance for the last page of each climber is
         not meaningful.
+    route_var : ndarray
+        Estimate of the variance of the natural rating of each route.
+        route_var[0] is zero by assumption.
     """
 
     # Minimum and maximum ratings.
@@ -205,6 +208,9 @@ class WholeHistoryRating:
         self.page_ratings = np.full(num_pages, 1.0)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.empty(num_pages)
+        self.route_var = np.empty_like(self.route_ratings)
+        self.route_var[0] = 0.0
+
         self._pages_climber_slices = pages_climber_slices
 
         page_wins = []
@@ -270,8 +276,15 @@ class WholeHistoryRating:
 
         clip_ratings(self.page_ratings)
 
-    def update_route_ratings(self):
-        """Update the ratings of all routes"""
+    def update_route_ratings(self, should_update_variance=False):
+        """Update the ratings of all routes.
+
+        Parameters
+        ----------
+        should_update_variance : boolean
+            If true, updates the "route_var" attribute.  This has no effect on
+            rating estimation.
+        """
 
         rascents_route_ratings = expand_to_slices(
             self.route_ratings, self._route_ascents.slices
@@ -301,6 +314,10 @@ class WholeHistoryRating:
         np.exp(delta, delta)
         self.route_ratings[1:] *= delta
         clip_ratings(self.route_ratings)
+
+        if should_update_variance:
+            np.reciprocal(d2[1:], self.route_var[1:])
+            np.negative(self.route_var[1:], self.route_var[1:])
 
     def update_ratings(self):
         """Update ratings for all routes and pages"""

@@ -85,10 +85,11 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
 
     def test_update_route_ratings(self):
         """Test WholeHistoryRating.update_route_ratings is stable"""
-        self.whr.update_route_ratings()
+        self.whr.update_route_ratings(True)
         # Ratings should not change: both ascents had a 50% probability assuming
         # the initial ratings.
         self.assert_close([1.0, 1.0, 1.0], self.whr.route_ratings, "route_ratings")
+        self.assert_close([0.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var")
 
 
 class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
