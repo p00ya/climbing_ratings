@@ -52,12 +52,12 @@ NormalizeTables <- function(df_raw) {
     mutate(route = droplevels(route), climber = droplevels(climber))
 
   # Summarize the tick counts.
-  print(paste(
+  cat(
     nrow(df), "ascents by",
     nlevels(df$climber), "climbers over",
-    nlevels(df$route), "routes."
-  ))
-  print(sprintf("%0.2f%% clean ascents", mean(df$clean) * 100.0))
+    nlevels(df$route), "routes;",
+    sprintf("%0.2f%%", mean(df$clean) * 100.0), "clean ascents\n"
+  )
 
   # Find the most popular routes:
   top_routes <- count(df, route, sort = TRUE)

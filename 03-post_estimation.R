@@ -125,13 +125,13 @@ route_rating_plot <- ggplot(
   )
 
 png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, res = 120)
-print(sprintf("Total accuracy was %0.2f%%", total_accuracy * 100.0))
-print(grid.draw(rbind(
+cat(sprintf("Total accuracy was %0.2f%%\n", total_accuracy * 100.0))
+suppressMessages(grid.draw(rbind(
   ggplotGrob(accuracy_plot),
   ggplotGrob(prediction_density_plot),
   size = "last"
 )))
-print(residuals_ewbank_plot)
-print(residuals_route_rating_plot)
-print(route_rating_plot)
+suppressMessages(print(residuals_ewbank_plot))
+suppressMessages(print(residuals_route_rating_plot))
+suppressMessages(print(route_rating_plot))
 dev.off()
