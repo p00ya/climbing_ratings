@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Make sure to source("01-data_prep.R") before sourcing this script.
+
 library(dplyr)
 library(ggplot2)
 library(grid)

@@ -46,9 +46,15 @@ python3 02-run_estimation.py data
 
 It will typically take seconds (measured on an Intel Core i5) for every ten thousand ascents.
 
-### Data preparation and results analysis
+### R scripts
 
-The `01-data_prep.R` script creates appropriate input CSV files for `02-run_estimation.py`.
+A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection, which can be installed from R:
+
+```
+install.packages("tidyverse")
+```
+
+Together, `00-data_prep_functions.R` and `01-data_prep.R` create appropriate input CSV files for `02-run_estimation.py`.
 
 The `03-post_estimation.R` script merges the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
 
@@ -56,9 +62,21 @@ With the file `data/raw_ascents.csv` already present, the entire pipeline can be
 
 ```
 data_dir <- "data"
+source("00-data_prep_functions.R")
 source("01-data_prep.R")
-system("python3 02-run_estimation.py data")
+system2("./02-run_estimation.py", data_dir)
 source("03-post_estimation.R")
+```
+
+The `raw_ascents.csv` file can be regenerated from a directory containing CSV logbook exports from theCrag.  Having sourced `00-data_prep_functions.R`, and with the logbooks in the directory "logbooks":
+
+```
+write.csv(
+  ReadLogbooks("logbooks"),
+  "data/raw_ascents.csv",
+  quote = FALSE,
+  row.names = FALSE
+)
 ```
 
 ## Interpreting ratings
