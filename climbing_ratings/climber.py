@@ -16,7 +16,13 @@
 
 import collections
 import numpy as np
-from .climber_helpers import solve_lu_d, solve_ul_d, solve_y, solve_x
+from .climber_helpers import (
+    add_wiener_gradient,
+    solve_lu_d,
+    solve_ul_d,
+    solve_x,
+    solve_y,
+)
 from .gamma_distribution import GammaDistribution
 
 
@@ -273,17 +279,6 @@ class Climber:
         hu += self.one_on_sigma_sq
         hl += self.one_on_sigma_sq
 
-    def add_wiener_gradient(self, ratings, gradient):
-        """Add terms from the Wiener prior to the gradient."""
-        # WHR Appendix A.2 Terms of the Wiener prior:
-        # d ln p / d r[t] = - (r[t] - r[t+1]) / sigma[t]^2
-        r = np.log(ratings)
-        d = r[:-1]  # output parameter
-        np.subtract(r[1:], r[:-1], d)
-        d *= self.one_on_sigma_sq
-        gradient[:-1] += d
-        gradient[1:] -= d
-
     def get_derivatives(self, ratings, bt_d1, bt_d2):
         """Return the Hessian and gradient at the given ratings point.
 
@@ -323,7 +318,7 @@ class Climber:
         gradient = np.zeros([n])
 
         self.add_wiener_hessian(hessian)
-        self.add_wiener_gradient(ratings, gradient)
+        add_wiener_gradient(self.one_on_sigma_sq, ratings, gradient)
 
         # Bradley-Terry terms.
         gradient += bt_d1

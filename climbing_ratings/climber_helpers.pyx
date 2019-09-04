@@ -22,6 +22,41 @@ access to numpy arrays is avoided.
 # limitations under the License.
 
 cimport cython
+from libc.math cimport log
+
+
+def add_wiener_gradient(
+    double[::1] one_on_sigma_sq,
+    double[::1] ratings,
+    double[::1] gradient,
+):
+    """Add terms from the Wiener prior to the gradient.
+
+    Parameters
+    ----------
+    one_on_sigma_sq : contiguous ndarray with length N - 1
+        Reciprocal of the Wiener variance between each page and the next page.
+    ratings : contiguous ndarray with length N
+        The rating (gamma) for each page.
+    gradient : contiguous ndarray with length N
+        Output array for the first derivative of the log likelihood with
+        respect to the rating for each page.
+    """
+    # WHR Appendix A.2 Terms of the Wiener prior:
+    # d ln p / d r[t] = -(r[t] - r[t+1]) / sigma[t]^2
+    cdef Py_ssize_t end = one_on_sigma_sq.shape[0]
+
+    cdef double d
+    cdef Py_ssize_t i
+    for i in range(end):
+        # -(r[t] - r[t+1]) = r[t+1] - r[t]
+        # = log(gamma[t+1]) - log(gamma[t])
+        # = log(gamma[t+1] / gamma[t])
+
+        d = log(ratings[i + 1] / ratings[i])
+        d *= one_on_sigma_sq[i]
+        gradient[i] += d
+        gradient[i + 1] -= d
 
 
 def solve_lu_d(double[::1] c, double[::1] hd):

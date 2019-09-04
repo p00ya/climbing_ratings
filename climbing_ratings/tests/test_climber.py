@@ -114,15 +114,6 @@ class TestClimber(unittest.TestCase):
         one_on_sigma_sq = c.one_on_sigma_sq
         self.assert_close([0.1, 0.05], one_on_sigma_sq, "one_on_sigma_sq")
 
-    def test_add_wiener_gradient(self):
-        """Test Climber.add_wiener_gradient"""
-        gaps = np.array([1.0])
-        c = climber.Climber(gaps)
-        ratings = np.exp([1.0, 2.0])
-        gradient = np.zeros(2)
-        c.add_wiener_gradient(ratings, gradient)
-        self.assert_close([1.0, -1.0], gradient, "gradient")
-
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
         gaps = np.array([1.0])

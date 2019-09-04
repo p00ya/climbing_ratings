@@ -27,6 +27,14 @@ class TestClimberHelpers(unittest.TestCase):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
 
+    def test_add_wiener_gradient(self):
+        """Test add_wiener_gradient()"""
+        one_on_sigma_sq = np.array([1.0])
+        ratings = np.exp([1.0, 2.0])
+        gradient = np.zeros(2)
+        climber_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
+        self.assert_close([1.0, -1.0], gradient, "gradient")
+
     def test_solve_lu_d(self):
         """Test solve_lu_d()"""
         c = np.array([0.0, 1.0, -3.0])
