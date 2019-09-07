@@ -115,16 +115,6 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
     )
 
 
-def clip_ratings(ratings):
-    """Clip ratings to range."""
-    np.clip(
-        ratings,
-        WholeHistoryRating.clip_ratings[0],
-        WholeHistoryRating.clip_ratings[1],
-        ratings,
-    )
-
-
 class WholeHistoryRating:
     """Performs optimization for route and climber ratings.
 
@@ -153,9 +143,6 @@ class WholeHistoryRating:
         Estimate of the variance of the natural rating of each route.
         route_var[0] is zero by assumption.
     """
-
-    # Minimum and maximum ratings.
-    clip_ratings = (1.0 / 1024.0, 1024.0)
 
     # Private Attributes
     # ------------------
@@ -274,8 +261,6 @@ class WholeHistoryRating:
                     self.page_cov[start : end - 1],
                 )
 
-        clip_ratings(self.page_ratings)
-
     def update_route_ratings(self, should_update_variance=False):
         """Update the ratings of all routes.
 
@@ -313,7 +298,6 @@ class WholeHistoryRating:
         np.negative(delta, delta)
         np.exp(delta, delta)
         self.route_ratings[1:] *= delta
-        clip_ratings(self.route_ratings)
 
         if should_update_variance:
             np.reciprocal(d2[1:], self.route_var[1:])
