@@ -24,7 +24,6 @@ CYTHON_CFLAGS = [
     "-mtune=native",
     "-ffast-math",
     "-fno-math-errno",
-    "-Rpass=loop-vectorize",
 ]
 
 bradley_terry = Extension(
