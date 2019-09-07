@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import numpy as np
-cimport cython
 
 
 def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
