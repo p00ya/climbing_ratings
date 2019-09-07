@@ -252,6 +252,9 @@ class Climber:
     # one_on_sigma_sq : array of float
     #     The Wiener variance between each page and the next page.  The length
     #     is 1 fewer than the number of pages.
+    # wiener_d2 : array of float
+    #     The second derivative terms (diagonal of the Hessian matrix) from the
+    #     Wiener prior, for each page.
 
     def __init__(self, gaps):
         """Initializes a Climber.
@@ -267,17 +270,13 @@ class Climber:
         s *= gaps
         np.reciprocal(s, s)
         self.one_on_sigma_sq = s
-
-    def add_wiener_hessian(self, hessian):
-        """Add terms from the Wiener prior to the Hessian and gradient."""
         # WHR Appendix A.2 Terms of the Wiener prior:
         # d^2 ln p / d r[t]^2 = -1 / sigma^2
-        # d^2 ln p / d r[t] d r[t+1] = 1 / sigma^2
-        hd, hu, hl = hessian
-        hd[:-1] -= self.one_on_sigma_sq
-        hd[1:] -= self.one_on_sigma_sq
-        hu += self.one_on_sigma_sq
-        hl += self.one_on_sigma_sq
+        hd = np.empty(s.shape[0] + 1)
+        hd[0] = 0.0
+        np.negative(s, hd[1:])
+        hd[:-1] -= s
+        self.wiener_d2 = hd
 
     def get_derivatives(self, ratings, bt_d1, bt_d2):
         """Return the Hessian and gradient at the given ratings point.
@@ -310,15 +309,10 @@ class Climber:
         """
 
         # Wiener terms.
-        n = ratings.shape[0]
-        hd = np.zeros([n])
-        hu = np.zeros([n - 1])
-        hl = np.zeros([n - 1])
-        hessian = TriDiagonal(hd, hu, hl)
-        gradient = np.zeros([n])
-
-        self.add_wiener_hessian(hessian)
-        add_wiener_gradient(self.one_on_sigma_sq, ratings, gradient)
+        gradient = np.zeros_like(ratings)
+        one_on_sigma_sq = self.one_on_sigma_sq
+        add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
+        hd = np.copy(self.wiener_d2)
 
         # Bradley-Terry terms.
         gradient += bt_d1
@@ -327,8 +321,9 @@ class Climber:
         # Gamma terms.
         gamma_d1, gamma_d2 = Climber.gamma_distribution.get_derivatives(ratings[0])
         gradient[0] += gamma_d1
-        hessian.d[0] += gamma_d2
+        hd[0] += gamma_d2
 
+        hessian = TriDiagonal(hd, one_on_sigma_sq, one_on_sigma_sq)
         return (gradient, hessian)
 
     def get_ratings_adjustment(self, ratings, bt_d1, bt_d2):

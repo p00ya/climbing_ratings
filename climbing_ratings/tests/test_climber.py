@@ -106,13 +106,13 @@ class TestClimber(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         climber.Climber.wiener_variance = 1.0
 
-    def test_one_on_sigma_sq(self):
-        """Test Climber.one_on_sigma_sq"""
+    def test_init(self):
+        """Test Climber initializes one_on_sigma_sq and wiener_d2"""
         gaps = np.array([1.0, 2.0])
         climber.Climber.wiener_variance = 10.0
         c = climber.Climber(gaps)
-        one_on_sigma_sq = c.one_on_sigma_sq
-        self.assert_close([0.1, 0.05], one_on_sigma_sq, "one_on_sigma_sq")
+        self.assert_close([0.1, 0.05], c.one_on_sigma_sq, "one_on_sigma_sq")
+        self.assert_close([-0.1, -0.15, -0.05], c.wiener_d2, "wiener_d2")
 
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
