@@ -40,7 +40,7 @@ python3 setup.py test
 
 ### Estimation script
 
-The Python script `02-run_estimation.py` reads in set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
+The Python script `02-run_estimation.py` reads in a set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
 
 ```
 python3 02-run_estimation.py data

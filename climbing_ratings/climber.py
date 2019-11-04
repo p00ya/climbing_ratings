@@ -257,7 +257,7 @@ class Climber:
     #     Wiener prior, for each page.
 
     def __init__(self, gaps):
-        """Initializes a Climber.
+        """Initialize a Climber.
 
         Parameters
         ----------

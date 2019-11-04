@@ -23,7 +23,7 @@ from .gamma_distribution import GammaDistribution
 
 
 def expand_to_slices(values, slices, dtype=None):
-    """Expand normalized values to contiguous blocks
+    """Expand normalized values to contiguous blocks.
 
     Parameters
     ----------

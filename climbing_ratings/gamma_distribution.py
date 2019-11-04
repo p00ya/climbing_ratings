@@ -53,7 +53,7 @@ class GammaDistribution:
         ----------
         x : ndarray
             Samples from the distribution.  Should have the same length as the
-            this object's "mean" parameter.
+            this object's "mode" parameter.
 
         Returns
         -------

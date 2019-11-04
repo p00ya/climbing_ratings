@@ -102,9 +102,9 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
     Returns
     -------
     (d1 : ndarray, d2 : ndarray)
-    A pair of ndarrays of the first and second derivative of the
-    Bradley-Terry log-likelihood a "player" wins, with respect to the
-    "natural rating" of that player.
+        A pair of ndarrays of the first and second derivative of the
+        Bradley-Terry log-likelihood a "player" wins, with respect to the
+        "natural rating" of that player.
     """
     d1_terms_arr, d2_terms_arr = get_bt_summation_terms(gamma, adversary_gamma)
     cdef double[::1] d1_terms = d1_terms_arr
