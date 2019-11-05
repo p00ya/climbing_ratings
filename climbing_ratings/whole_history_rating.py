@@ -40,7 +40,11 @@ def expand_to_slices(values, slices, dtype=None):
     return expanded
 
 
-class Ascents(collections.namedtuple("Ascents", ["wins", "slices", "adversary"])):
+class Ascents(
+    collections.namedtuple(
+        "Ascents", ["wins", "slices", "adversary", "clean"], defaults=[None]
+    )
+):
     """Stores ascents organized into contiguous slices.
 
     Ascents are organized into player-order, where the player is a route or
@@ -56,6 +60,8 @@ class Ascents(collections.namedtuple("Ascents", ["wins", "slices", "adversary"])
         for each player.
     adversary : ndarray of intp
         The index of the adversary for each player-ordered ascent.
+    clean : ndarray or None
+        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
     """
 
 
@@ -149,7 +155,7 @@ class WholeHistoryRating:
     # _page_ascents : Ascents
     #     Ascents in page order.
     # _route_ascents : Ascents
-    #     Ascents in route order.
+    #     Ascents in route order (no clean).
     # _pages_climber_slices : list of pairs
     #     Start and end indices in _page_ratings for each climber.
     # _pages_gap : ndarray
@@ -205,7 +211,10 @@ class WholeHistoryRating:
             page_wins.append(np.add.reduce(ascents_clean[start:end]))
 
         self._page_ascents = Ascents(
-            np.array(page_wins), ascents_page_slices, np.array(ascents_route)
+            np.array(page_wins),
+            ascents_page_slices,
+            np.array(ascents_route),
+            np.array(ascents_clean),
         )
         self._route_ascents = make_route_ascents(
             ascents_clean, ascents_page_slices, ascents_route
@@ -309,3 +318,44 @@ class WholeHistoryRating:
         # the routes.
         self.update_page_ratings()
         self.update_route_ratings()
+
+    def get_log_likelihood(self):
+        """Calculate the marginal log-likelihood.
+
+        Evaluates the marginal log-likelihood from the Bradley-Terry model at
+        the current ratings.
+
+        This value generally increases toward zero as the model improves.
+        However, its maximum may not coincide with the posterior distribution's
+        maximum due to the influence of the other priors.
+
+        Returns
+        -------
+        float
+            Marginal log-likelihood.
+        """
+        # WHR 2.2: Bradley-Terry Model
+        #   P(player i beats player j) = gamma_i / (gamma_i + gamma_j)
+
+        # While we could use ascents.wins to make evaluation of the numerator
+        # O(pages + routes), to avoid numeric overflow it's better to iterate
+        # over ascents (which is unavoidable for the denominator anyway).
+
+        ascent_page_ratings = expand_to_slices(
+            self.page_ratings, self._page_ascents.slices
+        )
+        ascent_route_ratings = self.route_ratings[self._page_ascents.adversary]
+
+        # Collect the rating of each winner for the numerator.
+        clean = self._page_ascents.clean
+        x = clean * ascent_page_ratings
+        x += (1.0 - clean) * ascent_route_ratings
+
+        denominator = ascent_page_ratings  # reuse array
+        denominator += ascent_route_ratings
+
+        np.log(x, x)
+        np.log(denominator, denominator)
+
+        x -= denominator
+        return np.sum(x)

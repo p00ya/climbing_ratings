@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import unittest
+import math
 import numpy as np
 from .. import whole_history_rating
 from .assertions import assert_close
@@ -91,6 +92,11 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         self.assert_close([1.0, 1.0, 1.0], self.whr.route_ratings, "route_ratings")
         self.assert_close([0.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var")
 
+    def test_get_log_likelihood(self):
+        """Test WholeHistoryRating.get_log_likelihood"""
+        log_lik = self.whr.get_log_likelihood()
+        self.assert_close(6.0 * math.log(0.5), log_lik, "log_lik")
+
 
 class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
     """Tests for the WholeHistoryRating class with multiple pages.
@@ -122,6 +128,11 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         self.whr.update_page_ratings(True)
         self.assert_close([1.0, 1.0], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.5, 0.625], self.whr.page_var, "page_var")
+
+    def test_get_log_likelihood(self):
+        """Test WholeHistoryRating.get_log_likelihood"""
+        log_lik = self.whr.get_log_likelihood()
+        self.assert_close(6.0 * math.log(0.5), log_lik, "log_lik")
 
 
 class TestWholeHistoryRatingUpdates(unittest.TestCase):

@@ -203,11 +203,21 @@ def main(argv):
     )
 
     np.seterr(all="ignore")
-    for _ in range(32):
+    last_log_lik = float("-inf")
+    for i in range(64):
         whr.update_ratings()
+        if i % 8 == 0:
+            log_lik = whr.get_log_likelihood()
+            print(log_lik)
+            if 0.0 < (log_lik - last_log_lik) < 1.0:
+                # Detect early convergence.
+                break
+            last_log_lik = log_lik
 
     whr.update_page_ratings(should_update_covariance=True)
     whr.update_route_ratings(should_update_variance=True)
+
+    print(whr.get_log_likelihood())
 
     write_route_ratings(data, routes_name, whr.route_ratings, whr.route_var)
     write_page_ratings(data, pages_climber, whr.page_ratings, whr.page_var)
