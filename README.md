@@ -46,7 +46,7 @@ The Python script `02-run_estimation.py` reads in a set of CSV files and writes 
 python3 02-run_estimation.py data
 ```
 
-It will typically less than a second per 10,000 ascents (measured on an Intel Core i5-8210Y).
+It will typically run in less than a second per 10,000 ascents (measured on an Intel Core i5-8210Y).
 
 ### R scripts
 
