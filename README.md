@@ -46,14 +46,14 @@ The Python script `02-run_estimation.py` reads in a set of CSV files and writes 
 python3 02-run_estimation.py data
 ```
 
-It will typically run in less than a second per 10,000 ascents (measured on an Intel Core i5-8210Y).
+It will typically run in less than 5 seconds per 100,000 ascents (measured on an Intel Core i5-8210Y).
 
 ### R scripts
 
-A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection, which can be installed from R:
+A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  The packages can be installed from R:
 
 ```
-install.packages("tidyverse")
+install.packages(c("tidyverse", "jsonlite"))
 ```
 
 Together, `00-data_prep_functions.R` and `01-data_prep.R` create appropriate input CSV files for `02-run_estimation.py`.
@@ -79,6 +79,12 @@ write.csv(
   quote = FALSE,
   row.names = FALSE
 )
+```
+
+Instead of reading the ascents data from logbook exports, it can instead be read from the JSON responses returned by theCrag's API.  With files like `data/ascents-01.json` present, replace `source("01-data_prep.R")` in the pipeline above with:
+
+```
+source("01-data_prep_json.R")
 ```
 
 ## Interpreting ratings
