@@ -86,6 +86,12 @@ total_accuracy <-
   )) /
     NROW(dfs$ascents)
 
+log_loss <- -sum(log(ifelse(
+  dfs$ascents$clean == 0,
+  1 - dfs$ascents$predicted,
+  dfs$ascents$predicted
+)))
+
 # Plots the "predicted" probability of clean ascents vs the actual proportion
 # of clean ascents.  Ideally the fit follows the y=x line.
 accuracy_plot <- ggplot(dfs$ascents, aes(predicted, clean)) + geom_smooth() +
@@ -124,6 +130,8 @@ route_rating_plot <- ggplot(
 
 png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, res = 120)
 cat(sprintf("Total accuracy was %0.2f%%\n", total_accuracy * 100.0))
+cat(sprintf("Log loss was %0.2f\n", log_loss))
+
 suppressMessages(grid.draw(rbind(
   ggplotGrob(accuracy_plot),
   ggplotGrob(prediction_density_plot),
