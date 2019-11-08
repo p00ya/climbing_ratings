@@ -211,7 +211,8 @@ NormalizeTables <- function(df_raw, period_length) {
 
   df_pages <- df_ascents %>%
     group_by(climber, t) %>%
-    summarise()
+    summarise(timestamp = first(timestamp))
+
   # Set first_page[c] to be the index in df_pages of the first page for climber
   # c.
   first_page <- (df_pages %>% group_by(climber) %>% summarise(n = n()) %>%
@@ -224,9 +225,9 @@ NormalizeTables <- function(df_raw, period_length) {
   df_pages$gap <- c(diff(df_pages$rel_t), 0)
 
   df_pages <- df_pages %>%
-    select(climber, t, gap) %>%
     ungroup() %>%
-    mutate(page = row_number())
+    mutate(page = row_number()) %>%
+    select(climber, t, gap, page, timestamp)
 
   df_ascents <- df_ascents %>%
     inner_join(df_pages, by = c("climber", "t")) %>%

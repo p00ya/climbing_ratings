@@ -48,18 +48,14 @@ MergeWithRatings <- function(dfs, dir) {
   dfs
 }
 
-GetTimestampForPeriod <- function(t) {
-  as.POSIXct(t * period_length + min(df_raw$timestamp), origin = "1970-01-01")
-}
-
 # Plots the timeseries of rating estimates for a set of climbers.  The "friends"
 # parameter should be a named vector where the names are the climber levels and
 # the values are corresponding labels to apply in the plot.
 PlotProgression <- function(df_pages, friends) {
   df_friends <- df_pages %>%
     filter(climber %in% names(friends)) %>%
-    mutate(
-      date = GetTimestampForPeriod(t),
+    transmute(
+      date = as.POSIXct(timestamp, origin = "1970-01-01"),
       climber = recode(climber, !!!friends),
       r = log(gamma),
       r_upper = r + qnorm(0.25) * sqrt(var),
