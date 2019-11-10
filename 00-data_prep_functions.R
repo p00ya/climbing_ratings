@@ -140,9 +140,10 @@ ReadAllJsonAscents <- function(dir) {
     )
 }
 
-# Classifies tick types like "dog" into either 1 (clean), 0 (not clean) or NA.
+# Classifies tick types like "dog" into a logical indicating whether the
+# ascent was clean, or NA.
 # Note that we are optimistic about tick types that are ambiguous in practice,
-# e.g. a plain "tick" is dropped.
+# e.g. a plain "tick" is clean.
 # Also note that no tick shift is applied - a clean top rope ascent is
 # equivalent to an onsight.
 IsTickClean <- function(ticktype) {
@@ -153,22 +154,25 @@ IsTickClean <- function(ticktype) {
       "pinkpoint", "clean", "onsightsolo", "topropeonsight", "topropeflash",
       "topropeclean", "secondclean", "leadsolo", "firstfreeascent",
       "tick", "second"
-    ) ~ 1,
+    ) ~ TRUE,
     ticktype %in% c(
       "dog", "attempt", "retreat", "working",
       "allfreewithrest", "toproperest", "ghost", "secondrest"
-    ) ~ 0
+    ) ~ FALSE
   )
 }
 
-# Given a data frame containing "raw" ascents, normalizes these to ascent,
-# page and route tables.
+# Tidies a raw ascents table.
+#
+# Removes unclassifiable ascents, removes routes with less than 2 ascents, adds
+# a "clean" column, and re-orders the route levels so the most popular route is
+# first.
+#
+# Also prints a summary of the resulting data.
 #
 # df_raw is expected to have the columns "ascentId", "route", "climber",
 # "tick", "grade", "timestamp".
-#
-# period_length is the number of seconds per page.
-NormalizeTables <- function(df_raw, period_length) {
+CleanAscents <- function(df_raw) {
   df <- df_raw %>%
     mutate(clean = IsTickClean(tick)) %>%
     filter(!is.na(clean)) %>%
@@ -180,7 +184,8 @@ NormalizeTables <- function(df_raw, period_length) {
   # Drop ascents where the route has a single ascent.
   df <- df %>%
     inner_join(top_routes, by = "route") %>%
-    filter(n > 1)
+    filter(n > 1) %>%
+    select(-n)
 
   # Make the route with the most ascents the "first" route.  This means it will
   # be used as the reference route (rating of 1).  Having lots of ascents
@@ -201,12 +206,23 @@ NormalizeTables <- function(df_raw, period_length) {
     sprintf("%0.2f%%", mean(df$clean) * 100.0), "clean ascents\n"
   )
 
+  tibble::as_tibble(df)
+}
+
+# Given a data frame containing filtered ascents (as produced by
+# "CleanAscents"), normalizes these to ascent, page and route tables.
+#
+# period_length is the number of seconds per page.
+NormalizeTables <- function(df, period_length) {
   df_routes <- df %>%
     group_by(route) %>%
     summarise(ewbank = floor(median(grade)))
 
   df_ascents <- df %>%
-    mutate(t = (timestamp - min(df$timestamp)) %/% period_length) %>%
+    mutate(
+      t = (timestamp - min(df$timestamp)) %/% period_length,
+      clean = as.numeric(clean)
+    ) %>%
     arrange(climber, t)
 
   df_pages <- df_ascents %>%
@@ -231,7 +247,7 @@ NormalizeTables <- function(df_raw, period_length) {
 
   df_ascents <- df_ascents %>%
     inner_join(df_pages, by = c("climber", "t")) %>%
-    select("route", "climber", "clean", "page")
+    select(route, climber, clean, page)
 
   df_ascents <- tibble::as_tibble(df_ascents)
 
@@ -246,22 +262,25 @@ NormalizeTables <- function(df_raw, period_length) {
 # "dfs" should be a list of data frames, with the tags "ascents", "routes" and
 # "pages"; like what NormalizeTables returns.
 WriteNormalizedTables <- function(dfs, dir) {
-  write.csv(dfs$ascents %>%
-    mutate(route = as.integer(route) - 1, page = page - 1) %>%
-    select(-climber),
-  file.path(dir, "ascents.csv"),
-  row.names = FALSE
+  write.csv(
+    dfs$ascents %>%
+      mutate(route = as.integer(route) - 1, page = page - 1) %>%
+      select(-climber),
+    file.path(dir, "ascents.csv"),
+    row.names = FALSE
   )
-  write.csv(dfs$routes %>%
-    mutate(grade = pmax(1, 1 + ewbank - ewbank[[1]])) %>%
-    select(-ewbank),
-  file.path(dir, "routes.csv"),
-  row.names = FALSE
+  write.csv(
+    dfs$routes %>%
+      mutate(grade = pmax(1, 1 + ewbank - ewbank[[1]])) %>%
+      select(-ewbank),
+    file.path(dir, "routes.csv"),
+    row.names = FALSE
   )
-  write.csv(dfs$pages %>%
-    select(climber, gap) %>%
-    mutate(climber = as.integer(climber) - 1),
-  file.path(dir, "pages.csv"),
-  row.names = FALSE
+  write.csv(
+    dfs$pages %>%
+      select(climber, gap) %>%
+      mutate(climber = as.integer(climber) - 1),
+    file.path(dir, "pages.csv"),
+    row.names = FALSE
   )
 }

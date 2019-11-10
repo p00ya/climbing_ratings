@@ -58,7 +58,7 @@ install.packages(c("tidyverse", "jsonlite"))
 
 Together, `00-data_prep_functions.R` and `01-data_prep.R` create appropriate input CSV files for `02-run_estimation.py`.
 
-The `03-post_estimation.R` script merges the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
+Together, `00-post_estimation_functions.R` and `03-post_estimation.R` merge the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
 
 With the file `data/raw_ascents.csv` already present, the entire pipeline can be run from R:
 
@@ -67,6 +67,7 @@ data_dir <- "data"
 source("00-data_prep_functions.R")
 source("01-data_prep.R")
 system2("./02-run_estimation.py", data_dir)
+source("00-post_estimation_functions.R")
 source("03-post_estimation.R")
 ```
 

@@ -32,5 +32,5 @@ df_raw <- read.csv(
   )
 )
 
-dfs <- NormalizeTables(df_raw, period_length)
+dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
 WriteNormalizedTables(dfs, data_dir)
