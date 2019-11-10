@@ -69,7 +69,7 @@ residuals_route_rating_plot <- ggplot(
 # Outliers are labeled.
 route_rating_plot <- PlotRouteRating(dfs$routes)
 
-png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, res = 120)
+png(filename = file.path(data_dir, "Rplot%03d.png"), width = 1024, height = 768, res = 120)
 cat(sprintf("Total accuracy was %0.2f%%\n", total_accuracy * 100.0))
 cat(sprintf("Log loss was %0.2f\n", log_loss))
 
