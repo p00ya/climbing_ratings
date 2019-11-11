@@ -94,12 +94,10 @@ def read_ascents(dirname):
     cleans = []
     pages = []
     with open(filename, newline="") as fp:
-        reader = csv.reader(fp)
+        reader = iter(csv.reader(fp))
 
-        for i, line in enumerate(reader):
-            if i == 0:
-                assert line == ["route", "clean", "page"]
-                continue
+        assert next(reader) == ["route", "clean", "page"]
+        for line in reader:
             route, clean, page = line
             routes.append(int(route))
             cleans.append(float(clean))
@@ -114,12 +112,10 @@ def read_routes(dirname):
     names = []
     grades = []
     with open(filename, newline="") as fp:
-        reader = csv.reader(fp)
+        reader = iter(csv.reader(fp))
 
-        for i, line in enumerate(reader):
-            if i == 0:
-                assert line == ["route", "grade"]
-                continue
+        assert next(reader) == ["route", "grade"]
+        for line in reader:
             name, grade = line
             names.append(name)
             grades.append(float(grade))
@@ -133,12 +129,10 @@ def read_pages(dirname):
     climbers = []
     gaps = []
     with open(filename, newline="") as fp:
-        reader = csv.reader(fp)
+        reader = iter(csv.reader(fp))
 
-        for i, line in enumerate(reader):
-            if i == 0:
-                assert line == ["climber", "gap"]
-                continue
+        assert next(reader) == ["climber", "gap"]
+        for line in reader:
             climber, gap = line
             climbers.append(int(climber))
             gaps.append(float(gap))
