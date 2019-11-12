@@ -38,10 +38,23 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         ascents_route = [0, 1, 0, 1, 0]
 
         ascents = whole_history_rating.make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route
+            ascents_clean, ascents_page_slices, ascents_route, 2
         )
         self.assertSequenceEqual([3.0, 2.0], ascents.wins.tolist())
         self.assertSequenceEqual([(0, 3), (3, 5)], ascents.slices)
+        self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
+
+    def test_make_route_ascents_sparse(self):
+        """Test make_route_ascents() for routes without ascents"""
+        ascents_clean = [0, 0, 0, 0, 0]
+        ascents_page_slices = [(0, 5)]
+        ascents_route = [1, 2, 1, 2, 1]
+
+        ascents = whole_history_rating.make_route_ascents(
+            ascents_clean, ascents_page_slices, ascents_route, 4
+        )
+        self.assertSequenceEqual([0.0, 3.0, 2.0, 0.0], ascents.wins.tolist())
+        self.assertSequenceEqual([(0, 0), (0, 3), (3, 5), (5, 5)], ascents.slices)
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
 
 

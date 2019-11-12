@@ -20,7 +20,7 @@ import numpy as np
 def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     """Get the Bradley-Terry summation terms for each player.
 
-    A player is an abstraction for an entity with a rating; in will correspond
+    A player is an abstraction for an entity with a rating; it will correspond
     to a page or a route.
 
     Parameters
@@ -85,7 +85,7 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
                        double[::1] adversary_gamma):
     """Get the derivatives of the log-likelihood for each player.
 
-    A player is an abstraction for an entity with a rating; in will correspond
+    A player is an abstraction for an entity with a rating; it will correspond
     to a page or a route.
 
     Parameters
@@ -122,6 +122,11 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
     cdef tuple pair
     for i, pair in enumerate(slices):
         start, end = pair
+        if start == end:
+          d1[i] = 0.0
+          d2[i] = 0.0
+          continue
+
         # WHR Appendix A.1:
         # d ln P / d r = |W_i| - gamma_i sum( C_ij / (C_ij gamma_i + D_ij) )
         d1_sum = d1_terms[end - 1]

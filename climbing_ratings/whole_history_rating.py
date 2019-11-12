@@ -16,6 +16,7 @@
 
 
 import collections
+import itertools
 import numpy as np
 from .bradley_terry import get_bt_derivatives
 from .climber import Climber
@@ -65,7 +66,7 @@ class Ascents(
     """
 
 
-def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
+def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_routes):
     """Create a permutation of ascents in route-order.
 
     Parameters
@@ -76,11 +77,15 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
         Route index of each ascent.
     ascents_page : ndarray of intp
         Page index of each ascent.
+    num_routes : integer
+        Number of routes.  Route indices must be in the interval
+        [0, num_routes).  Routes may have zero ascents.
 
     Returns
     -------
-    rascents : Ascents
-        Ascents ordered by (and sliced by) route.
+    Ascents
+        Ascents ordered by (and sliced by) route.  The "slices" list will have
+        length num_routes.  The "clean" attribute is unpopulated.
     """
     num_ascents = len(ascents_route)
     route_wins = []
@@ -91,24 +96,29 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route):
     permutation.sort()
     ascent_to_rascent = [0] * num_ascents
 
-    prev_route = 0
-    start = 0
+    # Add an additional ascent so the loop adds all routes.
+    permutation = itertools.chain(permutation, [(num_routes, -1)])
+
+    start = end = 0
+    i = 0
     wins = 0.0
-    for ra, (route, a) in enumerate(permutation):
-        ascent_to_rascent[a] = ra
-        if route != prev_route:
-            # Flush the last block.
-            rascents_route_slices.append((start, ra))
+
+    for j, (route, a) in enumerate(permutation):
+        if 0 <= a:
+            ascent_to_rascent[a] = j
+        if i < route:
+            rascents_route_slices.append((start, end))
             route_wins.append(wins)
-            # Start a new block.
+
+            # Routes with no ascents:
+            rascents_route_slices.extend([(end, end)] * (route - i - 1))
+            route_wins.extend([0.0] * (route - i - 1))
+
+            i = route
+            start = j
             wins = 0.0
-            start = ra
-            prev_route = route
-
+        end = j + 1
         wins += 1.0 - ascents_clean[a]
-
-    rascents_route_slices.append((start, num_ascents))
-    route_wins.append(wins)
 
     for page, (start, end) in enumerate(ascents_page_slices):
         for a in range(start, end):
@@ -217,7 +227,7 @@ class WholeHistoryRating:
             np.array(ascents_clean),
         )
         self._route_ascents = make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route
+            ascents_clean, ascents_page_slices, ascents_route, len(routes_grade)
         )
 
         self._pages_gap = pages_gap
@@ -251,6 +261,8 @@ class WholeHistoryRating:
         )
 
         for i, (start, end) in enumerate(self._pages_climber_slices):
+            if start == end:
+                continue
             climber = self._climbers[i]
             delta = climber.get_ratings_adjustment(
                 self.page_ratings[start:end], bt_d1[start:end], bt_d2[start:end]

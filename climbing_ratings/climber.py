@@ -232,7 +232,7 @@ class Climber:
     """Models a climber.
 
     A climber has an associated set of "ratings", each corresponding to a
-    particular period (a page).  Each page corresponds to one or more ascents.
+    particular period (a page).  Each page corresponds to zero or more ascents.
 
     Instances store state that is invariant over estimation.
 

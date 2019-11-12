@@ -65,6 +65,16 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([-3.2], d1, "d1")
         self.assert_close([-0.64], d2, "d2")
 
+    def test_get_bt_derivatives_no_ascents(self):
+        """Test get_bt_derivatives() with no ascents"""
+        slices = [(0, 0)]
+        wins = np.array([])
+        gamma = np.array([])
+        adversary_gamma = np.array([])
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        self.assert_close([0.0], d1, "d1")
+        self.assert_close([0.0], d2, "d2")
+
     def test_get_bt_derivatives(self):
         """Test get_bt_derivatives() with multiple slices"""
         slices = [(0, 1), (1, 4)]

@@ -81,6 +81,7 @@ var
 # limitations under the License.
 
 import csv
+import itertools
 import numpy as np
 import sys
 from climbing_ratings.climber import Climber
@@ -140,17 +141,36 @@ def read_pages(dirname):
     return (climbers, gaps)
 
 
-def extract_slices(values):
-    """Extract slices of contiguous values."""
+def extract_slices(values, num_slices):
+    """Extract slices of contiguous values.
+
+    Parameters
+    ----------
+    values : list of int
+        A list of values in ascending order.
+    num_slices : int
+        The length of the list to return.
+
+    Returns
+    -------
+    list of (start, end) tuples
+        Returns a list x such that x[i] is a tuple (start, end) where start is
+        the earliest index of the least value >= i, and end is the latest index
+        of the greatest value <= i.
+    """
     slices = []
-    prev_value = 0
-    start = 0
-    for i, value in enumerate(values):
-        if value != prev_value:
-            slices.append((start, i))
-            start = i
-            prev_value = value
-    slices.append((start, len(values)))
+    start = end = 0
+    i = 0
+    for j, value in enumerate(itertools.chain(values, [num_slices])):
+        if i < value:
+            slices.append((start, end))
+            # Add missing values:
+            slices.extend([(end, end)] * (value - i - 1))
+            i = value
+            start = j
+
+        end = j + 1
+
     return slices
 
 
@@ -177,12 +197,11 @@ def main(argv):
     data = argv[1]
 
     ascents_route, ascents_clean, ascents_page = read_ascents(data)
-    ascents_page_slices = extract_slices(ascents_page)
-
+    pages_climber, pages_gap = read_pages(data)
     routes_name, routes_grade = read_routes(data)
 
-    pages_climber, pages_gap = read_pages(data)
-    pages_climber_slices = extract_slices(pages_climber)
+    ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
+    pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
     # Assume a variance over 1 year of 1 point, and pages at 1-week intervals.
     Climber.wiener_variance = 1.0 / 52.0
