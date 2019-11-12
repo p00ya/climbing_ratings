@@ -50,15 +50,17 @@ It will typically run in less than 5 seconds per 100,000 ascents (measured on an
 
 ### R scripts
 
-A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  The packages can be installed from R:
+A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  The packages can be installed from R:
 
 ```
-install.packages(c("tidyverse", "jsonlite"))
+install.packages(c("tidyverse", "jsonlite", "caret"))
 ```
 
 Together, `00-data_prep_functions.R` and `01-data_prep.R` create appropriate input CSV files for `02-run_estimation.py`.
 
 Together, `00-post_estimation_functions.R` and `03-post_estimation.R` merge the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
+
+The `cross_validation.R` script performs repeated k-fold cross-validation on the model.
 
 With the file `data/raw_ascents.csv` already present, the entire pipeline can be run from R:
 

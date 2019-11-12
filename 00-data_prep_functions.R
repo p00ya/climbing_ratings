@@ -118,9 +118,9 @@ ReadJsonAscents <- function(filename) {
       climber = as.character(AccountID),
       tick = NormalizeAscentType(Tick),
       grade = ExtractEwbankGrade(Grade),
-      timestamp = as.integer(
+      timestamp = suppressWarnings(as.integer(
         as.POSIXct(as.character(Date), format = "%FT%H:%M:%SZ", optional = TRUE)
-      )
+      ))
     ) %>%
     na.omit()
 }
@@ -206,7 +206,7 @@ CleanAscents <- function(df_raw) {
     sprintf("%0.2f%%", mean(df$clean) * 100.0), "clean ascents\n"
   )
 
-  tibble::as_tibble(df)
+  df
 }
 
 # Given a data frame containing filtered ascents (as produced by
@@ -248,8 +248,6 @@ NormalizeTables <- function(df, period_length) {
   df_ascents <- df_ascents %>%
     inner_join(df_pages, by = c("climber", "t")) %>%
     select(route, climber, clean, page)
-
-  df_ascents <- tibble::as_tibble(df_ascents)
 
   list(ascents = df_ascents, pages = df_pages, routes = df_routes)
 }
