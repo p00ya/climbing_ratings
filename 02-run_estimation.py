@@ -4,11 +4,12 @@
 
 Should be called as:
 
-    run_estimation.py DATA
+    run_estimation.py DATA_DIR
 
-DATA should be a directory containing the files 'ascents.csv', 'routes.csv',
+DATA_DIR should be a directory containing the files 'ascents.csv', 'routes.csv',
 'pages.csv'.  The two files 'route_ratings.csv' and 'page_ratings.csv' will be
-written to the directory.  Each of the files are described below.
+written to the output directory (which defaults to DATA_DIR).  Each of the
+files are described below.
 
 The first line of each of the CSV files is assumed to be a header.
 
@@ -80,11 +81,13 @@ var
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import csv
 import itertools
 import numpy as np
 import sys
 from climbing_ratings.climber import Climber
+from climbing_ratings.gamma_distribution import GammaDistribution
 from climbing_ratings.whole_history_rating import WholeHistoryRating
 
 
@@ -192,9 +195,41 @@ def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
             writer.writerow([climber, rating, var])
 
 
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        description="""
+        Reads a pre-processed table of ascents and iteratively runs a WHR model.
+        """
+    )
+    parser.add_argument("data_dir", metavar="DATA_DIR", help="input data directory")
+    parser.add_argument(
+        "--output", metavar="DIR", help="output data directory; defaults to DATA_DIR"
+    )
+    parser.add_argument(
+        "--dry-run", "-n", action="store_true", help="do not write output files"
+    )
+    parser.add_argument(
+        "--wiener-variance",
+        metavar="w",
+        type=float,
+        # Assume a 1 point variance over 1 year, with time units of 1 week.
+        default=1.0 / 52.0,
+        help="variance of climber ratings per time unit",
+    )
+    parser.add_argument(
+        "--gamma-shape",
+        metavar="k",
+        type=float,
+        default=2.0,
+        help="shape parameter of the gamma distribution, for ratings priors",
+    )
+    return parser.parse_args(argv)
+
+
 def main(argv):
     """Read tables and perform estimation."""
-    data = argv[1]
+    args = parse_args(argv[1:])
+    data = args.data_dir
 
     ascents_route, ascents_clean, ascents_page = read_ascents(data)
     pages_climber, pages_gap = read_pages(data)
@@ -203,8 +238,8 @@ def main(argv):
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
-    # Assume a variance over 1 year of 1 point, and pages at 1-week intervals.
-    Climber.wiener_variance = 1.0 / 52.0
+    Climber.wiener_variance = args.wiener_variance
+    GammaDistribution.shape = args.gamma_shape
 
     whr = WholeHistoryRating(
         ascents_route,
@@ -232,8 +267,13 @@ def main(argv):
 
     print(whr.get_log_likelihood())
 
-    write_route_ratings(data, routes_name, whr.route_ratings, whr.route_var)
-    write_page_ratings(data, pages_climber, whr.page_ratings, whr.page_var)
+    if not args.dry_run:
+        output = args.output
+        if output is None:
+            output = data
+
+        write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
+        write_page_ratings(output, pages_climber, whr.page_ratings, whr.page_var)
 
 
 if __name__ == "__main__":
