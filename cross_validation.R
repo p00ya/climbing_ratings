@@ -64,7 +64,15 @@ MakeWhrModel <- function(dfs_full) {
     tryCatch({
       dir.create(data_dir)
       WriteNormalizedTables(dfs, data_dir)
-      status <- system2("python3", c("./02-run_estimation.py", data_dir))
+      status <- system2(
+        "python3",
+        c(
+          "./02-run_estimation.py",
+          "--wiener-variance", param["w"],
+          "--gamma-shape", param["k"],
+          data_dir
+        )
+      )
       if (status != 0) stop("Error executing estimation script")
 
       ReadRatings(data_dir)
@@ -79,13 +87,10 @@ MakeWhrModel <- function(dfs_full) {
     loop = NULL,
     # caret doesn't allow empty parameters; create a dummy parameter for
     # model validation.
-    #
-    # TODO: search Climber.wiener_variance period_length, and parameters
-    # for the gamma priors of routes and climbers.
     parameters = data.frame(
-      parameter = c("w"),
-      class = c("numeric"),
-      label = c("dummy")
+      parameter = c("w", "k"),
+      class = c("numeric", "numeric"),
+      label = c("Wiener variance", "Gamma shape")
     ),
     grid = NULL,
     type = "Classification",
@@ -112,7 +117,7 @@ train_result <- train(
   dfs$ascents,
   factor(dfs$ascents$clean, levels = c(0, 1), labels = c("ATTEMPT", "CLEAN")),
   method = MakeWhrModel(dfs),
-  tuneGrid = data.frame(w = 1),
+  tuneGrid = expand.grid(w = 1:3 / 52, k = seq(1.25, 2.5, by = 0.25)),
   trControl = trainControl(
     method = "repeatedcv", repeats = 3, verboseIter = TRUE
   )
