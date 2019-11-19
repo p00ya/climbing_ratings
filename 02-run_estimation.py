@@ -180,7 +180,7 @@ def extract_slices(values, num_slices):
 def write_route_ratings(dirname, routes_name, route_ratings, route_var):
     filename = "%s/route_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
-        writer = csv.writer(fp, delimiter=",")
+        writer = csv.writer(fp, lineterminator="\n", delimiter=",")
         writer.writerow(["route", "gamma", "var"])
         for route, rating, var in zip(routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
@@ -189,7 +189,7 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
 def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
     filename = "%s/page_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
-        writer = csv.writer(fp, delimiter=",")
+        writer = csv.writer(fp, lineterminator="\n", delimiter=",")
         writer.writerow(["climber", "gamma", "var"])
         for climber, rating, var in zip(pages_climber, page_ratings, page_var):
             writer.writerow([climber, rating, var])
