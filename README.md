@@ -48,6 +48,12 @@ python3 02-run_estimation.py data
 
 It will typically run in less than 5 seconds per 100,000 ascents (measured on an Intel Core i5-8210Y).
 
+Tests can be run using:
+
+```
+python3 -m unittest discover -s tests
+```
+
 ### R scripts
 
 A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  The packages can be installed from R:
@@ -88,6 +94,12 @@ Instead of reading the ascents data from logbook exports, it can instead be read
 
 ```
 source("01-data_prep_json.R")
+```
+
+Tests can be run using:
+
+```
+Rscript --vanilla -e 'testthat::test_dir("tests", env = globalenv())'
 ```
 
 ## Interpreting ratings
