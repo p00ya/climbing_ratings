@@ -38,11 +38,37 @@ climber_helpers = Extension(
     extra_compile_args=CYTHON_CFLAGS,
 )
 
+long_description = """
+climbing_ratings is a library for estimating ratings for the sport of rock
+climbing.  The ratings can be used to predict route difficulty and climber
+performance on a particular route.
+
+The algorithms are based on the Whole-History Rating system."""
+
 if __name__ == "__main__":
     setup(
         name="climbing_ratings",
         author="Dean Scarff",
         author_email="dos@scarff.id.au",
+        description="Estimate climber and route ratings from ascents data",
+        long_description=long_description,
+        version="1.1.1",
+        url="https://github.com/p00ya/climbing_ratings",
+        classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Intended Audience :: Developers",
+            "Intended Audience :: Science/Research",
+            "License :: OSI Approved :: Apache Software License",
+            "Operating System :: POSIX",
+            "Programming Language :: Cython",
+            "Programming Language :: Python :: 3",
+            "Topic :: Software Development :: Libraries :: Python Modules",
+        ],
+        license="Apache License 2.0",
+        data_files=[("", ["LICENSE.txt"])],
+        packages=["climbing_ratings", "climbing_ratings.tests"],
+        package_data={"climbing_ratings": ["*.pyx"]},
+        platforms=["POSIX"],
         install_requires=["numpy"],
         setup_requires=["cython"],
         test_suite="climbing_ratings.tests.test_suite",
