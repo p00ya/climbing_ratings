@@ -187,6 +187,16 @@ CleanAscents <- function(df_raw) {
     filter(n > 1) %>%
     select(-n)
 
+  # Find how often climbers log clean ascents:
+  climbers <- df %>%
+    group_by(climber) %>%
+    summarise(clean_p = mean(clean))
+
+  # Drop ascents where the climber hasn't logged any non-clean ascents.
+  df <- df %>%
+    inner_join(filter(climbers, clean_p < 1), by = "climber") %>%
+    select(-clean_p)
+
   # Make the route with the most ascents the "first" route.  This means it will
   # be used as the reference route (rating of 1).  Having lots of ascents
   # means it is (hopefully) a good reference point for comparing climbers.
