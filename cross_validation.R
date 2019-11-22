@@ -131,7 +131,7 @@ train_result <- train(
     b = c(0, 0.15, 0.22)
   ),
   trControl = trainControl(
-    method = "repeatedcv", repeats = 3, verboseIter = TRUE
+    method = "adaptive_cv", repeats = 3, verboseIter = TRUE
   )
 )
 
