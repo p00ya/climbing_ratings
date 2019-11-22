@@ -56,6 +56,10 @@ MakeWhrModel <- function(dfs_full) {
     # tables are always aligned.  It's possible some routes and pages may
     # have no ascents.
     dfs <- dfs_full
+    dfs$routes <- mutate(
+      dfs$routes,
+      grade = TransformGrade(ewbank, as.numeric(param["b"]))
+    )
     dfs$ascents <- x
 
     # Write normalized tables to a temporary directory, run the estimation,
@@ -88,9 +92,13 @@ MakeWhrModel <- function(dfs_full) {
     # caret doesn't allow empty parameters; create a dummy parameter for
     # model validation.
     parameters = data.frame(
-      parameter = c("w", "k"),
-      class = c("numeric", "numeric"),
-      label = c("Wiener variance", "Gamma shape")
+      parameter = c("w", "k", "b"),
+      class = rep("numeric", 3),
+      label = c(
+        "Wiener variance",
+        "Gamma shape",
+        "Grade scaling"
+      )
     ),
     grid = NULL,
     type = "Classification",
@@ -117,7 +125,11 @@ train_result <- train(
   dfs$ascents,
   factor(dfs$ascents$clean, levels = c(0, 1), labels = c("ATTEMPT", "CLEAN")),
   method = MakeWhrModel(dfs),
-  tuneGrid = expand.grid(w = 1:3 / 52, k = seq(1.25, 2.5, by = 0.25)),
+  tuneGrid = expand.grid(
+    w = 1:3 / 52,
+    k = seq(1.25, 2.5, by = 0.25),
+    b = c(0, 0.15, 0.22)
+  ),
   trControl = trainControl(
     method = "repeatedcv", repeats = 3, verboseIter = TRUE
   )

@@ -21,4 +21,5 @@ period_length <- 604800 # seconds in 1 week
 df_raw <- ReadAllJsonAscents(data_dir)
 
 dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
+dfs$routes <- mutate(dfs$routes, grade = TransformGrade(ewbank))
 WriteNormalizedTables(dfs, data_dir)
