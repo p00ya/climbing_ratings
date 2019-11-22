@@ -264,7 +264,7 @@ def main(argv):
         if i % 8 == 0:
             log_lik = whr.get_log_likelihood()
             print(log_lik)
-            if 0.0 < (log_lik - last_log_lik) < 1.0:
+            if 0.0 < abs(log_lik - last_log_lik) < 1.0:
                 # Detect early convergence.
                 break
             last_log_lik = log_lik
