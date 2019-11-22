@@ -209,6 +209,13 @@ def parse_args(argv):
         "--dry-run", "-n", action="store_true", help="do not write output files"
     )
     parser.add_argument(
+        "--max-iterations",
+        metavar="N",
+        type=int,
+        default=64,
+        help="maximum number of Newton-Raphson iterations",
+    )
+    parser.add_argument(
         "--wiener-variance",
         metavar="w",
         type=float,
@@ -252,7 +259,7 @@ def main(argv):
 
     np.seterr(all="ignore")
     last_log_lik = float("-inf")
-    for i in range(64):
+    for i in range(args.max_iterations):
         whr.update_ratings()
         if i % 8 == 0:
             log_lik = whr.get_log_likelihood()
