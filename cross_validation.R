@@ -127,7 +127,7 @@ train_result <- train(
   method = MakeWhrModel(dfs),
   tuneGrid = expand.grid(
     w = 1:3 / 52,
-    k = seq(1.25, 2.5, by = 0.25),
+    k = 1 + 10^(-2:0),
     b = c(0, 0.15, 0.22)
   ),
   trControl = trainControl(
