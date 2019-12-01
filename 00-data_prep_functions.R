@@ -87,29 +87,74 @@ ReadLogbooks <- function(dir) {
   bind_rows(dfs)
 }
 
-# Parses ascent data from JSON responses as returned by theCrag API:
-# http://www.thecrag.com/api/facet/ascents/?thin=1&withdata=AscentID,CreateDate,Date,LastUpdated,AccountID,NodeID,Tick,Label,Artificial,Grade,AltGrade,Height,Pitch,Quality,Shot&markupType=text
+# Downloads ascent data from theCrag's ascent facet API.  The data is paginated
+# and saved as JSON responses in "dir".
+FetchJsonFromApi <- function(area, api_key, dir, per_page = 5000) {
+  base_url <- paste0(
+    "https://sandpit.thecrag.com/api",
+    "/facet/ascents/at/", area,
+    "/with-route-gear-style/sport",
+    "/in-setting/natural",
+    "?thin=1",
+    "&withdata=AscentID,Date,AccountID,NodeID,Tick,Grade",
+    "&sortby=when",
+    "&markupType=text",
+    "&key=", api_key,
+    "&perPage=", per_page
+  )
+
+  for (page in 1:1024) {
+    url <- paste0(base_url, "&page=", page)
+    filename <- file.path(dir, sprintf("ascents-%03d.json", page))
+
+    if (download.file(url, filename, method = "libcurl")) {
+      # Stop making requests if there was an error.
+      warning(paste("Error downloading URL: ", url))
+      break
+    }
+
+    j <- jsonlite::read_json(filename)
+    # Note the perPage parameter of the request may not be respected; calculate
+    # the actual pagination from the response.  The response may code these
+    # fields as strings.
+    j_page <- as.integer(j$data$page)
+    j_num_ascents <- as.integer(j$data$numberAscents)
+    j_per_page <- as.integer(j$data$perPage)
+    # Stop on the last page.
+    if (j_page * j_per_page >= j_num_ascents) {
+      break
+    }
+
+    # Don't hammer theCrag's servers.
+    Sys.sleep(1)
+    page <- page + 1
+  }
+}
+
+# The minimum set of fields required for parsing ascents from theCrag's ascent
+# facet API.
+kDefaultWithdata <- c(
+  "AscentID", "Date", "AccountID", "NodeID", "Tick", "Grade"
+)
+
+# Parses ascent data from JSON responses as returned by theCrag's ascent facet
+# API.  "withdata" is a character vector of the fields passed to the API's
+# parameter of the same name.  It should be a superset of kDefaultWithdata.
+# "json" should be a parsed JSON object as returned by jsonlite.
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
-ReadJsonAscents <- function(filename) {
-  j <- jsonlite::read_json(filename)
-
+ParseJsonAscents <- function(json, withdata = kDefaultWithdata) {
   # Due to the input JSON's use of heterogeneous arrays, what comes out of
   # jsonlite is horribly structured: ascents is a list, each ascent is a list,
   # ascents can have different lengths, and the fields in each ascent have no
   # names.
-  ascents <- PadList(j$data$ascents, 15)
+  ascents <- PadList(json$data$ascents, length(withdata))
   df_json <- as.data.frame(do.call(rbind, ascents))
 
   # Columns correspond to the "withdata" parameter of the API request.
-  colnames(df_json) <- c(
-    "AscentID", "CreateDate", "Date", "LastUpdated", "AccountID", "NodeID",
-    "Tick", "Label", "Artificial", "Grade", "AltGrade", "Height", "Pitch",
-    "Quality", "Shot"
-  )
+  colnames(df_json) <- withdata
 
   df_json %>%
-    filter(Artificial == 0) %>%
     transmute(
       # Don't coerce the IDs to factors; assume this will be done in
       # ReadAllJsonAscents after rbind'ing.
@@ -126,12 +171,14 @@ ReadJsonAscents <- function(filename) {
 }
 
 # Reads all ascent JSON in directory "dir".  JSON filenames are assumed to have
-# the pattern "ascents-*.json".
+# the pattern "ascents-*.json".  "withdata" is a character vector of the fields
+# passed to the API's parameter of the same name.
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
-ReadAllJsonAscents <- function(dir) {
+ReadAllJsonAscents <- function(dir, withdata = kDefaultWithdata) {
   responses <- Sys.glob(file.path(dir, "ascents-*.json"))
-  purrr::map(responses, ReadJsonAscents) %>%
+  purrr::map(responses, jsonlite::read_json) %>%
+    purrr::map(ParseJsonAscents, withdata = withdata) %>%
     bind_rows() %>%
     mutate(
       route = factor(route),
