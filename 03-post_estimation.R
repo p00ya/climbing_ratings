@@ -55,14 +55,14 @@ prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) + geom_density()
 # follows the y=0 line.
 residuals_ewbank_plot <- ggplot(
   dfs$ascents %>% inner_join(dfs$routes, by = "route"),
-  aes(ewbank, predicted - clean)
+  aes(ewbank, clean - predicted)
 ) + geom_smooth()
 
 # Plots the residuals vs the estimated natural route rating.  Ideally the fit
 # follows the y=0 line.
 residuals_route_rating_plot <- ggplot(
   dfs$ascents %>% inner_join(dfs$routes, by = "route"),
-  aes(r, predicted - clean)
+  aes(r, clean - predicted)
 ) + geom_smooth()
 
 # Plots conventional grades vs the estimated "natural rating" of routes.
