@@ -38,11 +38,11 @@ routes.csv
 route
     Arbitrary route tag.  Not used.
 grade
-    Initial "grade" estimate for each route.  The first route should have a
-    grade of 1.  The other grades should be positive reals, with the
-    interpretation under the Bradley-Terry model that for grades A and B, if
-    a climber can cleanly ascend grade A with even probability, then the
-    probability of cleanly ascending grade B = B / (A + B).
+    Initial "grade" estimate for each route.  The grades should be positive
+    reals, with the interpretation under the Bradley-Terry model that for
+    grades A and B, if a climber can cleanly ascend grade A with even
+    probability, then the probability of cleanly ascending grade B =
+    B / (A + B).
 
 route_ratings.csv
 -----------------

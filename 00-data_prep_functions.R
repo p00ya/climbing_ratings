@@ -212,8 +212,8 @@ IsTickClean <- function(ticktype) {
 # Tidies a raw ascents table.
 #
 # Removes unclassifiable ascents, removes routes with less than 2 ascents, adds
-# a "clean" column, and re-orders the route levels so the most popular route is
-# first.
+# a "clean" column, and re-orders the route levels so the first route has the
+# most ascents at the most common grade.
 #
 # Also prints a summary of the resulting data.
 #
@@ -225,14 +225,26 @@ CleanAscents <- function(df_raw) {
     filter(!is.na(clean)) %>%
     filter(!is.na(grade))
 
-  # Find the most popular routes:
-  top_routes <- count(df, route, sort = TRUE)
+  # Summarise routes by their grade and number of ascents:
+  routes <- df %>%
+    group_by(route) %>%
+    summarise(n = n(), grade = floor(median(grade)))
+
+  # Make the route with the most ascents for the most common grade the first
+  # route.  This means it will be used as the reference route (natural rating
+  # prior with mode 0).  Having the most common grade and lots of ascents means
+  # it is (hopefully) a good reference point.
+  route_grades <- routes %>% count(grade)
+  routes <- routes %>%
+    inner_join(route_grades, by = "grade", suffix = c(".ascents", ".grade")) %>%
+    arrange(desc(n.grade), desc(n.ascents)) %>%
+    select(-n.grade, -grade)
 
   # Drop ascents where the route has a single ascent.
   df <- df %>%
-    inner_join(top_routes, by = "route") %>%
-    filter(n > 1) %>%
-    select(-n)
+    inner_join(routes, by = "route") %>%
+    filter(n.ascents > 1) %>%
+    select(-n.ascents)
 
   # Find how often climbers log clean ascents:
   climbers <- df %>%
@@ -244,14 +256,12 @@ CleanAscents <- function(df_raw) {
     inner_join(filter(climbers, clean_p < 1), by = "climber") %>%
     select(-clean_p)
 
-  # Make the route with the most ascents the "first" route.  This means it will
-  # be used as the reference route (rating of 1).  Having lots of ascents
-  # means it is (hopefully) a good reference point for comparing climbers.
+  # Recompute factors from the preprocessed data.
   df <- df %>%
     mutate(
       route = route %>%
         droplevels() %>%
-        relevel(ref = as.character(top_routes[[1, 1]])),
+        relevel(ref = as.character(routes[[1, 1]])),
       climber = climber %>% droplevels()
     )
 

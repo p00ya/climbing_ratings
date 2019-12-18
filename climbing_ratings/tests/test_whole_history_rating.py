@@ -103,7 +103,9 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         # Ratings should not change: both ascents had a 50% probability assuming
         # the initial ratings.
         self.assert_close([1.0, 1.0, 1.0], self.whr.route_ratings, "route_ratings")
-        self.assert_close([0.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var")
+        self.assert_close(
+            [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
+        )
 
     def test_get_log_likelihood(self):
         """Test WholeHistoryRating.get_log_likelihood"""

@@ -147,8 +147,7 @@ class WholeHistoryRating:
     page_ratings : ndarray
         Current estimate of the rating of each page.
     route_ratings : ndarray
-        Current estimate of the rating of each route.  route_ratings[0] is
-        always 1.
+        Current estimate of the rating of each route.
     page_var : ndarray
         Estimate of the variance of the natural rating of each page.
     page_cov : ndarray
@@ -157,7 +156,6 @@ class WholeHistoryRating:
         not meaningful.
     route_var : ndarray
         Estimate of the variance of the natural rating of each route.
-        route_var[0] is zero by assumption.
     """
 
     # Private Attributes
@@ -200,8 +198,7 @@ class WholeHistoryRating:
             Each (start, end) entry defines the slice of the pages for a
             climber.
         routes_grade : list
-            Normalized grades of each route.  The first route has an implied
-            grade of 1.
+            Normalized grades of each route.
         pages_gap : array_like of float
             Interval of time between each page and the next page.  The gap for
             the last page of each climber is not used.
@@ -212,7 +209,6 @@ class WholeHistoryRating:
         self.page_var = np.empty(num_pages)
         self.page_cov = np.empty(num_pages)
         self.route_var = np.empty_like(self.route_ratings)
-        self.route_var[0] = 0.0
 
         self._pages_climber_slices = pages_climber_slices
 
@@ -311,18 +307,18 @@ class WholeHistoryRating:
         d1 += gamma_d1
         d2 += gamma_d2
 
-        delta = d1[1:]  # output parameter
-        np.divide(d1[1:], d2[1:], delta)
+        delta = d1  # output parameter
+        np.divide(d1, d2, delta)
 
         # r2 = r1 - delta
         # gamma2 = exp(log(gamma1) - delta) = gamma exp(-delta)
         np.negative(delta, delta)
         np.exp(delta, delta)
-        self.route_ratings[1:] *= delta
+        self.route_ratings *= delta
 
         if should_update_variance:
-            np.reciprocal(d2[1:], self.route_var[1:])
-            np.negative(self.route_var[1:], self.route_var[1:])
+            np.reciprocal(d2, self.route_var)
+            np.negative(self.route_var, self.route_var)
 
     def update_ratings(self):
         """Update ratings for all routes and pages"""
