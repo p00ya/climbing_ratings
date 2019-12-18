@@ -65,24 +65,28 @@ MakeWhrModel <- function(dfs_full) {
     # Write normalized tables to a temporary directory, run the estimation,
     # then return the results.
     data_dir <- tempfile(pattern = "climbing_ratings-")
-    tryCatch({
-      dir.create(data_dir)
-      WriteNormalizedTables(dfs, data_dir)
-      status <- system2(
-        "python3",
-        c(
-          "./02-run_estimation.py",
-          "--wiener-variance", param["w"],
-          "--gamma-shape", param["k"],
-          data_dir
+    tryCatch(
+      {
+        dir.create(data_dir)
+        WriteNormalizedTables(dfs, data_dir)
+        status <- system2(
+          "python3",
+          c(
+            "./02-run_estimation.py",
+            "--wiener-variance", param["w"],
+            "--gamma-shape", param["k"],
+            "--max-iterations", 256,
+            data_dir
+          )
         )
-      )
-      if (status != 0) stop("Error executing estimation script")
+        if (status != 0) stop("Error executing estimation script")
 
-      ReadRatings(data_dir)
-    }, finally = {
-      suppressWarnings(unlink(data_dir, recursive = TRUE))
-    })
+        ReadRatings(data_dir)
+      },
+      finally = {
+        suppressWarnings(unlink(data_dir, recursive = TRUE))
+      }
+    )
   }
 
   list(

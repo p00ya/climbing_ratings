@@ -257,9 +257,9 @@ CleanAscents <- function(df_raw) {
 
   # Summarize the tick counts.
   cat(
-    prettyNum(nrow(df), big.mark=","), "ascents by",
-    prettyNum(nlevels(df$climber), big.mark=","), "climbers, over",
-    prettyNum(nlevels(df$route), big.mark=","), "routes;",
+    prettyNum(nrow(df), big.mark = ","), "ascents by",
+    prettyNum(nlevels(df$climber), big.mark = ","), "climbers, over",
+    prettyNum(nlevels(df$route), big.mark = ","), "routes;",
     sprintf("%0.2f%%", mean(df$clean) * 100.0), "clean ascents\n"
   )
 
