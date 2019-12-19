@@ -99,3 +99,25 @@ PlotRouteRating <- function(df_routes) {
       hjust = 0, nudge_x = 0.1, vjust = "outward"
     )
 }
+
+# Plots the ratings distribution for pages and routes.
+PlotRatingsDensity <- function(df_pages, df_routes) {
+  page_ratings <- df_pages %>%
+    mutate(type = "climber") %>%
+    select(r, type)
+  route_ratings <- df_routes %>%
+    mutate(type = "route") %>%
+    select(r, type)
+  ratings <- bind_rows(page_ratings, route_ratings) %>%
+    mutate(type = as.factor(type))
+  ggplot(ratings, aes(r)) + facet_grid(rows = vars(type)) + geom_density()
+}
+
+# Plots precision vs recall given predicted probabilities of clean ascents.
+PlotPrecisionRecall <- function(df_ascents) {
+  sscurves <- precrec::evalmod(
+    scores = dfs$ascents$predicted,
+    labels = dfs$ascents$clean
+  )
+  autoplot(sscurves, "PRC", show_legend = FALSE)
+}
