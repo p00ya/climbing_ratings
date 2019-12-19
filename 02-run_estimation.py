@@ -37,8 +37,8 @@ routes.csv
 ----------
 route
     Arbitrary route tag.  Not used.
-grade
-    Initial "grade" estimate for each route.  The grades should be positive
+gamma
+    Initial gamma rating for each route.  The ratings should be positive
     reals, with the interpretation under the Bradley-Terry model that for
     grades A and B, if a climber can cleanly ascend grade A with even
     probability, then the probability of cleanly ascending grade B =
@@ -114,17 +114,17 @@ def read_routes(dirname):
     """Read the routes table."""
     filename = "%s/routes.csv" % dirname
     names = []
-    grades = []
+    gammas = []
     with open(filename, newline="") as fp:
         reader = iter(csv.reader(fp))
 
-        assert next(reader) == ["route", "grade"]
+        assert next(reader) == ["route", "gamma"]
         for line in reader:
-            name, grade = line
+            name, gamma = line
             names.append(name)
-            grades.append(float(grade))
+            gammas.append(float(gamma))
 
-    return names, grades
+    return names, gammas
 
 
 def read_pages(dirname):
@@ -240,7 +240,7 @@ def main(argv):
 
     ascents_route, ascents_clean, ascents_page = read_ascents(data)
     pages_climber, pages_gap = read_pages(data)
-    routes_name, routes_grade = read_routes(data)
+    routes_name, routes_gamma = read_routes(data)
 
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
@@ -253,7 +253,7 @@ def main(argv):
         ascents_clean,
         ascents_page_slices,
         pages_climber_slices,
-        routes_grade,
+        routes_gamma,
         pages_gap,
     )
 

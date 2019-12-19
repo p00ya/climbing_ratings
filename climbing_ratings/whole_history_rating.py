@@ -179,7 +179,7 @@ class WholeHistoryRating:
         ascents_clean,
         ascents_page_slices,
         pages_climber_slices,
-        routes_grade,
+        routes_gamma,
         pages_gap,
     ):
         """Initialize a WHR model.
@@ -197,14 +197,14 @@ class WholeHistoryRating:
         pages_climber_slices : list of pairs
             Each (start, end) entry defines the slice of the pages for a
             climber.
-        routes_grade : list
-            Normalized grades of each route.
+        routes_gamma : list
+            Initial gamma ratings for each route.
         pages_gap : array_like of float
             Interval of time between each page and the next page.  The gap for
             the last page of each climber is not used.
         """
         num_pages = len(ascents_page_slices)
-        self.route_ratings = np.array(routes_grade, dtype=np.float64)
+        self.route_ratings = np.array(routes_gamma, dtype=np.float64)
         self.page_ratings = np.full(num_pages, 1.0)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.empty(num_pages)
@@ -223,7 +223,7 @@ class WholeHistoryRating:
             np.array(ascents_clean),
         )
         self._route_ascents = make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route, len(routes_grade)
+            ascents_clean, ascents_page_slices, ascents_route, len(routes_gamma)
         )
 
         self._pages_gap = pages_gap

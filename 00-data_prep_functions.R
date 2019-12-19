@@ -347,7 +347,7 @@ WriteNormalizedTables <- function(dfs, dir) {
     row.names = FALSE
   )
   write.csv(
-    dfs$routes %>% select(route, grade),
+    dfs$routes %>% select(route, gamma),
     file.path(dir, "routes.csv"),
     row.names = FALSE
   )

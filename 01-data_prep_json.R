@@ -26,5 +26,5 @@ cat(
 )
 
 dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
-dfs$routes <- mutate(dfs$routes, grade = TransformGrade(ewbank))
+dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(ewbank))
 WriteNormalizedTables(dfs, data_dir)
