@@ -17,7 +17,7 @@ Equivalences to the WHR model are:
 Notable differences are:
 
 -   Routes are like players except their rating does not change with time.
--   The gamma distribution is used for the prior distribution of route and initial climber ratings.
+-   The normal distribution is used for the prior distribution of route and initial climber ratings.
 -   A "page" is the model of a climber in a particular time interval (like a page in a climber's logbook).  This is equivalent to a player on a particular day in WHR, except that the time may be quantized with lower resolution (e.g. a week).
 
 ## Contents and Usage

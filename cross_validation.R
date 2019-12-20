@@ -74,8 +74,9 @@ MakeWhrModel <- function(dfs_full) {
           c(
             "./02-run_estimation.py",
             "--wiener-variance", param["w"],
-            "--gamma-shape", param["k"],
-            "--max-iterations", 256,
+            "--climber-prior-variance", param["sigma"],
+            "--route-prior-variance", param["sigma"],
+            "--max-iterations", 512,
             data_dir
           )
         )
@@ -94,11 +95,11 @@ MakeWhrModel <- function(dfs_full) {
     library = NULL,
     loop = NULL,
     parameters = data.frame(
-      parameter = c("w", "k", "b"),
+      parameter = c("w", "sigma", "b"),
       class = rep("numeric", 3),
       label = c(
         "Wiener variance",
-        "Gamma shape",
+        "Ratings variance",
         "Grade scaling"
       )
     ),
@@ -129,7 +130,7 @@ train_result <- train(
   method = MakeWhrModel(dfs),
   tuneGrid = expand.grid(
     w = 1:3 / 52,
-    k = 1 + 10^(-2:0),
+    sigma = (1:3)^2,
     b = c(0, 0.15, 0.22)
   ),
   trControl = trainControl(

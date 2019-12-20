@@ -23,7 +23,7 @@ from .climber_helpers import (
     solve_x,
     solve_y,
 )
-from .gamma_distribution import GammaDistribution
+from .log_normal_distribution import LogNormalDistribution
 
 
 class TriDiagonal(collections.namedtuple("TriDiagonal", ["d", "u", "l"])):
@@ -240,43 +240,45 @@ class Climber:
     ----------------
     wiener_variance : float
         The variance of the climber's Wiener process per unit time.
-    gamma_distribution : GammaDistribution
-        Prior distribution for the climbers' initial rating.
     """
 
     wiener_variance = 1.0
-    gamma_distribution = GammaDistribution(1.0)
 
     # Private attributes
     # -------------------
-    # one_on_sigma_sq : array of float
+    # _initial_prior : LogNormalDistribution
+    #     The prior distribution for the first page of the climber.
+    # _one_on_sigma_sq : array of float
     #     The Wiener variance between each page and the next page.  The length
     #     is 1 fewer than the number of pages.
-    # wiener_d2 : array of float
+    # _wiener_d2 : array of float
     #     The second derivative terms (diagonal of the Hessian matrix) from the
     #     Wiener prior, for each page.
 
-    def __init__(self, gaps):
+    def __init__(self, initial_prior, gaps):
         """Initialize a Climber.
 
         Parameters
         ----------
+        initial_prior : LogNormalDistribution
+            Prior distribution for the first page of the climber.
         gaps : ndarray
             gaps[i] is the time interval between the page i and page i + 1.
             Must be consistent with the time scale for Climber.wiener_variance.
             The length of gaps should be 1 fewer than the number of pages.
         """
+        self._initial_prior = initial_prior
         s = np.full_like(gaps, Climber.wiener_variance)
         s *= gaps
         np.reciprocal(s, s)
-        self.one_on_sigma_sq = s
+        self._one_on_sigma_sq = s
         # WHR Appendix A.2 Terms of the Wiener prior:
         # d^2 ln p / d r[t]^2 = -1 / sigma^2
         hd = np.empty(s.shape[0] + 1)
         hd[0] = 0.0
         np.negative(s, hd[1:])
         hd[:-1] -= s
-        self.wiener_d2 = hd
+        self._wiener_d2 = hd
 
     def get_derivatives(self, ratings, bt_d1, bt_d2):
         """Return the Hessian and gradient at the given ratings point.
@@ -310,18 +312,18 @@ class Climber:
 
         # Wiener terms.
         gradient = np.zeros_like(ratings)
-        one_on_sigma_sq = self.one_on_sigma_sq
+        one_on_sigma_sq = self._one_on_sigma_sq
         add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
-        hd = np.copy(self.wiener_d2)
+        hd = np.copy(self._wiener_d2)
 
         # Bradley-Terry terms.
         gradient += bt_d1
         hd += bt_d2
 
-        # Gamma terms.
-        gamma_d1, gamma_d2 = Climber.gamma_distribution.get_derivatives(ratings[0])
-        gradient[0] += gamma_d1
-        hd[0] += gamma_d2
+        # First page Log-Normal terms.
+        initial_d = self._initial_prior.get_derivatives(ratings[0])
+        gradient[0] += initial_d[0]
+        hd[0] += initial_d[1]
 
         hessian = TriDiagonal(hd, one_on_sigma_sq, one_on_sigma_sq)
         return (gradient, hessian)

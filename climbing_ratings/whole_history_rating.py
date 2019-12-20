@@ -20,7 +20,7 @@ import itertools
 import numpy as np
 from .bradley_terry import get_bt_derivatives
 from .climber import Climber
-from .gamma_distribution import GammaDistribution
+from .log_normal_distribution import LogNormalDistribution
 
 
 def expand_to_slices(values, slices, dtype=None):
@@ -145,9 +145,9 @@ class WholeHistoryRating:
     Attributes
     ----------
     page_ratings : ndarray
-        Current estimate of the rating of each page.
+        Current estimate of the gamma rating of each page.
     route_ratings : ndarray
-        Current estimate of the rating of each route.
+        Current estimate of the gamma rating of each route.
     page_var : ndarray
         Estimate of the variance of the natural rating of each page.
     page_cov : ndarray
@@ -157,6 +157,10 @@ class WholeHistoryRating:
     route_var : ndarray
         Estimate of the variance of the natural rating of each route.
     """
+
+    climber_mean = 0.0
+    climber_variance = 1.0
+    route_variance = 1.0
 
     # Private Attributes
     # ------------------
@@ -228,11 +232,17 @@ class WholeHistoryRating:
 
         self._pages_gap = pages_gap
 
-        self._route_priors = GammaDistribution(self.route_ratings)
+        self._route_priors = LogNormalDistribution(
+            np.log(self.route_ratings), WholeHistoryRating.route_variance
+        )
 
+        climber_prior = LogNormalDistribution(
+            WholeHistoryRating.climber_mean, WholeHistoryRating.climber_variance
+        )
         self._climbers = []
         for start, end in pages_climber_slices:
-            self._climbers.append(Climber(pages_gap[start : end - 1]))
+            climber = Climber(climber_prior, pages_gap[start : end - 1])
+            self._climbers.append(climber)
 
     def update_page_ratings(self, should_update_covariance=False):
         """Update the ratings of all pages.
@@ -302,10 +312,10 @@ class WholeHistoryRating:
             rascents_page_ratings,
         )
 
-        # Gamma terms.
-        gamma_d1, gamma_d2 = self._route_priors.get_derivatives(self.route_ratings)
-        d1 += gamma_d1
-        d2 += gamma_d2
+        # Prior terms.
+        prior_d1, prior_d2 = self._route_priors.get_derivatives(self.route_ratings)
+        d1 += prior_d1
+        d2 += prior_d2
 
         delta = d1  # output parameter
         np.divide(d1, d2, delta)

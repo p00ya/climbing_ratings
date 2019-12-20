@@ -1,4 +1,4 @@
-"""Gamma distribution"""
+"""Log-normal distribution"""
 
 # Copyright 2019 Dean Scarff
 #
@@ -15,29 +15,24 @@
 # limitations under the License.
 
 
-class GammaDistribution:
-    """Models variables drawn from a gamma distribution.
+import numpy as np
 
-    Note the "gamma" here is not the same as WHR's "gamma" rating.  It refers
-    to the well-known Gamma probability distribution.
 
-    Class Attributes
-    ----------
-    shape : float
-        Shape parameter of the gamma distribution.
+class LogNormalDistribution:
+    """Models variables whose logarithm is drawn from a normal distribution.
     """
 
-    shape = 2.0
-
-    def __init__(self, mode):
+    def __init__(self, mu, sigma_sq):
         """
         Parameters
         ----------
-        mode : array_like
-            Mode of the distribution(s).
+        mu : float or array_like
+            Mean of the normal distribution.
+        sigma_sq : float or array_like
+            Variance of the normal distribution.  Must be positive.
         """
-        # Theta is the conventional "scale" parameter for the distribution.
-        self._theta = mode / (GammaDistribution.shape - 1.0)
+        self._mu = mu
+        self._sigma_sq = sigma_sq
 
     def get_derivatives(self, x):
         """Return the first and second derivative of the log-likelihood.
@@ -52,8 +47,7 @@ class GammaDistribution:
         Parameters
         ----------
         x : ndarray
-            Samples from the distribution.  Should have the same length as the
-            this object's "mode" parameter.
+            Samples from the distribution.
 
         Returns
         -------
@@ -61,7 +55,8 @@ class GammaDistribution:
             The first and second derivatives of the log-PDF wrt log(x),
             evaluated at x.
         """
-        d2 = -x
-        d2 /= self._theta
-        d1 = d2 + (GammaDistribution.shape - 1)
-        return (d1, d2)
+        y = np.log(x)
+        y -= self._mu
+        y /= -self._sigma_sq
+
+        return (y, -1.0 / self._sigma_sq)

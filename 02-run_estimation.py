@@ -87,7 +87,6 @@ import itertools
 import numpy as np
 import sys
 from climbing_ratings.climber import Climber
-from climbing_ratings.gamma_distribution import GammaDistribution
 from climbing_ratings.whole_history_rating import WholeHistoryRating
 
 
@@ -224,11 +223,25 @@ def parse_args(argv):
         help="variance of climber ratings per time unit",
     )
     parser.add_argument(
-        "--gamma-shape",
-        metavar="k",
+        "--climber-prior-mean",
+        metavar="mu",
         type=float,
-        default=2.0,
-        help="shape parameter of the gamma distribution, for ratings priors",
+        default=0.0,
+        help="mean of climbers' natural ratings prior",
+    )
+    parser.add_argument(
+        "--climber-prior-variance",
+        metavar="sigma",
+        type=float,
+        default=1.0,
+        help="standard deviation of climbers' natural ratings prior",
+    )
+    parser.add_argument(
+        "--route-prior-variance",
+        metavar="sigma",
+        type=float,
+        default=1.0,
+        help="standard deviation of routes' natural ratings prior",
     )
     return parser.parse_args(argv)
 
@@ -246,7 +259,9 @@ def main(argv):
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
     Climber.wiener_variance = args.wiener_variance
-    GammaDistribution.shape = args.gamma_shape
+    WholeHistoryRating.climber_mean = args.climber_prior_mean
+    WholeHistoryRating.climber_variance = args.climber_prior_variance
+    WholeHistoryRating.route_variance = args.route_prior_variance
 
     whr = WholeHistoryRating(
         ascents_route,

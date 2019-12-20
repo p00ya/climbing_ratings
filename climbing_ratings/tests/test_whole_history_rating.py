@@ -178,8 +178,8 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         """Test WholeHistoryRating.update_page_ratings converges"""
         for _ in range(4):
             self.whr.update_page_ratings(True)
-        self.assert_close([2.64575131], self.whr.page_ratings, "page_ratings")
-        self.assert_close([0.26041301], self.whr.page_var, "page_var")
+        self.assert_close([3.64202411], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.49650051], self.whr.page_var, "page_var")
 
 
 class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
@@ -210,8 +210,8 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         """Test WholeHistoryRating.update_page_ratings"""
         for _ in range(4):
             self.whr.update_page_ratings(True)
-        self.assert_close([3.06951799], self.whr.page_ratings, "page_ratings")
-        self.assert_close([0.22751215], self.whr.page_var, "page_var")
+        self.assert_close([4.69413661], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.47001792], self.whr.page_var, "page_var")
 
 
 class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
@@ -243,6 +243,6 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         for _ in range(4):
             self.whr.update_page_ratings(True)
         self.assert_close(
-            [2.54225096, 3.84231624], self.whr.page_ratings, "page_ratings"
+            [3.45378219, 4.85897138], self.whr.page_ratings, "page_ratings"
         )
-        self.assert_close([0.27781627, 0.9107634], self.whr.page_var, "page_var")
+        self.assert_close([0.52162231, 1.09620465], self.whr.page_var, "page_var")

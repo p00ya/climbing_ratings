@@ -17,6 +17,7 @@
 import unittest
 import numpy as np
 from .. import climber
+from ..log_normal_distribution import LogNormalDistribution
 from .assertions import assert_close
 
 
@@ -105,14 +106,15 @@ class TestClimber(unittest.TestCase):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
         climber.Climber.wiener_variance = 1.0
+        self.initial_prior = LogNormalDistribution(0.0, 1.0)
 
     def test_init(self):
         """Test Climber initializes one_on_sigma_sq and wiener_d2"""
         gaps = np.array([1.0, 2.0])
         climber.Climber.wiener_variance = 10.0
-        c = climber.Climber(gaps)
-        self.assert_close([0.1, 0.05], c.one_on_sigma_sq, "one_on_sigma_sq")
-        self.assert_close([-0.1, -0.15, -0.05], c.wiener_d2, "wiener_d2")
+        c = climber.Climber(self.initial_prior, gaps)
+        self.assert_close([0.1, 0.05], c._one_on_sigma_sq, "one_on_sigma_sq")
+        self.assert_close([-0.1, -0.15, -0.05], c._wiener_d2, "wiener_d2")
 
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
@@ -120,9 +122,9 @@ class TestClimber(unittest.TestCase):
         ratings = np.array([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
-        c = climber.Climber(gaps)
+        c = climber.Climber(self.initial_prior, gaps)
         delta = c.get_ratings_adjustment(ratings, bt_d1, bt_d2)
-        self.assert_close([0.60901247, -0.4901247], delta, "delta")
+        self.assert_close([0.50918582, -0.55155649], delta, "delta")
 
     def test_get_covariance(self):
         """Test Climber.get_covariance"""
@@ -130,9 +132,9 @@ class TestClimber(unittest.TestCase):
         ratings = np.array([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
-        c = climber.Climber(gaps)
+        c = climber.Climber(self.initial_prior, gaps)
         var = np.empty(2)
         cov = np.empty(1)
         c.get_covariance(ratings, bt_d1, bt_d2, var, cov)
-        self.assert_close([52.0 / 345.0, 232.0 / 345.0], var, "var")
-        self.assert_close([32.0 / 345.0], cov, "cov")
+        self.assert_close([0.61176471, 0.84705882], var, "var")
+        self.assert_close([0.37647059], cov, "cov")
