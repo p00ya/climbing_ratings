@@ -89,8 +89,6 @@ MakeWhrModel <- function(dfs_full) {
     label = "Climbing Ratings (Whole History Rating)",
     library = NULL,
     loop = NULL,
-    # caret doesn't allow empty parameters; create a dummy parameter for
-    # model validation.
     parameters = data.frame(
       parameter = c("w", "k", "b"),
       class = rep("numeric", 3),
