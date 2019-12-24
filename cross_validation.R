@@ -58,7 +58,7 @@ MakeWhrModel <- function(dfs_full) {
     dfs <- dfs_full
     dfs$routes <- mutate(
       dfs$routes,
-      gamma = TransformGrade(ewbank, as.numeric(param["b"]))
+      gamma = TransformGrade(ewbank, as.numeric(param["b"]), param["g0"])
     )
     dfs$ascents <- x
 
@@ -74,9 +74,9 @@ MakeWhrModel <- function(dfs_full) {
           c(
             "./02-run_estimation.py",
             "--wiener-variance", param["w"],
-            "--climber-prior-variance", param["sigma"],
-            "--route-prior-variance", param["sigma"],
-            "--max-iterations", 512,
+            "--climber-prior-variance", param["sigma_c"],
+            "--route-prior-variance", param["sigma_r"],
+            "--max-iterations", 64,
             data_dir
           )
         )
@@ -95,12 +95,14 @@ MakeWhrModel <- function(dfs_full) {
     library = NULL,
     loop = NULL,
     parameters = data.frame(
-      parameter = c("w", "sigma", "b"),
-      class = rep("numeric", 3),
+      parameter = c("w", "sigma_c", "sigma_r", "b", "g0"),
+      class = rep("numeric", 5),
       label = c(
         "Wiener variance",
-        "Ratings variance",
-        "Grade scaling"
+        "Climber ratings variance",
+        "Route ratings variance",
+        "Grade scaling",
+        "Reference grade"
       )
     ),
     grid = NULL,
@@ -123,18 +125,24 @@ dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
 
 set.seed(1337)
 
-# Evaluate model with 10-fold repeated cross-validation.
+# Evaluate model with 10-fold cross-validation.
 train_result <- train(
   dfs$ascents,
   factor(dfs$ascents$clean, levels = c(0, 1), labels = c("ATTEMPT", "CLEAN")),
   method = MakeWhrModel(dfs),
   tuneGrid = expand.grid(
     w = 1:3 / 52,
-    sigma = (1:3)^2,
-    b = c(0, 0.15, 0.22)
+    sigma_c = (1:4)^2,
+    sigma_r = (1:4)^2,
+    b = c(0, 0.4),
+    g0 = 22
   ),
+  metric = "logLoss",
   trControl = trainControl(
-    method = "adaptive_cv", repeats = 3, verboseIter = TRUE
+    method = "adaptive_cv", repeats = 1, verboseIter = TRUE,
+    summaryFunction = multiClassSummary,
+    classProbs = TRUE,
+    adaptive = list(min = 2, alpha = 0.05, method = "gls", complete = FALSE)
   )
 )
 

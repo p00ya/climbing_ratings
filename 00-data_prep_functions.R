@@ -321,14 +321,14 @@ NormalizeTables <- function(df, period_length) {
 
 # Performs a transformation of a grade to a "gamma" rating.
 #
-# The first rating is normalized to 1 (a natural rating of 0).
+# The reference grade "ref" is normalized to 1 (a natural rating of 0).
 #
 # This transformation assumes a linear relationship between the grade and the
 # "natural" rating.  A scale of 1 implies that if a climber has a 50%
 # probability of ascending a route at grade X cleanly, then they have a 1/(1+e)
 # (approx. 27%) probability of ascending a route at grade X + 1 cleanly.
-TransformGrade <- function(grade, scale = 0) {
-  exp(scale * (grade - grade[[1]]))
+TransformGrade <- function(grade, scale = 0, ref = grade[[1]]) {
+  exp(scale * (grade - ref))
 }
 
 # Writes normalized tables to CSV files.
