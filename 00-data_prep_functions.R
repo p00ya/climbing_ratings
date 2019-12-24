@@ -189,18 +189,18 @@ ReadAllJsonAscents <- function(dir, withdata = kDefaultWithdata) {
 
 # Classifies tick types like "dog" into a logical indicating whether the
 # ascent was clean, or NA.
-# Note that we are optimistic about tick types that are ambiguous in practice,
-# e.g. a plain "tick" is clean.
-# Also note that no tick shift is applied - a clean top rope ascent is
-# equivalent to an onsight.
+#
+# Note that we have pessimistic interpretations of some tick types that are
+# ambiguous in practice, e.g. a plain "tick" is not counted as clean.
+# Furthermore, no tick shift is applied - a clean top rope ascent is equivalent
+# to an onsight.
 IsTickClean <- function(ticktype) {
   # See https://www.thecrag.com/en/article/ticktypes
   case_when(
     ticktype %in% c(
       "onsight", "flash", "redpoint", "groundupredpoint",
       "pinkpoint", "clean", "onsightsolo", "topropeonsight", "topropeflash",
-      "topropeclean", "secondclean", "leadsolo", "firstfreeascent",
-      "tick", "second"
+      "topropeclean", "secondclean", "leadsolo", "firstfreeascent"
     ) ~ TRUE,
     ticktype %in% c(
       "dog", "attempt", "retreat", "working",
