@@ -1,6 +1,6 @@
 # Functions for post-processing ratings estimates.
 
-# Copyright 2019 Dean Scarff
+# Copyright 2019, 2020 Dean Scarff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ MergeWithRatings <- function(dfs, ratings) {
   dfs$pages$gamma <- ratings$pages$gamma
   dfs$pages$var <- ratings$pages$var
   dfs$routes$gamma <- ratings$routes$gamma
+  dfs$routes$var <- ratings$routes$var
 
   dfs$ascents$predicted <- PredictBradleyTerry(dfs)
   dfs$routes$r <- log(dfs$routes$gamma)
@@ -77,12 +78,32 @@ PlotProgression <- function(df_pages, friends) {
     )
 }
 
+# Plots (1 - alpha) confidence intervals for a set of routes.  The "selected"
+# parameter should be a named vector where the names are the route levels and
+# the values are corresponding labels to apply in the plot.
+PlotSelectedRoutes <- function(df_routes, selected, alpha = 0.05) {
+  df <- df_routes %>%
+    filter(route %in% names(selected)) %>%
+    transform(
+      error = qnorm(alpha / 2, sd = sqrt(var)),
+      route = recode(route, !!!selected)
+    )
+  ggplot(df, aes(r, route)) +
+    geom_point() +
+    geom_errorbarh(aes(xmin = r - error, xmax = r + error))
+}
+
 # Generates outlier labels for the route plot.
-GetOutliers <- function(df_routes) {
-  m <- loess(r ~ ewbank, df_routes)
+GetOutliers <- function(df_routes, alpha = 0.05) {
+  m <- loess(r ~ ewbank, df_routes, weights = 1 / df_routes$var)
   e <- residuals(m)
   e <- e / sd(e)
-  ifelse(abs(e) > 1.65, as.character(df_routes$route), NA)
+  q <- qnorm(1 - alpha / 2)
+  ifelse(
+    abs(e) > q & sqrt(df_routes$var) < q,
+    as.character(df_routes$route),
+    NA
+  )
 }
 
 # Plots conventional grades vs the estimated "natural rating" of routes.
