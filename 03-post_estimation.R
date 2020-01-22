@@ -1,6 +1,6 @@
 # Exploration of estimated ratings.
 
-# Copyright 2019 Dean Scarff
+# Copyright 2019, 2020 Dean Scarff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ total_accuracy <-
   )) /
     NROW(dfs$ascents)
 
-log_loss <- -sum(log(ifelse(
+log_loss <- -mean(log(ifelse(
   dfs$ascents$clean,
   dfs$ascents$predicted,
   1 - dfs$ascents$predicted
