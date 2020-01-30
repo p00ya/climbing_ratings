@@ -53,9 +53,9 @@ prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) + geom_density()
 
 # Plots the residuals vs the conventional grade of routes.  Ideally the fit
 # follows the y=0 line.
-residuals_ewbank_plot <- ggplot(
+residuals_grade_plot <- ggplot(
   dfs$ascents %>% inner_join(dfs$routes, by = "route"),
-  aes(ewbank, clean - predicted)
+  aes(grade, clean - predicted)
 ) + geom_smooth()
 
 # Plots the residuals vs the estimated natural route rating.  Ideally the fit
@@ -78,7 +78,7 @@ suppressMessages(grid.draw(rbind(
   ggplotGrob(prediction_density_plot),
   size = "last"
 )))
-suppressMessages(print(residuals_ewbank_plot))
+suppressMessages(print(residuals_grade_plot))
 suppressMessages(print(residuals_route_rating_plot))
 suppressMessages(print(route_rating_plot))
 dev.off()

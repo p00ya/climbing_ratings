@@ -1,6 +1,6 @@
 # Functions for pre-processing ascents data.
 
-# Copyright 2019 Dean Scarff
+# Copyright 2019, 2020 Dean Scarff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,18 +34,21 @@ PadList <- function(x, len) {
 }
 
 # Converts a list of grades as they appear in theCrag's API responses to an
-# atomic vector of integers representing the Ewbank grade.  Each input grade is
-# expected to be a list containing (id, grade, context).  Contexts other than
-# AU will return NA.
-ExtractEwbankGrade <- function(grades) {
+# atomic vector of integers representing the theCrag's internal grade.  Each
+# input grade is expected to be a list containing (id, grade, context), and
+# each grade_config should have id and mid columns.
+ExtractGrade <- function(grades, grade_config) {
   # Empty lists are dropped by rbind; replace them with the right shape of
   # list containing NA.
   grades <- PadList(grades, 3)
 
   dfg <- as.data.frame(do.call(rbind, grades))
   colnames(dfg) <- c("id", "grade", "context")
-  # Ignore "NAs introduced by coercion" warnings.
-  suppressWarnings(ifelse(dfg$context == "AU", as.integer(dfg$grade), NA))
+
+  dfg %>%
+    transform(id = factor(id, levels(grade_config$id))) %>%
+    left_join(grade_config, by = "id") %>%
+    `$`("mid")
 }
 
 # Reads a CSV export of a climber's logbook from theCrag.  The filename is
@@ -143,7 +146,7 @@ kDefaultWithdata <- c(
 # "json" should be a parsed JSON object as returned by jsonlite.
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
-ParseJsonAscents <- function(json, withdata = kDefaultWithdata) {
+ParseJsonAscents <- function(json, grade_config, withdata = kDefaultWithdata) {
   # Due to the input JSON's use of heterogeneous arrays, what comes out of
   # jsonlite is horribly structured: ascents is a list, each ascent is a list,
   # ascents can have different lengths, and the fields in each ascent have no
@@ -162,7 +165,7 @@ ParseJsonAscents <- function(json, withdata = kDefaultWithdata) {
       route = as.character(NodeID),
       climber = as.character(AccountID),
       tick = NormalizeAscentType(Tick),
-      grade = ExtractEwbankGrade(Grade),
+      grade = ExtractGrade(Grade, grade_config),
       timestamp = suppressWarnings(as.integer(
         as.POSIXct(as.character(Date), format = "%FT%H:%M:%SZ", optional = TRUE)
       ))
@@ -170,15 +173,47 @@ ParseJsonAscents <- function(json, withdata = kDefaultWithdata) {
     na.omit()
 }
 
+# Parses grade systems from a JSON response as returned by theCrag's grade
+# system API.  Returns a dataframe with the columns "id" (an integer),
+# "mid" (middle of the grade band), "lower" and "upper" (boundaries of the
+# grade band).
+ParseTheCragGradeConfig <- function(json) {
+  purrr::map(
+    json$data,
+    # Flatten grade structure from:
+    #   list(list(id = "1", score = list(c(2), c(1), c()3)), ...)
+    # to a dataframe.
+    function(d) {
+      # Be robust to dummy grades with no score.
+      grades <- d$grade %>% purrr::discard(~ is.null(.$score))
+      data.frame(
+        id = purrr::map_chr(grades, "id"),
+        mid = purrr::map_dbl(grades, ~ .$score[[1]]),
+        lower = purrr::map_dbl(grades, ~ .$score[[2]]),
+        upper = purrr::map_dbl(grades, ~ .$score[[3]]),
+        stringsAsFactors = FALSE
+      ) %>%
+        filter(!is.null(mid))
+    }
+  ) %>%
+    bind_rows() %>%
+    transform(id = factor(id))
+}
+
 # Reads all ascent JSON in directory "dir".  JSON filenames are assumed to have
 # the pattern "ascents-*.json".  "withdata" is a character vector of the fields
 # passed to the API's parameter of the same name.
+# The directory should also contain a "grade-config.json" file from theCrag's
+# "/api/config/grade/system" endpoint.
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
 ReadAllJsonAscents <- function(dir, withdata = kDefaultWithdata) {
+  grade_config <- ParseTheCragGradeConfig(
+    jsonlite::read_json(file.path(data_dir, "grade-system.json"))
+  )
   responses <- Sys.glob(file.path(dir, "ascents-*.json"))
   purrr::map(responses, jsonlite::read_json) %>%
-    purrr::map(ParseJsonAscents, withdata = withdata) %>%
+    purrr::map(ParseJsonAscents, grade_config, withdata = withdata) %>%
     bind_rows() %>%
     mutate(
       route = factor(route),
@@ -219,11 +254,19 @@ IsTickClean <- function(ticktype) {
 #
 # df_raw is expected to have the columns "ascentId", "route", "climber",
 # "tick", "grade", "timestamp".
-CleanAscents <- function(df_raw) {
+CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
+  max_time <- ifelse(
+    is.null(max_time),
+    as.integer(Sys.time()) + 86400L, # + 1 day
+    max_time
+  )
+
   df <- df_raw %>%
     mutate(clean = IsTickClean(tick)) %>%
     filter(!is.na(clean)) %>%
-    filter(!is.na(grade))
+    filter(!is.na(grade)) %>%
+    filter(min_time <= timestamp) %>%
+    filter(timestamp < max_time)
 
   # Summarise routes by their grade and number of ascents:
   routes <- df %>%
@@ -283,11 +326,11 @@ CleanAscents <- function(df_raw) {
 NormalizeTables <- function(df, period_length) {
   df_routes <- df %>%
     group_by(route) %>%
-    summarise(ewbank = floor(median(grade)))
+    summarise(grade = floor(median(grade)))
 
   df_ascents <- df %>%
     mutate(
-      t = (timestamp - min(df$timestamp)) %/% period_length,
+      t = (timestamp - min(!!df$timestamp)) %/% period_length,
       clean = as.numeric(clean)
     ) %>%
     arrange(climber, t)

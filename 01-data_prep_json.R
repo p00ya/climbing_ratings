@@ -1,6 +1,6 @@
 # Convert theCrag API responses to ascent, page and route tables.
 
-# Copyright 2019 Dean Scarff
+# Copyright 2019, 2020 Dean Scarff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,5 +26,5 @@ cat(
 )
 
 dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
-dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(ewbank))
+dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(grade, 0.02, ref = 259))
 WriteNormalizedTables(dfs, data_dir)

@@ -95,7 +95,7 @@ PlotSelectedRoutes <- function(df_routes, selected, alpha = 0.05) {
 
 # Generates outlier labels for the route plot.
 GetOutliers <- function(df_routes, alpha = 0.05) {
-  m <- loess(r ~ ewbank, df_routes, weights = 1 / df_routes$var)
+  m <- loess(r ~ grade, df_routes, weights = 1 / df_routes$var)
   e <- residuals(m)
   e <- e / sd(e)
   q <- qnorm(1 - alpha / 2)
@@ -111,7 +111,7 @@ GetOutliers <- function(df_routes, alpha = 0.05) {
 PlotRouteRating <- function(df_routes) {
   ggplot(
     df_routes %>% mutate(outlier = GetOutliers(df_routes)),
-    aes(ewbank, r)
+    aes(grade, r)
   ) +
     geom_point(alpha = 0.1, size = 0.5, color = "red") +
     geom_smooth() +
