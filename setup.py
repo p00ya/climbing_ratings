@@ -24,6 +24,7 @@ CYTHON_CFLAGS = [
     "-mtune=native",
     "-ffast-math",
     "-fno-math-errno",
+    "-fno-associative-math",
 ]
 
 bradley_terry = Extension(

@@ -16,7 +16,7 @@
 
 import numpy as np
 import unittest
-from ..bradley_terry import get_bt_summation_terms, get_bt_derivatives
+from ..bradley_terry import get_bt_summation_terms, get_bt_derivatives, sum
 from .assertions import assert_close
 
 
@@ -32,8 +32,25 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         gamma = np.array([1.0, 1.0, 1.0, 1.0])
         adversary_gamma = np.array([1.0, 1.0, 1.0, 1.0])
         d1, d2 = get_bt_summation_terms(gamma, adversary_gamma)
-        self.assert_close([0.5, 1.0, 1.5, 2.0], d1, "d1")
-        self.assert_close([0.25, 0.5, 0.75, 1.0], d2, "d2")
+        self.assert_close([0.5, 0.5, 0.5, 0.5], d1, "d1")
+        self.assert_close([0.25, 0.25, 0.25, 0.25], d2, "d2")
+
+    def test_sum(self):
+        """Test sum()"""
+        x = np.array([1.0, 2.0, 4.0, 8.0])
+        self.asertEqual(15.0, sum(x, 0, 4))
+        self.asertEqual(0.0, sum(x, 0, 0))
+        self.asertEqual(6.0, sum(x, 1, 3))
+        self.asertEqual(7.0, sum(x, 0, 3))
+
+    def test_sum(self):
+        """Test sum() error compensation"""
+        x = np.full([10], 0.1)
+        self.assertEqual(1.0, sum(x, 0, 10))
+        x = np.array([1e100, -1.0, -1e100, 1.0])
+        self.assertEqual(0.0, sum(x, 0, 4))
+        x = np.array([1e100, 1.0, -1e100, 1.0])
+        self.assertEqual(2.0, sum(x, 0, 4))
 
     def test_get_bt_derivatives_single_win(self):
         """Test get_bt_derivatives() with a single win"""

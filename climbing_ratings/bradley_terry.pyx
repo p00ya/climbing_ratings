@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import numpy as np
+from libc.math cimport fabs
 
 
 def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
@@ -33,9 +34,9 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     Returns
     -------
     (d1_terms : ndarray, d2_terms : ndarray)
-        d1_terms contains the cumulative sum of the
-        "1 / (gamma + adversary_gamma)" terms for each player.
-        d2_terms contains the cumulative sum of the
+        d1_terms contains the "1 / (gamma + adversary_gamma)" terms for each
+        player.
+        d2_terms contains the
         "adversary_gamma / (gamma + adversary_gamma)^2" terms for each player.
     """
     # WHR Appendix A.1 Terms of the Bradley-Terry model:
@@ -75,10 +76,27 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
         t *= adversary_gamma[i]
         d2_terms[i] = t
 
-    # Don't accumulate in the loop since it may break vectorization.
-    np.cumsum(d1_arr, out=d1_arr)
-    np.cumsum(d2_arr, out=d2_arr)
     return (d1_arr, d2_arr)
+
+
+cpdef double sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
+    """Compute the sum of x[start:end], with error compensation."""
+    # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
+    # this must be compiled with clang's "-fno-associative-math" or equivalent.
+    cdef double s = 0.0
+    cdef Py_ssize_t i
+
+    cdef double c = 0.0
+    cdef double t
+    for i in range(start, end):
+        t = s + x[i]
+        if fabs(s) >= fabs(x[i]):
+            c += (s - t) + x[i]
+        else:
+            c += (x[i] - t) + s
+
+        s = t
+    return s + c
 
 
 def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
@@ -129,15 +147,11 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
 
         # WHR Appendix A.1:
         # d ln P / d r = |W_i| - gamma_i sum( C_ij / (C_ij gamma_i + D_ij) )
-        d1_sum = d1_terms[end - 1]
-        if start > 0:
-            d1_sum -= d1_terms[start - 1]
+        d1_sum = sum(d1_terms, start, end)
         d1[i] = wins[i] - gamma[start] * d1_sum
         # WHR Appendix A.1:
         # d^2 ln P / d r^2 = -gamma * sum( C_ij D_ij / (C_ij + D_ij)^2 )
-        d2_sum = d2_terms[end - 1]
-        if start > 0:
-            d2_sum -= d2_terms[start - 1]
+        d2_sum = sum(d2_terms, start, end)
         d2[i] = -d2_sum * gamma[start]
 
     return (d1_arr, d2_arr)
