@@ -18,7 +18,7 @@ import numpy as np
 from libc.math cimport fabs
 
 
-def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
+cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     """Get the Bradley-Terry summation terms for each player.
 
     A player is an abstraction for an entity with a rating; it will correspond
@@ -36,8 +36,9 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     (d1_terms : ndarray, d2_terms : ndarray)
         d1_terms contains the "1 / (gamma + adversary_gamma)" terms for each
         player.
-        d2_terms contains the
-        "adversary_gamma / (gamma + adversary_gamma)^2" terms for each player.
+
+        d2_terms contains the "adversary_gamma / (gamma + adversary_gamma)^2"
+        terms for each player.
     """
     # WHR Appendix A.1 Terms of the Bradley-Terry model:
     #
@@ -79,7 +80,12 @@ def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     return (d1_arr, d2_arr)
 
 
-cpdef double sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
+def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
+    """Wraps cget_bt_summation_terms() for testing"""
+    return cget_bt_summation_terms(gamma, adversary_gamma)
+
+
+cdef double csum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
     """Compute the sum of x[start:end], with error compensation."""
     # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
     # this must be compiled with clang's "-fno-associative-math" or equivalent.
@@ -97,6 +103,11 @@ cpdef double sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
 
         s = t
     return s + c
+
+
+def sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
+    """Wraps csum() for testing"""
+    return csum(x, start, end)
 
 
 def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
@@ -124,7 +135,7 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         Bradley-Terry log-likelihood a "player" wins, with respect to the
         "natural rating" of that player.
     """
-    d1_terms_arr, d2_terms_arr = get_bt_summation_terms(gamma, adversary_gamma)
+    d1_terms_arr, d2_terms_arr = cget_bt_summation_terms(gamma, adversary_gamma)
     cdef double[::1] d1_terms = d1_terms_arr
     cdef double[::1] d2_terms = d2_terms_arr
 
@@ -141,17 +152,17 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
     for i, pair in enumerate(slices):
         start, end = pair
         if start == end:
-          d1[i] = 0.0
-          d2[i] = 0.0
-          continue
+            d1[i] = 0.0
+            d2[i] = 0.0
+            continue
 
         # WHR Appendix A.1:
         # d ln P / d r = |W_i| - gamma_i sum( C_ij / (C_ij gamma_i + D_ij) )
-        d1_sum = sum(d1_terms, start, end)
+        d1_sum = csum(d1_terms, start, end)
         d1[i] = wins[i] - gamma[start] * d1_sum
         # WHR Appendix A.1:
         # d^2 ln P / d r^2 = -gamma * sum( C_ij D_ij / (C_ij + D_ij)^2 )
-        d2_sum = sum(d2_terms, start, end)
+        d2_sum = csum(d2_terms, start, end)
         d2[i] = -d2_sum * gamma[start]
 
     return (d1_arr, d2_arr)
