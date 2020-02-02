@@ -25,6 +25,7 @@ CYTHON_CFLAGS = [
     "-ffast-math",
     "-fno-math-errno",
     "-fno-associative-math",
+    "-fno-reciprocal-math",
 ]
 
 bradley_terry = Extension(

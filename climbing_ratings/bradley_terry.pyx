@@ -34,11 +34,12 @@ cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     Returns
     -------
     (d1_terms : ndarray, d2_terms : ndarray)
-        d1_terms contains the "1 / (gamma + adversary_gamma)" terms for each
+        d1_terms contains the "gamma / (gamma + adversary_gamma)" terms for each
         player.
 
-        d2_terms contains the "adversary_gamma / (gamma + adversary_gamma)^2"
-        terms for each player.
+        d2_terms contains the
+        "gamma adversary_gamma / (gamma + adversary_gamma)^2" terms for each
+        player.
     """
     # WHR Appendix A.1 Terms of the Bradley-Terry model:
     #
@@ -63,19 +64,18 @@ cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     cdef double[::1] d1_terms = d1_arr
     cdef double[::1] d2_terms = d2_arr
 
-    cdef double t
+    cdef double t, u
     for i in range(n):
-        t = gamma[i]
-        t += adversary_gamma[i]
-        t = 1.0 / t
+        t = gamma[i] + adversary_gamma[i]
 
-        # 1 / (C_ij gamma_i + D_ij)
-        d1_terms[i] = t
+        # gamma_i / (C_ij gamma_i + D_ij)
+        u = gamma[i] / t
+        d1_terms[i] = u
 
-        # D_ij / (C_ij gamma_i + D_ij)^2
-        t *= t
-        t *= adversary_gamma[i]
-        d2_terms[i] = t
+        # C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2
+        u *= adversary_gamma[i] / t
+
+        d2_terms[i] = u
 
     return (d1_arr, d2_arr)
 
@@ -157,12 +157,13 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
             continue
 
         # WHR Appendix A.1:
-        # d ln P / d r = |W_i| - gamma_i sum( C_ij / (C_ij gamma_i + D_ij) )
-        d1_sum = csum(d1_terms, start, end)
-        d1[i] = wins[i] - gamma[start] * d1_sum
+        # d ln P / d r = |W_i| - sum( C_ij gamma_i / (C_ij gamma_i + D_ij) )
+        #
+        # We move gamma_i into the sum for numerical stability: terms will be
+        # closer to unity.
+        d1[i] = wins[i] - csum(d1_terms, start, end)
         # WHR Appendix A.1:
-        # d^2 ln P / d r^2 = -gamma * sum( C_ij D_ij / (C_ij + D_ij)^2 )
-        d2_sum = csum(d2_terms, start, end)
-        d2[i] = -d2_sum * gamma[start]
+        # d^2 ln P / d r^2 = - sum( C_ij gamma_i D_ij / (C_ij + D_ij)^2 )
+        d2[i] = -csum(d2_terms, start, end)
 
     return (d1_arr, d2_arr)

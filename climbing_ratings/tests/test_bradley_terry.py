@@ -29,11 +29,11 @@ class TestBradleyTerryFunctions(unittest.TestCase):
 
     def test_get_bt_summation_terms(self):
         """Test get_bt_summation_terms()"""
-        gamma = np.array([1.0, 1.0, 1.0, 1.0])
-        adversary_gamma = np.array([1.0, 1.0, 1.0, 1.0])
+        gamma = np.array([1.0, 2.0])
+        adversary_gamma = np.array([1.0, 2.0])
         d1, d2 = get_bt_summation_terms(gamma, adversary_gamma)
-        self.assert_close([0.5, 0.5, 0.5, 0.5], d1, "d1")
-        self.assert_close([0.25, 0.25, 0.25, 0.25], d2, "d2")
+        self.assert_close([0.5, 0.5], d1, "d1")
+        self.assert_close([0.25, 0.25], d2, "d2")
 
     def test_sum(self):
         """Test sum()"""
