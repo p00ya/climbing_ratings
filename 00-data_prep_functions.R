@@ -27,28 +27,26 @@ NormalizeAscentType <- function(ascent_type) {
     recode(hangdog = "dog")
 }
 
-# Appends NAs to each element of x such that they all have at least len
-# elements.
-PadList <- function(x, len) {
-  purrr::map_if(x, ~ length(.) < len, ~ c(., rep(NA, len - length(.))))
+# Coerces x[[i]] to an integer, replacing NULL with NA.
+AsIntegerOrNA <- function(x, idx = 1) {
+  ifelse(is.null(x), NA, as.integer(x[[idx]]))
 }
 
-# Converts a list of grades as they appear in theCrag's API responses to an
-# atomic vector of integers representing the theCrag's internal grade.  Each
-# input grade is expected to be a list containing (id, grade, context), and
-# each grade_config should have id and mid columns.
-ExtractGrade <- function(grades, grade_config) {
-  # Empty lists are dropped by rbind; replace them with the right shape of
-  # list containing NA.
-  grades <- PadList(grades, 3)
+# Coerces x[[i]] to a character, replacing NULL with NA.
+AsCharacterOrNA <- function(x, idx = 1) {
+  ifelse(is.null(x), NA, as.character(x[[idx]]))
+}
 
-  dfg <- as.data.frame(do.call(rbind, grades))
-  colnames(dfg) <- c("id", "grade", "context")
+# Converts the list-of-singleton-integer-list structures typical of jsonlite to
+# an atomic vector of integers.  NULLs are converted to NA.
+FlattenInt <- function(lst, idx = 1) {
+  purrr::map_int(lst, AsIntegerOrNA, idx = idx)
+}
 
-  dfg %>%
-    transform(id = factor(id, levels(grade_config$id))) %>%
-    left_join(grade_config, by = "id") %>%
-    `$`("mid")
+# Converts the list-of-singleton-character-list structures typical of jsonlite
+# to an atomic vector of characters.  NULLs are converted to NA.
+FlattenChr <- function(lst, idx = 1) {
+  purrr::map_chr(lst, AsCharacterOrNA, idx = idx)
 }
 
 # Reads a CSV export of a climber's logbook from theCrag.  The filename is
@@ -92,21 +90,25 @@ ReadLogbooks <- function(dir) {
 
 # Downloads ascent data from theCrag's ascent facet API.  The data is paginated
 # and saved as JSON responses in "dir".
-FetchJsonFromApi <- function(area, api_key, dir, per_page = 5000) {
+FetchJsonAscentsFromApi <- function(area, api_key, dir, start = 1, per_page = 5000) {
+  flatten_param <- paste(
+    "data[numberAscents", "page", "perPage", "ascents[id", "route[id]",
+    "account[id]", "tick[label]", "gradeID", "gradeScore", "date",
+    "pitch[number", "tick[label]]]]",
+    sep = ","
+  )
   base_url <- paste0(
     "https://sandpit.thecrag.com/api",
     "/facet/ascents/at/", area,
     "/with-route-gear-style/sport",
     "/in-setting/natural",
-    "?thin=1",
-    "&withdata=AscentID,Date,AccountID,NodeID,Tick,Grade",
+    "?key=", api_key,
+    "&flatten=", flatten_param,
     "&sortby=when",
-    "&markupType=text",
-    "&key=", api_key,
     "&perPage=", per_page
   )
 
-  for (page in 1:1024) {
+  for (page in start:1024) {
     url <- paste0(base_url, "&page=", page)
     filename <- file.path(dir, sprintf("ascents-%03d.json", page))
 
@@ -117,11 +119,13 @@ FetchJsonFromApi <- function(area, api_key, dir, per_page = 5000) {
     }
 
     j <- jsonlite::read_json(filename)
+    names(j) <- "data"
+    names(j$data) <- c("numberAscents", "page", "perPage", "ascents")
     # Note the perPage parameter of the request may not be respected; calculate
     # the actual pagination from the response.  The response may code these
     # fields as strings.
-    j_page <- as.integer(j$data$page)
     j_num_ascents <- as.integer(j$data$numberAscents)
+    j_page <- as.integer(j$data$page)
     j_per_page <- as.integer(j$data$perPage)
     # Stop on the last page.
     if (j_page * j_per_page >= j_num_ascents) {
@@ -134,86 +138,82 @@ FetchJsonFromApi <- function(area, api_key, dir, per_page = 5000) {
   }
 }
 
-# The minimum set of fields required for parsing ascents from theCrag's ascent
-# facet API.
-kDefaultWithdata <- c(
-  "AscentID", "Date", "AccountID", "NodeID", "Tick", "Grade"
-)
-
 # Parses ascent data from JSON responses as returned by theCrag's ascent facet
-# API.  "withdata" is a character vector of the fields passed to the API's
-# parameter of the same name.  It should be a superset of kDefaultWithdata.
-# "json" should be a parsed JSON object as returned by jsonlite.
+# API.   "json" should be a parsed JSON object as returned by using jsonlite to
+# parse the files written by "FetchJsonAscentsFromApi".
+#
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
-ParseJsonAscents <- function(json, grade_config, withdata = kDefaultWithdata) {
+ParseJsonAscents <- function(json) {
+  names(json) <- "data"
+  names(json$data) <- c("numberAscents", "page", "perPage", "ascents")
+
   # Due to the input JSON's use of heterogeneous arrays, what comes out of
   # jsonlite is horribly structured: ascents is a list, each ascent is a list,
-  # ascents can have different lengths, and the fields in each ascent have no
-  # names.
-  ascents <- PadList(json$data$ascents, length(withdata))
-  df_json <- as.data.frame(do.call(rbind, ascents))
-
-  # Columns correspond to the "withdata" parameter of the API request.
-  colnames(df_json) <- withdata
-
+  # and the fields have no names.
+  df_json <- as.data.frame(
+    do.call(rbind, json$data$ascents),
+    stringsAsFactors = FALSE
+  )
+  # These columns must be consistent with the "flatten"
+  colnames(df_json) <-
+    c(
+      "id", "routeID", "accountID", "tick", "gradeID", "gradeScore",
+      "date", "pitch"
+    )
   df_json %>%
     transmute(
-      # Don't coerce the IDs to factors; assume this will be done in
-      # ReadAllJsonAscents after rbind'ing.
-      ascentId = as.character(AscentID),
-      route = as.character(NodeID),
-      climber = as.character(AccountID),
-      tick = NormalizeAscentType(Tick),
-      grade = ExtractGrade(Grade, grade_config),
+      ascentId = FlattenChr(id),
+      route = FlattenChr(routeID),
+      tick = NormalizeAscentType(FlattenChr(tick)),
+      climber = FlattenChr(accountID),
       timestamp = suppressWarnings(as.integer(
-        as.POSIXct(as.character(Date), format = "%FT%H:%M:%SZ", optional = TRUE)
-      ))
+        as.POSIXct(FlattenChr(date), format = "%FT%H:%M:%SZ", optional = TRUE)
+      )),
+      grade = FlattenInt(gradeScore),
+      pitch
     ) %>%
-    na.omit()
-}
-
-# Parses grade systems from a JSON response as returned by theCrag's grade
-# system API.  Returns a dataframe with the columns "id" (an integer),
-# "mid" (middle of the grade band), "lower" and "upper" (boundaries of the
-# grade band).
-ParseTheCragGradeConfig <- function(json) {
-  purrr::map(
-    json$data,
-    # Flatten grade structure from:
-    #   list(list(id = "1", score = list(c(2), c(1), c()3)), ...)
-    # to a dataframe.
-    function(d) {
-      # Be robust to dummy grades with no score.
-      grades <- d$grade %>% purrr::discard(~ is.null(.$score))
-      data.frame(
-        id = purrr::map_chr(grades, "id"),
-        mid = purrr::map_dbl(grades, ~ .$score[[1]]),
-        lower = purrr::map_dbl(grades, ~ .$score[[2]]),
-        upper = purrr::map_dbl(grades, ~ .$score[[3]]),
-        stringsAsFactors = FALSE
-      ) %>%
-        filter(!is.null(mid))
-    }
-  ) %>%
-    bind_rows() %>%
-    transform(id = factor(id))
+    purrr::pmap_dfr(
+      function(ascentId, route, tick, climber, timestamp, grade, pitch, ...) {
+        if (is.null(pitch)) {
+          return(
+            data.frame(
+              ascentId, tick, grade, climber, timestamp, route,
+              stringsAsFactors = FALSE
+            )
+          )
+        }
+        # Split an ascent of a multipitch route into multiple ascents
+        # corresponding to each pitch.  Suffix the ascent and route IDs, e.g.
+        # with a "P2" suffix for pitch 2.
+        purrr::map_dfr(pitch, function(p) {
+          data.frame(
+            pitch.number = AsIntegerOrNA(p, 1),
+            pitch.tick = AsCharacterOrNA(p, 2),
+            stringsAsFactors = FALSE
+          )
+        }) %>%
+          na.omit() %>%
+          transmute(
+            ascentId = paste0(ascentId, "P", pitch.number),
+            tick = NormalizeAscentType(unlist(pitch.tick)),
+            route = paste0(route, "P", pitch.number),
+            grade = grade,
+            climber = climber,
+            timestamp = timestamp
+          )
+      }
+    )
 }
 
 # Reads all ascent JSON in directory "dir".  JSON filenames are assumed to have
-# the pattern "ascents-*.json".  "withdata" is a character vector of the fields
-# passed to the API's parameter of the same name.
-# The directory should also contain a "grade-config.json" file from theCrag's
-# "/api/config/grade/system" endpoint.
+# the pattern "ascents-*.json".
 # Returns a "raw ascents" data frame with columns "ascentId", "route",
 # "climber", "tick", "grade" and "timestamp".
-ReadAllJsonAscents <- function(dir, withdata = kDefaultWithdata) {
-  grade_config <- ParseTheCragGradeConfig(
-    jsonlite::read_json(file.path(data_dir, "grade-system.json"))
-  )
+ReadAllJsonAscents <- function(dir) {
   responses <- Sys.glob(file.path(dir, "ascents-*.json"))
   purrr::map(responses, jsonlite::read_json) %>%
-    purrr::map(ParseJsonAscents, grade_config, withdata = withdata) %>%
+    purrr::map(ParseJsonAscents) %>%
     bind_rows() %>%
     mutate(
       route = factor(route),
