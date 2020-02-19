@@ -1,6 +1,6 @@
 # Goldens test for 01-data_prep.R
 
-# Copyright 2019 Dean Scarff
+# Copyright 2019, 2020 Dean Scarff
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,18 +17,38 @@
 
 context("Tests for 01-data_prep.R")
 
-test_that("data_prep outputs match goldens", {
-  # Check outputs.
-  ExpectCsvsEqual <- function(filename) {
-    actual_file <- file.path(data_dir, filename)
-    expected_file <- file.path(src_dir, filename)
-    actual <- read.csv(actual_file)
-    expected <- read.csv(expected_file)
-    expect_equal(actual, expected)
-  }
+suppressMessages(source("../00-data_prep_functions.R"))
 
+src_dir <- "testdata"
+data_dir <- tempfile("dir")
+
+setup({
+  # Create temporary directory and copy testdata data there.
+  dir.create(data_dir)
+  file.copy(
+    file.path(src_dir, "raw_ascents.csv"),
+    file.path(data_dir)
+  )
+
+  source("../01-data_prep.R", local = TRUE)
+})
+
+teardown({
+  suppressWarnings(unlink(data_dir, recursive = TRUE))
+})
+
+# Asserts that two CSV files both named "filename" in the src_dir and data_dir
+# have identical contents.
+ExpectCsvsEqual <- function(filename) {
+  actual_file <- file.path(data_dir, filename)
+  expected_file <- file.path(src_dir, filename)
+  actual <- read.csv(actual_file)
+  expected <- read.csv(expected_file)
+  expect_equal(actual, expected)
+}
+
+test_that("data_prep outputs match goldens", {
   ExpectCsvsEqual("ascents.csv")
   ExpectCsvsEqual("pages.csv")
   ExpectCsvsEqual("routes.csv")
-  suppressWarnings(unlink(data_dir, recursive = TRUE))
 })
