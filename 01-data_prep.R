@@ -32,6 +32,8 @@ df_raw <- read.csv(
   )
 )
 
-dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
+df_clean <- CleanAscents(df_raw)
+message(SummarizeAscents(df_clean))
+dfs <- NormalizeTables(df_clean, period_length)
 dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(grade))
 WriteNormalizedTables(dfs, data_dir)

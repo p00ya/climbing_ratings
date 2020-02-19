@@ -19,12 +19,16 @@
 period_length <- 604800 # seconds in 1 week
 
 df_raw <- ReadAllJsonAscents(data_dir)
-cat(
-  prettyNum(nrow(df_raw), big.mark = ","), "raw ascents by",
-  prettyNum(nlevels(df_raw$climber), big.mark = ","), "climbers, over",
-  prettyNum(nlevels(df_raw$route), big.mark = ","), "routes\n"
+message(
+  paste(
+    prettyNum(nrow(df_raw), big.mark = ","), "raw ascents by",
+    prettyNum(nlevels(df_raw$climber), big.mark = ","), "climbers, over",
+    prettyNum(nlevels(df_raw$route), big.mark = ","), "routes\n"
+  )
 )
+df_clean <- CleanAscents(df_raw)
+message(SummarizeAscents(df_clean))
 
-dfs <- NormalizeTables(CleanAscents(df_raw), period_length)
+dfs <- NormalizeTables(df_clean, period_length)
 dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(grade, 0.02, ref = 259))
 WriteNormalizedTables(dfs, data_dir)

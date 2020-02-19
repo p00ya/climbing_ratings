@@ -308,15 +308,18 @@ CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
       climber = climber %>% droplevels()
     )
 
-  # Summarize the tick counts.
-  cat(
+  df
+}
+
+# Given a data frame containing ascents (as produced by "CleanAScents"),
+# return a summary as a character.
+SummarizeAscents <- function(df) {
+  paste(
     prettyNum(nrow(df), big.mark = ","), "ascents by",
     prettyNum(nlevels(df$climber), big.mark = ","), "climbers, over",
     prettyNum(nlevels(df$route), big.mark = ","), "routes;",
     sprintf("%0.2f%%", mean(df$clean) * 100.0), "clean ascents\n"
   )
-
-  df
 }
 
 # Given a data frame containing filtered ascents (as produced by
