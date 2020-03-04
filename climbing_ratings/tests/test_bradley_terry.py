@@ -38,10 +38,10 @@ class TestBradleyTerryFunctions(unittest.TestCase):
     def test_sum(self):
         """Test sum()"""
         x = np.array([1.0, 2.0, 4.0, 8.0])
-        self.asertEqual(15.0, sum(x, 0, 4))
-        self.asertEqual(0.0, sum(x, 0, 0))
-        self.asertEqual(6.0, sum(x, 1, 3))
-        self.asertEqual(7.0, sum(x, 0, 3))
+        self.assertEqual(15.0, sum(x, 0, 4))
+        self.assertEqual(0.0, sum(x, 0, 0))
+        self.assertEqual(6.0, sum(x, 1, 3))
+        self.assertEqual(7.0, sum(x, 0, 3))
 
     def test_sum(self):
         """Test sum() error compensation"""
