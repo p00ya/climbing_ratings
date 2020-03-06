@@ -2,7 +2,7 @@
 
 Climbing Ratings is software that estimates ratings for the sport of rock climbing.  The ratings can be used to predict route difficulty and climber performance on a particular route.
 
-Climbing Ratings is Copyright 2019 Dean Scarff.
+Climbing Ratings is Copyright 2019, 2020 the Contributors to the Climbing Ratings project.
 
 The algorithms are based on the "WHR" paper:
 

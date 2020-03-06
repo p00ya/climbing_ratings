@@ -1,6 +1,6 @@
 # Unit tests for 00-data_prep_functions.R
 
-# Copyright 2020 Dean Scarff
+# Copyright Contributors to the Climbing Ratings project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

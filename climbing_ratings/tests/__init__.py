@@ -1,6 +1,6 @@
 """Tests for climbing_ratings"""
 
-# Copyright 2019 Dean Scarff
+# Copyright Contributors to the Climbing Ratings project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
