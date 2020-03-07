@@ -142,3 +142,12 @@ PlotPrecisionRecall <- function(df_ascents) {
   )
   autoplot(sscurves, "PRC", show_legend = FALSE)
 }
+
+# Returns the contingency table for a binary classifier where the predicted
+# probability of a clean ascent > threshold.
+GetContingencyTable <- function(df_ascents, threshold = 0.5) {
+  table(
+    factor(df_ascents$clean, labels = c("ATTEMPT", "CLEAN")),
+    factor(df_ascents$predicted > threshold, labels = c("pATTEMPT", "pCLEAN"))
+  )
+}
