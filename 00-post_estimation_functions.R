@@ -137,8 +137,8 @@ PlotRatingsDensity <- function(df_pages, df_routes) {
 # Plots precision vs recall given predicted probabilities of clean ascents.
 PlotPrecisionRecall <- function(df_ascents) {
   sscurves <- precrec::evalmod(
-    scores = dfs$ascents$predicted,
-    labels = dfs$ascents$clean
+    scores = df_ascents$predicted,
+    labels = df_ascents$clean
   )
   autoplot(sscurves, "PRC", show_legend = FALSE)
 }
