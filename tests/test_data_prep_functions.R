@@ -44,13 +44,13 @@ describe("TransformGrade", {
   it("applies scaling", {
     expect_equal(
       TransformGrade(0:2, 1, 0),
-      exp(0:2)
+      0:2
     )
   })
   it("applies ref translation", {
     expect_equal(
       TransformGrade(0:2, 1, 1),
-      exp(-1:1)
+      -1:1
     )
   })
 })

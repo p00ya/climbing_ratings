@@ -365,16 +365,16 @@ NormalizeTables <- function(df, period_length) {
   list(ascents = df_ascents, pages = df_pages, routes = df_routes)
 }
 
-# Performs a transformation of a grade to a "gamma" rating.
+# Performs a transformation of a grade to a natural rating.
 #
-# The reference grade "ref" is normalized to 1 (a natural rating of 0).
+# The reference grade "ref" is normalized to a natural rating of 0.
 #
 # This transformation assumes a linear relationship between the grade and the
 # "natural" rating.  A scale of 1 implies that if a climber has a 50%
 # probability of ascending a route at grade X cleanly, then they have a 1/(1+e)
 # (approx. 27%) probability of ascending a route at grade X + 1 cleanly.
 TransformGrade <- function(grade, scale = 0, ref = grade[[1]]) {
-  exp(scale * (grade - ref))
+  scale * (grade - ref)
 }
 
 # Writes normalized tables to CSV files.
@@ -393,7 +393,7 @@ WriteNormalizedTables <- function(dfs, dir) {
     row.names = FALSE
   )
   write.csv(
-    dfs$routes %>% select(route, gamma),
+    dfs$routes %>% select(route, rating),
     file.path(dir, "routes.csv"),
     row.names = FALSE
   )

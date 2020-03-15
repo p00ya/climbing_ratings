@@ -30,5 +30,8 @@ df_clean <- CleanAscents(df_raw)
 message(SummarizeAscents(df_clean))
 
 dfs <- NormalizeTables(df_clean, period_length)
-dfs$routes <- mutate(dfs$routes, gamma = TransformGrade(grade, 0.02, ref = 259))
+dfs$routes <- mutate(
+  dfs$routes,
+  rating = TransformGrade(grade, 0.02, ref = 259)
+)
 WriteNormalizedTables(dfs, data_dir)

@@ -58,7 +58,7 @@ MakeWhrModel <- function(dfs_full) {
     dfs <- dfs_full
     dfs$routes <- mutate(
       dfs$routes,
-      gamma = TransformGrade(ewbank, as.numeric(param["b"]), param["g0"])
+      rating = TransformGrade(ewbank, as.numeric(param["b"]), param["g0"])
     )
     dfs$ascents <- x
 

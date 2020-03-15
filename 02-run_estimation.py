@@ -37,12 +37,11 @@ routes.csv
 ----------
 route
     Arbitrary route tag.  Not used.
-gamma
-    Initial gamma rating for each route.  The ratings should be positive
-    reals, with the interpretation under the Bradley-Terry model that for
-    grades A and B, if a climber can cleanly ascend grade A with even
-    probability, then the probability of cleanly ascending grade B =
-    B / (A + B).
+rating
+    Initial natural rating for each route.  The ratings should be reals, with
+    the interpretation under the Bradley-Terry model that for grades A and B,
+    if a climber can cleanly ascend grade A with even probability, then the
+    probability of cleanly ascending grade B = exp(B) / (exp(A) + exp(B)).
 
 route_ratings.csv
 -----------------
@@ -50,10 +49,10 @@ Output file.
 
 route
     Tag from routes.csv
-gamma
-    WHR gamma-rating for each route.
+rating
+    WHR natural rating for each route.
 var
-    Variance of the natural (log gamma) rating for each route.
+    Variance of the natural rating for each route.
 
 page_ratings.csv
 ----------------
@@ -61,10 +60,10 @@ Output file.
 
 climber
     0-based climber ID for each page.  Consistent with pages.csv.
-gamma
-    WHR gamma-rating for each page.
+rating
+    WHR natural rating for each page.
 var
-    Variance of the natural (log gamma) rating for each page.
+    Variance of the natural rating for each page.
 """
 
 # Copyright Contributors to the Climbing Ratings project
@@ -113,17 +112,17 @@ def read_routes(dirname):
     """Read the routes table."""
     filename = "%s/routes.csv" % dirname
     names = []
-    gammas = []
+    ratings = []
     with open(filename, newline="") as fp:
         reader = iter(csv.reader(fp))
 
-        assert next(reader) == ["route", "gamma"]
+        assert next(reader) == ["route", "rating"]
         for line in reader:
-            name, gamma = line
+            name, rating = line
             names.append(name)
-            gammas.append(float(gamma))
+            ratings.append(float(rating))
 
-    return names, gammas
+    return names, ratings
 
 
 def read_pages(dirname):
@@ -180,7 +179,7 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
     filename = "%s/route_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
-        writer.writerow(["route", "gamma", "var"])
+        writer.writerow(["route", "rating", "var"])
         for route, rating, var in zip(routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
 
@@ -189,7 +188,7 @@ def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
     filename = "%s/page_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
-        writer.writerow(["climber", "gamma", "var"])
+        writer.writerow(["climber", "rating", "var"])
         for climber, rating, var in zip(pages_climber, page_ratings, page_var):
             writer.writerow([climber, rating, var])
 
@@ -253,7 +252,7 @@ def main(argv):
 
     ascents_route, ascents_clean, ascents_page = read_ascents(data)
     pages_climber, pages_gap = read_pages(data)
-    routes_name, routes_gamma = read_routes(data)
+    routes_name, routes_rating = read_routes(data)
 
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
@@ -268,7 +267,7 @@ def main(argv):
         ascents_clean,
         ascents_page_slices,
         pages_climber_slices,
-        routes_gamma,
+        routes_rating,
         pages_gap,
     )
 

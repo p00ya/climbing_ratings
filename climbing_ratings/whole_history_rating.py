@@ -145,9 +145,9 @@ class WholeHistoryRating:
     Attributes
     ----------
     page_ratings : ndarray
-        Current estimate of the gamma rating of each page.
+        Current estimate of the natural rating of each page.
     route_ratings : ndarray
-        Current estimate of the gamma rating of each route.
+        Current estimate of the natural rating of each route.
     page_var : ndarray
         Estimate of the variance of the natural rating of each page.
     page_cov : ndarray
@@ -183,7 +183,7 @@ class WholeHistoryRating:
         ascents_clean,
         ascents_page_slices,
         pages_climber_slices,
-        routes_gamma,
+        routes_rating,
         pages_gap,
     ):
         """Initialize a WHR model.
@@ -201,15 +201,15 @@ class WholeHistoryRating:
         pages_climber_slices : list of pairs
             Each (start, end) entry defines the slice of the pages for a
             climber.
-        routes_gamma : list
-            Initial gamma ratings for each route.
+        routes_rating : list
+            Initial natural ratings for each route.
         pages_gap : array_like of float
             Interval of time between each page and the next page.  The gap for
             the last page of each climber is not used.
         """
         num_pages = len(ascents_page_slices)
-        self.route_ratings = np.array(routes_gamma, dtype=np.float64)
-        self.page_ratings = np.full(num_pages, 1.0)
+        self.route_ratings = np.array(routes_rating, dtype=np.float64)
+        self.page_ratings = np.full(num_pages, 0.0)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.empty(num_pages)
         self.route_var = np.empty_like(self.route_ratings)
@@ -227,13 +227,13 @@ class WholeHistoryRating:
             np.array(ascents_clean),
         )
         self._route_ascents = make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route, len(routes_gamma)
+            ascents_clean, ascents_page_slices, ascents_route, len(routes_rating)
         )
 
         self._pages_gap = pages_gap
 
         self._route_priors = NormalDistribution(
-            np.log(self.route_ratings), WholeHistoryRating.route_variance
+            self.route_ratings, WholeHistoryRating.route_variance
         )
 
         climber_prior = NormalDistribution(
@@ -254,16 +254,17 @@ class WholeHistoryRating:
             This has no effect on rating estimation.
         """
 
-        ascent_page_ratings = expand_to_slices(
-            self.page_ratings, self._page_ascents.slices
+        ascent_page_gammas = expand_to_slices(
+            np.exp(self.page_ratings), self._page_ascents.slices
         )
-        ascent_route_ratings = self.route_ratings[self._page_ascents.adversary]
+        ascent_route_gammas = self.route_ratings[self._page_ascents.adversary]
+        np.exp(ascent_route_gammas, ascent_route_gammas)
 
         bt_d1, bt_d2 = get_bt_derivatives(
             self._page_ascents.slices,
             self._page_ascents.wins,
-            ascent_page_ratings,
-            ascent_route_ratings,
+            ascent_page_gammas,
+            ascent_route_gammas,
         )
 
         for i, (start, end) in enumerate(self._pages_climber_slices):
@@ -274,10 +275,7 @@ class WholeHistoryRating:
                 self.page_ratings[start:end], bt_d1[start:end], bt_d2[start:end]
             )
             # r2 = r1 - delta
-            # gamma2 = exp(log(gamma1) - delta) = gamma exp(-delta)
-            np.negative(delta, delta)
-            np.exp(delta, delta)
-            self.page_ratings[start:end] *= delta
+            self.page_ratings[start:end] -= delta
 
             if should_update_covariance:
                 climber.get_covariance(
@@ -298,23 +296,23 @@ class WholeHistoryRating:
             rating estimation.
         """
 
-        rascents_route_ratings = expand_to_slices(
-            self.route_ratings, self._route_ascents.slices
+        rascents_route_gammas = expand_to_slices(
+            np.exp(self.route_ratings), self._route_ascents.slices
         )
 
-        rascents_page_ratings = self.page_ratings[self._route_ascents.adversary]
+        rascents_page_gammas = self.page_ratings[self._route_ascents.adversary]
+        np.exp(rascents_page_gammas, rascents_page_gammas)
 
         # Bradley-Terry terms.
         d1, d2 = get_bt_derivatives(
             self._route_ascents.slices,
             self._route_ascents.wins,
-            rascents_route_ratings,
-            rascents_page_ratings,
+            rascents_route_gammas,
+            rascents_page_gammas,
         )
 
         # Prior terms.
-        r = np.log(self.route_ratings)
-        prior_d1, prior_d2 = self._route_priors.get_derivatives(r)
+        prior_d1, prior_d2 = self._route_priors.get_derivatives(self.route_ratings)
         d1 += prior_d1
         d2 += prior_d2
 
@@ -322,10 +320,7 @@ class WholeHistoryRating:
         np.divide(d1, d2, delta)
 
         # r2 = r1 - delta
-        # gamma2 = exp(log(gamma1) - delta) = gamma exp(-delta)
-        np.negative(delta, delta)
-        np.exp(delta, delta)
-        self.route_ratings *= delta
+        self.route_ratings -= delta
 
         if should_update_variance:
             np.reciprocal(d2, self.route_var)
@@ -354,7 +349,7 @@ class WholeHistoryRating:
             Marginal log-likelihood.
         """
         # WHR 2.2: Bradley-Terry Model
-        #   P(player i beats player j) = gamma_i / (gamma_i + gamma_j)
+        #   P(player i beats player j) = exp(r_i) / (exp(r_i) + exp(r_j))
 
         # While we could use ascents.wins to make evaluation of the numerator
         # O(pages + routes), to avoid numeric overflow it's better to iterate
@@ -365,15 +360,21 @@ class WholeHistoryRating:
         )
         ascent_route_ratings = self.route_ratings[self._page_ascents.adversary]
 
+        # log(P) = sum over ascents[ log( exp(r_i) / (exp(r_i) + exp(r_j)) ) ]
+        #        = sum[ r_winner - log( exp(r_i) + exp(r_j) ) ]
+
         # Collect the rating of each winner for the numerator.
         clean = self._page_ascents.clean
         x = clean * ascent_page_ratings
         x += (1.0 - clean) * ascent_route_ratings
 
-        denominator = ascent_page_ratings  # reuse array
+        # Sum the exponential terms for the denominator, reusing the ratings
+        # arrays.
+        np.exp(ascent_page_ratings, ascent_page_ratings)
+        np.exp(ascent_route_ratings, ascent_route_ratings)
+        denominator = ascent_page_ratings
         denominator += ascent_route_ratings
 
-        np.log(x, x)
         np.log(denominator, denominator)
 
         x -= denominator

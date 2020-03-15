@@ -119,7 +119,7 @@ class TestClimber(unittest.TestCase):
     def test_get_ratings_adjustment(self):
         """Test Climber.get_ratings_adjustment"""
         gaps = np.array([1.0])
-        ratings = np.array([6.0, 4.0])
+        ratings = np.log([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(self.initial_prior, gaps)
@@ -129,7 +129,7 @@ class TestClimber(unittest.TestCase):
     def test_get_covariance(self):
         """Test Climber.get_covariance"""
         gaps = np.array([1.0])
-        ratings = np.array([6.0, 4.0])
+        ratings = np.log([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
         c = climber.Climber(self.initial_prior, gaps)

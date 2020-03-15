@@ -335,7 +335,7 @@ class Climber:
         Parameters
         ----------
         ratings : ndarray
-            Current estimate of gamma ratings for each of this climber's pages.
+            Last estimate of natural ratings for each of this climber's pages.
         bt_d1 : ndarray
             Bradley-Terry derivatives for each of this climber's pages.
         bt_d2 : ndarray
@@ -346,8 +346,7 @@ class Climber:
         ratings : ndarray
             Deltas to subtract from the current ratings.
         """
-        r = np.log(ratings)
-        gradient, hessian = self.get_derivatives(r, bt_d1, bt_d2)
+        gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         return invert_lu_dot_g(lu, gradient)
 
@@ -357,7 +356,7 @@ class Climber:
         Parameters
         ----------
         ratings : ndarray
-            The rating (gamma) for each of the climber's pages.
+            The natural rating for each of the climber's pages.
         bt_d1 : ndarray
             First derivative from the Bradley-Terry model.
         bt_d2 : ndarray
@@ -368,8 +367,7 @@ class Climber:
             The output array for the covariance between the natural ratings of
             each page the next page.
         """
-        r = np.log(ratings)
-        _, hessian = self.get_derivatives(r, bt_d1, bt_d2)
+        _, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         ul = ul_decompose(hessian)
         return invert_lu(lu, ul, var, cov)

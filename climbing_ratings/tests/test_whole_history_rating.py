@@ -72,7 +72,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         ascents_clean = np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
-        routes_grade = [1.0, 1.0, 1.0]
+        routes_grade = [0.0, 0.0, 0.0]
         pages_gap = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
@@ -86,15 +86,15 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
     def test_initialization(self):
         """Test WholeHistoryRating initialization"""
         route_ratings = self.whr.route_ratings
-        self.assert_close([1.0, 1.0, 1.0], route_ratings, "route_ratings")
+        self.assert_close([0.0, 0.0, 0.0], route_ratings, "route_ratings")
 
         page_ratings = self.whr.page_ratings
-        self.assert_close([1.0], page_ratings, "page_ratings")
+        self.assert_close([0.0], page_ratings, "page_ratings")
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings"""
         self.whr.update_page_ratings(True)
-        self.assert_close([1.0, 1.0], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.0, 0.0], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.4], self.whr.page_var, "page_var")
 
     def test_update_route_ratings(self):
@@ -102,7 +102,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         self.whr.update_route_ratings(True)
         # Ratings should not change: both ascents had a 50% probability assuming
         # the initial ratings.
-        self.assert_close([1.0, 1.0, 1.0], self.whr.route_ratings, "route_ratings")
+        self.assert_close([0.0, 0.0, 0.0], self.whr.route_ratings, "route_ratings")
         self.assert_close(
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
         )
@@ -127,7 +127,7 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         ascents_clean = np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
         ascents_page_slices = [(0, 2), (2, 6)]
         pages_climber_slices = [(0, 2)]
-        routes_grade = [1.0, 1.0, 1.0]
+        routes_grade = [0.0, 0.0, 0.0]
         pages_gap = np.array([1.0 / 10.0, 0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
@@ -141,7 +141,7 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings is stable"""
         self.whr.update_page_ratings(True)
-        self.assert_close([1.0, 1.0], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.0, 0.0], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.5, 0.625], self.whr.page_var, "page_var")
 
     def test_get_log_likelihood(self):
@@ -163,7 +163,7 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
-        routes_grade = [1.0, 1.0, 1.0]
+        routes_grade = [0.0, 0.0, 0.0]
         pages_gap = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
@@ -178,7 +178,7 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         """Test WholeHistoryRating.update_page_ratings converges"""
         for _ in range(4):
             self.whr.update_page_ratings(True)
-        self.assert_close([3.64202411], self.whr.page_ratings, "page_ratings")
+        self.assert_close([1.29253960], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.49650051], self.whr.page_var, "page_var")
 
 
@@ -195,7 +195,7 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
-        routes_grade = [1.0, 2.0, 2.0]
+        routes_grade = np.log([1.0, 2.0, 2.0])
         pages_gap = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
@@ -210,7 +210,7 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         """Test WholeHistoryRating.update_page_ratings"""
         for _ in range(4):
             self.whr.update_page_ratings(True)
-        self.assert_close([4.69413661], self.whr.page_ratings, "page_ratings")
+        self.assert_close([1.54631420], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.47001792], self.whr.page_var, "page_var")
 
 
@@ -227,7 +227,7 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         ascents_page_slices = [(0, 4), (4, 6)]
         pages_climber_slices = [(0, 2)]
-        routes_grade = [1.0, 1.0, 1.0]
+        routes_grade = [0.0, 0.0, 0.0]
         pages_gap = np.array([1.0 / 10.0, 0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
@@ -242,7 +242,5 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         """Test WholeHistoryRating.update_page_ratings converges"""
         for _ in range(4):
             self.whr.update_page_ratings(True)
-        self.assert_close(
-            [3.45378219, 4.85897138], self.whr.page_ratings, "page_ratings"
-        )
-        self.assert_close([0.52162231, 1.09620465], self.whr.page_var, "page_var")
+        self.assert_close([1.2394699, 1.5808267], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.5216223, 1.0962046], self.whr.page_var, "page_var")

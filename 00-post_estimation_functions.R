@@ -28,8 +28,8 @@ PredictBradleyTerry <- function(dfs) {
 # Read ratings results from "dir".
 #
 # Expects dir to contain two files:
-# - "page_ratings.csv" containing climber, gamma and var columns
-# - "route_ratings.csv" containing route, gamma and var columns
+# - "page_ratings.csv" containing climber, rating and var columns
+# - "route_ratings.csv" containing route, rating and var columns
 ReadRatings <- function(dir) {
   df_page_ratings <- read.csv(file.path(dir, "page_ratings.csv"),
     colClasses = c("integer", "numeric", "numeric")
@@ -44,14 +44,14 @@ ReadRatings <- function(dir) {
 
 # Updates the data frames in "dfs" with ratings results.
 MergeWithRatings <- function(dfs, ratings) {
-  dfs$pages$gamma <- ratings$pages$gamma
+  dfs$pages$r <- ratings$pages$rating
   dfs$pages$var <- ratings$pages$var
-  dfs$routes$gamma <- ratings$routes$gamma
+  dfs$routes$r <- ratings$routes$rating
   dfs$routes$var <- ratings$routes$var
 
+  dfs$routes$gamma <- exp(dfs$routes$r)
+  dfs$pages$gamma <- exp(dfs$pages$r)
   dfs$ascents$predicted <- PredictBradleyTerry(dfs)
-  dfs$routes$r <- log(dfs$routes$gamma)
-  dfs$pages$r <- log(dfs$pages$gamma)
   dfs
 }
 
@@ -64,7 +64,7 @@ PlotProgression <- function(df_pages, friends) {
     transmute(
       date = as.POSIXct(timestamp, origin = "1970-01-01"),
       climber = recode(climber, !!!friends),
-      r = log(gamma),
+      r = r,
       r_upper = r + qnorm(0.25) * sqrt(var),
       r_lower = r - qnorm(0.25) * sqrt(var)
     )
