@@ -66,6 +66,10 @@ rating
     WHR natural rating for each page.
 var
     Variance of the natural rating for each page.
+cov
+    Covariance of the natural rating for each page with the natural rating
+    of the climber's next page.  The value for the last page of a climber is
+    meaningless.
 """
 
 # Copyright Contributors to the Climbing Ratings project
@@ -186,13 +190,15 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
 
 
-def write_page_ratings(dirname, pages_climber, page_ratings, page_var):
+def write_page_ratings(dirname, pages_climber, page_ratings, page_var, page_cov):
     filename = "%s/page_ratings.csv" % dirname
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
-        writer.writerow(["climber", "rating", "var"])
-        for climber, rating, var in zip(pages_climber, page_ratings, page_var):
-            writer.writerow([climber, rating, var])
+        writer.writerow(["climber", "rating", "var", "cov"])
+        for climber, rating, var, cov in zip(
+            pages_climber, page_ratings, page_var, page_cov
+        ):
+            writer.writerow([climber, rating, var, cov])
 
 
 def parse_args(argv):
@@ -296,7 +302,9 @@ def main(argv):
             output = data
 
         write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
-        write_page_ratings(output, pages_climber, whr.page_ratings, whr.page_var)
+        write_page_ratings(
+            output, pages_climber, whr.page_ratings, whr.page_var, whr.page_cov
+        )
 
 
 if __name__ == "__main__":

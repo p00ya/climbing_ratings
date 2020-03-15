@@ -227,7 +227,7 @@ class WholeHistoryRating:
         self.route_ratings = np.array(routes_rating, dtype=np.float64)
         self.page_ratings = np.full(num_pages, WholeHistoryRating.climber_mean)
         self.page_var = np.empty(num_pages)
-        self.page_cov = np.empty(num_pages)
+        self.page_cov = np.zeros(num_pages)
         self.route_var = np.empty_like(self.route_ratings)
 
         self._pages_climber_slices = pages_climber_slices

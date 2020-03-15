@@ -28,11 +28,11 @@ PredictBradleyTerry <- function(dfs) {
 # Read ratings results from "dir".
 #
 # Expects dir to contain two files:
-# - "page_ratings.csv" containing climber, rating and var columns
+# - "page_ratings.csv" containing climber, rating, var and cov columns
 # - "route_ratings.csv" containing route, rating and var columns
 ReadRatings <- function(dir) {
   df_page_ratings <- read.csv(file.path(dir, "page_ratings.csv"),
-    colClasses = c("integer", "numeric", "numeric")
+    colClasses = c("integer", "numeric", "numeric", "numeric")
   )
 
   df_route_ratings <- read.csv(file.path(dir, "route_ratings.csv"),
@@ -46,6 +46,8 @@ ReadRatings <- function(dir) {
 MergeWithRatings <- function(dfs, ratings) {
   dfs$pages$r <- ratings$pages$rating
   dfs$pages$var <- ratings$pages$var
+  dfs$pages$cov <- ratings$pages$cov
+
   dfs$routes$r <- ratings$routes$rating
   dfs$routes$var <- ratings$routes$var
 
