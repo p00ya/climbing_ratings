@@ -28,10 +28,12 @@ pages.csv
 ---------
 climber
     0-based climber ID.  While there is no separate climbers table, the IDs
-    should behave like an index into such a table.
-gap
-    Time interval from this page to the next page.  The gap for the last page
-    of each climber is not used.
+    should behave like an index into such a table.  Pages corresponding to the
+    same climber must be contiguous.
+timestamp
+    Number representing the time of all ascents for this page.  The pages for a
+    given climber must be ordered by timestamp.  The time unit must be
+    consistent with the "wiener-variance" option.
 
 routes.csv
 ----------
@@ -129,17 +131,17 @@ def read_pages(dirname):
     """Read the pages table."""
     filename = "%s/pages.csv" % dirname
     climbers = []
-    gaps = []
+    timestamps = []
     with open(filename, newline="") as fp:
         reader = iter(csv.reader(fp))
 
-        assert next(reader) == ["climber", "gap"]
+        assert next(reader) == ["climber", "timestamp"]
         for line in reader:
-            climber, gap = line
+            climber, timestamp = line
             climbers.append(int(climber))
-            gaps.append(float(gap))
+            timestamps.append(float(timestamp))
 
-    return (climbers, gaps)
+    return (climbers, timestamps)
 
 
 def extract_slices(values, num_slices):
@@ -251,7 +253,7 @@ def main(argv):
     data = args.data_dir
 
     ascents_route, ascents_clean, ascents_page = read_ascents(data)
-    pages_climber, pages_gap = read_pages(data)
+    pages_climber, pages_timestamp = read_pages(data)
     routes_name, routes_rating = read_routes(data)
 
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
@@ -268,7 +270,7 @@ def main(argv):
         ascents_page_slices,
         pages_climber_slices,
         routes_rating,
-        pages_gap,
+        pages_timestamp,
     )
 
     np.seterr(all="ignore")

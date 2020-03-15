@@ -41,6 +41,25 @@ def expand_to_slices(values, slices, dtype=None):
     return expanded
 
 
+def get_pages_gap(pages_timestamp):
+    """Calculate the time difference from each page to the following page.
+
+    Parameters
+    ----------
+    pages_timestamp : array_like of float
+        The time of the ascents for each page.
+
+    Returns
+    -------
+    ndarray
+        Time interval from each page to the next page.  The gap for the last
+        page of each climber is undefined.
+    """
+    pages_gap = np.array(pages_timestamp)
+    pages_gap[:-1] = pages_gap[1:] - pages_gap[:-1]
+    return pages_gap
+
+
 class Ascents(
     collections.namedtuple(
         "Ascents", ["wins", "slices", "adversary", "clean"], defaults=[None]
@@ -170,8 +189,6 @@ class WholeHistoryRating:
     #     Ascents in route order (no clean).
     # _pages_climber_slices : list of pairs
     #     Start and end indices in _page_ratings for each climber.
-    # _pages_gap : ndarray
-    #     Interval of time between consecutive pages of a climber.
     # _route_priors : NormalDistribution
     #     Distributions for the prior on each route's natural rating.
     # _climbers : list of Climber
@@ -184,7 +201,7 @@ class WholeHistoryRating:
         ascents_page_slices,
         pages_climber_slices,
         routes_rating,
-        pages_gap,
+        pages_timestamp,
     ):
         """Initialize a WHR model.
 
@@ -203,9 +220,8 @@ class WholeHistoryRating:
             climber.
         routes_rating : list
             Initial natural ratings for each route.
-        pages_gap : array_like of float
-            Interval of time between each page and the next page.  The gap for
-            the last page of each climber is not used.
+        pages_timestamp : array_like of float
+            The time of the ascents for each page.
         """
         num_pages = len(ascents_page_slices)
         self.route_ratings = np.array(routes_rating, dtype=np.float64)
@@ -230,8 +246,6 @@ class WholeHistoryRating:
             ascents_clean, ascents_page_slices, ascents_route, len(routes_rating)
         )
 
-        self._pages_gap = pages_gap
-
         self._route_priors = NormalDistribution(
             self.route_ratings, WholeHistoryRating.route_variance
         )
@@ -239,6 +253,9 @@ class WholeHistoryRating:
         climber_prior = NormalDistribution(
             WholeHistoryRating.climber_mean, WholeHistoryRating.climber_variance
         )
+
+        pages_gap = get_pages_gap(pages_timestamp)
+
         self._climbers = []
         for start, end in pages_climber_slices:
             climber = Climber(climber_prior, pages_gap[start : end - 1])

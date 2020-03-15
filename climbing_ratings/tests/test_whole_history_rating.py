@@ -73,14 +73,14 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
         routes_grade = [0.0, 0.0, 0.0]
-        pages_gap = np.array([0.0])
+        pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
             ascents_clean,
             ascents_page_slices,
             pages_climber_slices,
             routes_grade,
-            pages_gap,
+            pages_timestamp,
         )
 
     def test_initialization(self):
@@ -128,14 +128,14 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         ascents_page_slices = [(0, 2), (2, 6)]
         pages_climber_slices = [(0, 2)]
         routes_grade = [0.0, 0.0, 0.0]
-        pages_gap = np.array([1.0 / 10.0, 0.0])
+        pages_timestamp = np.array([0.0, 1.0 / 10.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
             ascents_clean,
             ascents_page_slices,
             pages_climber_slices,
             routes_grade,
-            pages_gap,
+            pages_timestamp,
         )
 
     def test_update_page_ratings(self):
@@ -164,14 +164,14 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
         routes_grade = [0.0, 0.0, 0.0]
-        pages_gap = np.array([0.0])
+        pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
             ascents_clean,
             ascents_page_slices,
             pages_climber_slices,
             routes_grade,
-            pages_gap,
+            pages_timestamp,
         )
 
     def test_update_page_ratings(self):
@@ -196,14 +196,14 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         ascents_page_slices = [(0, 6)]
         pages_climber_slices = [(0, 1)]
         routes_grade = np.log([1.0, 2.0, 2.0])
-        pages_gap = np.array([0.0])
+        pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
             ascents_clean,
             ascents_page_slices,
             pages_climber_slices,
             routes_grade,
-            pages_gap,
+            pages_timestamp,
         )
 
     def test_update_page_ratings(self):
@@ -228,14 +228,14 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         ascents_page_slices = [(0, 4), (4, 6)]
         pages_climber_slices = [(0, 2)]
         routes_grade = [0.0, 0.0, 0.0]
-        pages_gap = np.array([1.0 / 10.0, 0.0])
+        pages_timestamp = np.array([0.0, 1.0 / 10.0])
         self.whr = whole_history_rating.WholeHistoryRating(
             ascents_route,
             ascents_clean,
             ascents_page_slices,
             pages_climber_slices,
             routes_grade,
-            pages_gap,
+            pages_timestamp,
         )
 
     def test_update_page_ratings(self):

@@ -347,16 +347,10 @@ NormalizeTables <- function(df, period_length) {
   first_page <- (df_pages %>% group_by(climber) %>% summarise(n = n()) %>%
     mutate(idx = head(cumsum(c(1, n)), -1)))$idx
 
-  # time relative to the first ascent from the same climber
-  df_pages$rel_t <- df_pages$t - df_pages$t[first_page[df_pages$climber]]
-  # time relative to the next page for the same climber (meaningless for last
-  # page of each climber).
-  df_pages$gap <- c(diff(df_pages$rel_t), 0)
-
   df_pages <- df_pages %>%
     ungroup() %>%
     mutate(page = row_number()) %>%
-    select(climber, t, gap, page, timestamp)
+    select(climber, t, page, timestamp)
 
   df_ascents <- df_ascents %>%
     inner_join(df_pages, by = c("climber", "t")) %>%
@@ -399,7 +393,7 @@ WriteNormalizedTables <- function(dfs, dir) {
   )
   write.csv(
     dfs$pages %>%
-      select(climber, gap) %>%
+      select(climber, timestamp = t) %>%
       mutate(climber = as.integer(climber) - 1),
     file.path(dir, "pages.csv"),
     row.names = FALSE
