@@ -172,8 +172,8 @@ class WholeHistoryRating:
     #     Start and end indices in _page_ratings for each climber.
     # _pages_gap : ndarray
     #     Interval of time between consecutive pages of a climber.
-    # _route_priors : GammaDistribution
-    #     Distributions for the gamma prior on each route's rating.
+    # _route_priors : LogNormalDistribution
+    #     Distributions for the prior on each route's gamma rating.
     # _climbers : list of Climber
     #     Climbers (in the same order as _pages_climber_slices).
 
