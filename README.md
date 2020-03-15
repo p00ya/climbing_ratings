@@ -20,6 +20,10 @@ Notable differences are:
 -   The normal distribution is used for the prior distribution of route and initial climber ratings.
 -   A "page" is the model of a climber in a particular time interval (like a page in a climber's logbook).  This is equivalent to a player on a particular day in WHR, except that the time may be quantized with lower resolution (e.g. a week).
 
+Results of analyzing a database of Australian ascents with this software are discussed in the paper:
+
+> Dean Scarff, "Estimation of Climbing Route Difficulty using Whole-History Rating", [arXiv:2001.05388](https://arxiv.org/abs/2001.05388) [stat.AP], 2020.
+
 ## Contents and Usage
 
 ### Python library
