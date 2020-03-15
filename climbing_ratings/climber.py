@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import collections
+import math
 import numpy as np
 from .climber_helpers import (
     add_wiener_gradient,
@@ -23,7 +24,7 @@ from .climber_helpers import (
     solve_x,
     solve_y,
 )
-from .log_normal_distribution import LogNormalDistribution
+from .normal_distribution import NormalDistribution
 
 
 class TriDiagonal(collections.namedtuple("TriDiagonal", ["d", "u", "l"])):
@@ -246,7 +247,7 @@ class Climber:
 
     # Private attributes
     # -------------------
-    # _initial_prior : LogNormalDistribution
+    # _initial_prior : NormalDistribution
     #     The prior distribution for the first page of the climber.
     # _one_on_sigma_sq : array of float
     #     The Wiener variance between each page and the next page.  The length
@@ -260,7 +261,7 @@ class Climber:
 
         Parameters
         ----------
-        initial_prior : LogNormalDistribution
+        initial_prior : NormalDistribution
             Prior distribution for the first page of the climber.
         gaps : ndarray
             gaps[i] is the time interval between the page i and page i + 1.
@@ -298,7 +299,7 @@ class Climber:
         Parameters
         ----------
         ratings : ndarray
-            The rating (gamma) for each of the climber's pages.
+            The natural rating for each of the climber's pages.
         bt_d1 : ndarray
             First derivative from the Bradley-Terry model.
         bt_d2 : ndarray
@@ -320,7 +321,7 @@ class Climber:
         gradient += bt_d1
         hd += bt_d2
 
-        # First page Log-Normal terms.
+        # First page Gaussian terms.
         initial_d = self._initial_prior.get_derivatives(ratings[0])
         gradient[0] += initial_d[0]
         hd[0] += initial_d[1]
@@ -334,7 +335,7 @@ class Climber:
         Parameters
         ----------
         ratings : ndarray
-            Current estimate of ratings for each of this climber's pages.
+            Current estimate of gamma ratings for each of this climber's pages.
         bt_d1 : ndarray
             Bradley-Terry derivatives for each of this climber's pages.
         bt_d2 : ndarray
@@ -345,7 +346,8 @@ class Climber:
         ratings : ndarray
             Deltas to subtract from the current ratings.
         """
-        gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
+        r = np.log(ratings)
+        gradient, hessian = self.get_derivatives(r, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         return invert_lu_dot_g(lu, gradient)
 
@@ -366,7 +368,8 @@ class Climber:
             The output array for the covariance between the natural ratings of
             each page the next page.
         """
-        _, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
+        r = np.log(ratings)
+        _, hessian = self.get_derivatives(r, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         ul = ul_decompose(hessian)
         return invert_lu(lu, ul, var, cov)

@@ -30,7 +30,7 @@ class TestClimberHelpers(unittest.TestCase):
     def test_add_wiener_gradient(self):
         """Test add_wiener_gradient()"""
         one_on_sigma_sq = np.array([1.0])
-        ratings = np.exp([1.0, 2.0])
+        ratings = np.array([1.0, 2.0])
         gradient = np.zeros(2)
         climber_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
         self.assert_close([1.0, -1.0], gradient, "gradient")

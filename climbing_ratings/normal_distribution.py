@@ -1,4 +1,4 @@
-"""Log-normal distribution"""
+"""Normal distribution"""
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -18,9 +18,8 @@
 import numpy as np
 
 
-class LogNormalDistribution:
-    """Models variables whose logarithm is drawn from a normal distribution.
-    """
+class NormalDistribution:
+    """Models variables drawn from a Gaussian distribution."""
 
     def __init__(self, mu, sigma_sq):
         """
@@ -37,9 +36,6 @@ class LogNormalDistribution:
     def get_derivatives(self, x):
         """Return the first and second derivative of the log-likelihood.
 
-        Note these are the derivatives of "ln P" with respect to "ln x", not
-        with respect to x.
-
         This method is vectorized: it will pair the distribution parameters
         from the initialization to each value of "x", and return an array of
         the same length.
@@ -52,10 +48,9 @@ class LogNormalDistribution:
         Returns
         -------
         (d1 : ndarray, d2 : ndarray)
-            The first and second derivatives of the log-PDF wrt log(x),
-            evaluated at x.
+            The first and second derivatives of the log-PDF, evaluated at x.
         """
-        y = np.log(x)
+        y = np.copy(x)
         y -= self._mu
         y /= -self._sigma_sq
 

@@ -36,7 +36,7 @@ def add_wiener_gradient(
     one_on_sigma_sq : contiguous ndarray with length N - 1
         Reciprocal of the Wiener variance between each page and the next page.
     ratings : contiguous ndarray with length N
-        The rating (gamma) for each page.
+        The natural rating for each page.
     gradient : contiguous ndarray with length N
         Output array for the first derivative of the log likelihood with
         respect to the rating for each page.
@@ -48,11 +48,7 @@ def add_wiener_gradient(
     cdef double d
     cdef Py_ssize_t i
     for i in range(end):
-        # -(r[t] - r[t+1]) = r[t+1] - r[t]
-        # = log(gamma[t+1]) - log(gamma[t])
-        # = log(gamma[t+1] / gamma[t])
-
-        d = log(ratings[i + 1] / ratings[i])
+        d = ratings[i + 1] - ratings[i]
         d *= one_on_sigma_sq[i]
         gradient[i] += d
         gradient[i + 1] -= d

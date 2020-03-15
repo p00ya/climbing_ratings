@@ -20,7 +20,7 @@ import itertools
 import numpy as np
 from .bradley_terry import get_bt_derivatives
 from .climber import Climber
-from .log_normal_distribution import LogNormalDistribution
+from .normal_distribution import NormalDistribution
 
 
 def expand_to_slices(values, slices, dtype=None):
@@ -172,8 +172,8 @@ class WholeHistoryRating:
     #     Start and end indices in _page_ratings for each climber.
     # _pages_gap : ndarray
     #     Interval of time between consecutive pages of a climber.
-    # _route_priors : LogNormalDistribution
-    #     Distributions for the prior on each route's gamma rating.
+    # _route_priors : NormalDistribution
+    #     Distributions for the prior on each route's natural rating.
     # _climbers : list of Climber
     #     Climbers (in the same order as _pages_climber_slices).
 
@@ -232,11 +232,11 @@ class WholeHistoryRating:
 
         self._pages_gap = pages_gap
 
-        self._route_priors = LogNormalDistribution(
+        self._route_priors = NormalDistribution(
             np.log(self.route_ratings), WholeHistoryRating.route_variance
         )
 
-        climber_prior = LogNormalDistribution(
+        climber_prior = NormalDistribution(
             WholeHistoryRating.climber_mean, WholeHistoryRating.climber_variance
         )
         self._climbers = []
@@ -313,7 +313,8 @@ class WholeHistoryRating:
         )
 
         # Prior terms.
-        prior_d1, prior_d2 = self._route_priors.get_derivatives(self.route_ratings)
+        r = np.log(self.route_ratings)
+        prior_d1, prior_d2 = self._route_priors.get_derivatives(r)
         d1 += prior_d1
         d2 += prior_d2
 

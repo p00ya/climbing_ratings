@@ -17,7 +17,7 @@
 import unittest
 import numpy as np
 from .. import climber
-from ..log_normal_distribution import LogNormalDistribution
+from ..normal_distribution import NormalDistribution
 from .assertions import assert_close
 
 
@@ -106,7 +106,7 @@ class TestClimber(unittest.TestCase):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
         climber.Climber.wiener_variance = 1.0
-        self.initial_prior = LogNormalDistribution(0.0, 1.0)
+        self.initial_prior = NormalDistribution(0.0, 1.0)
 
     def test_init(self):
         """Test Climber initializes one_on_sigma_sq and wiener_d2"""
