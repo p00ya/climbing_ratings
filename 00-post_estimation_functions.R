@@ -59,24 +59,31 @@ MergeWithRatings <- function(dfs, ratings) {
 
 # Plots the timeseries of rating estimates for a set of climbers.  The "friends"
 # parameter should be a named vector where the names are the climber levels and
-# the values are corresponding labels to apply in the plot.
-PlotProgression <- function(df_pages, friends) {
+# the values are corresponding labels to apply in the plot.  Level is the width
+# of the intervals, and wsq is the Wiener variance per second (should be
+# consistent with the estimation --wiener-variance flag, but potentially with
+# different units).
+# Requires "00-wiener_smooth.R" to be sourced.
+PlotProgression <- function(df_pages, friends, level = 0.5,
+                            wsq = 1 / (86400 * 7 * 52)) {
   df_friends <- df_pages %>%
     filter(climber %in% names(friends)) %>%
     transmute(
       date = as.POSIXct(timestamp, origin = "1970-01-01"),
       climber = recode(climber, !!!friends),
       r = r,
-      r_upper = r + qnorm(0.25) * sqrt(var),
-      r_lower = r - qnorm(0.25) * sqrt(var)
+      var = var,
+      cov = cov
     )
   ggplot(
     df_friends,
     aes(date, r, color = climber)
   ) +
-    geom_smooth(
-      aes(ymin = r_lower, ymax = r_upper, fill = climber),
-      stat = "identity"
+    stat_wiener_smooth(
+      aes(var = var, cov = cov, fill = climber),
+      wsq = wsq, # consistent with
+      level = level,
+      n = 1000L
     )
 }
 
