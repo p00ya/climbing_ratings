@@ -79,6 +79,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
     df_friends,
     aes(date, r, color = climber)
   ) +
+    geom_point() +
     stat_wiener_smooth(
       aes(var = var, cov = cov, fill = climber),
       wsq = wsq, # consistent with
