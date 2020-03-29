@@ -1,4 +1,4 @@
-# Unit tests for 00-data_prep_functions.R
+# Unit tests for json.R
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -15,44 +15,8 @@
 # limitations under the License.
 
 
-context("Tests for data_prep_functions.R")
+context("Tests for json.R")
 
-
-describe("NormalizeAscentType", {
-  it("converts to lower-case", {
-    expect_equal(
-      NormalizeAscentType(c("TopRope", "Clean")),
-      c("toprope", "clean")
-    )
-  })
-  it("removes spaces", {
-    expect_equal(
-      NormalizeAscentType(c("top rope", "top rope solo")),
-      c("toprope", "topropesolo")
-    )
-  })
-  it("rewrites hangdog to dog", {
-    expect_equal(
-      NormalizeAscentType("Hang Dog"),
-      "dog"
-    )
-  })
-})
-
-describe("TransformGrade", {
-  it("applies scaling", {
-    expect_equal(
-      TransformGrade(0:2, 1, 0),
-      0:2
-    )
-  })
-  it("applies ref translation", {
-    expect_equal(
-      TransformGrade(0:2, 1, 1),
-      -1:1
-    )
-  })
-})
 
 describe(".AsIntegerOrNA", {
   it("applies idx", {
