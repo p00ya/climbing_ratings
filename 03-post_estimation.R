@@ -14,15 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Make sure to:
-#   source("01-data_prep.R")
-#   source("00-post_estimation_functions.R")
-# before sourcing this script.
 
+library(climbr)
 library(dplyr)
 library(ggplot2)
 library(grid)
-
 
 # Assume 01-data_prep.R has already been sourced and 02-run_estimation.py has
 # already been run.

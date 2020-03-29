@@ -1,4 +1,4 @@
-# Goldens test for 01-data_prep_json.R
+# Goldens test for 01-data_prep.R
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -15,22 +15,20 @@
 # limitations under the License.
 
 
-context("Tests for 01-data_prep_json.R")
+context("Tests for 01-data_prep.R")
 
-suppressMessages(source("../00-data_prep_functions.R"))
-
-src_dir <- "testdata/json"
+src_dir <- "testdata"
 data_dir <- tempfile("dir")
 
 setup({
   # Create temporary directory and copy testdata data there.
   dir.create(data_dir)
   file.copy(
-    file.path(src_dir, "ascents-001.json"),
+    file.path(src_dir, "raw_ascents.csv"),
     file.path(data_dir)
   )
 
-  source("../01-data_prep_json.R", local = TRUE)
+  source("../01-data_prep.R", local = TRUE)
 })
 
 teardown({
@@ -47,7 +45,7 @@ ExpectCsvsEqual <- function(filename) {
   expect_equal(actual, expected)
 }
 
-test_that("data_prep_json outputs match goldens", {
+test_that("data_prep outputs match goldens", {
   ExpectCsvsEqual("ascents.csv")
   ExpectCsvsEqual("pages.csv")
   ExpectCsvsEqual("routes.csv")

@@ -18,10 +18,9 @@
 # json_dir <- "json"
 # period_length <- 604800 # seconds in 1 week
 
-library(caret)
 
-source("00-data_prep_functions.R")
-source("00-post_estimation_functions.R")
+library(caret)
+library(climbr)
 
 # Creates a model object for fitting climbing ratings.
 #

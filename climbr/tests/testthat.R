@@ -1,4 +1,4 @@
-# Normalize a table of ascents into ascent, page and route tables.
+# Shim for bridging R CMD check and climbr's testthat unit tests.
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -14,27 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+library(testthat)
 library(climbr)
 
-period_length <- 604800 # seconds in 1 week
-
-# Read in the ascents table.
-df_raw <- read.csv(
-  file.path(data_dir, "raw_ascents.csv"),
-  comment.char = "#",
-  colClasses = c(
-    ascentId = "character",
-    route = "factor",
-    climber = "factor",
-    tick = "factor",
-    grade = "integer",
-    timestamp = "integer"
-  )
-)
-
-df_clean <- CleanAscents(df_raw)
-message(SummarizeAscents(df_clean))
-dfs <- NormalizeTables(df_clean, period_length)
-dfs$routes <- dplyr::mutate(dfs$routes, rating = TransformGrade(grade))
-WriteNormalizedTables(dfs, data_dir)
+test_check("climbr")

@@ -1,4 +1,4 @@
-# Unit tests for 00-wiener_smooth.R
+# Unit tests for wiener_smooth.R
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -15,9 +15,8 @@
 # limitations under the License.
 
 
-context("Tests for 00-wiener_smooth.R")
+context("Tests for wiener_smooth.R")
 
-source("../00-wiener_smooth.R")
 
 describe("WienerSmooth", {
   it("applies formula", {
@@ -34,22 +33,22 @@ describe("WienerSmooth", {
   })
 })
 
-describe("AlignForInterpolation", {
+describe(".AlignForInterpolation", {
   it("with a == b", {
     expect_equal(
-      AlignForInterpolation(c(10, 20), c(10, 20)),
+      .AlignForInterpolation(c(10, 20), c(10, 20)),
       c(2, 3)
     )
   })
   it("with interpolated values", {
     expect_equal(
-      AlignForInterpolation(c(0, 3, 6, 8), c(0, 4, 8)),
+      .AlignForInterpolation(c(0, 3, 6, 8), c(0, 4, 8)),
       c(2, 2, 3, 4)
     )
   })
   it("with non-increasing values", {
-    expect_error(AlignForInterpolation(c(20, 10), c(10, 20)))
-    expect_error(AlignForInterpolation(c(10, 20), c(20, 10)))
+    expect_error(.AlignForInterpolation(c(20, 10), c(10, 20)))
+    expect_error(.AlignForInterpolation(c(10, 20), c(20, 10)))
   })
 })
 

@@ -15,9 +15,8 @@
 # limitations under the License.
 
 
-context("Tests for 00-data_prep_functions.R")
+context("Tests for data_prep_functions.R")
 
-source("../00-data_prep_functions.R")
 
 describe("NormalizeAscentType", {
   it("converts to lower-case", {
@@ -55,37 +54,37 @@ describe("TransformGrade", {
   })
 })
 
-describe("AsIntegerOrNA", {
+describe(".AsIntegerOrNA", {
   it("applies idx", {
-    expect_equal(AsIntegerOrNA(list(1L, 10L), 2), 10L)
+    expect_equal(.AsIntegerOrNA(list(1L, 10L), 2), 10L)
   })
   it("returns integers unmodified", {
-    expect_equal(AsIntegerOrNA(1L), 1L)
+    expect_equal(.AsIntegerOrNA(1L), 1L)
   })
   it("replaces NULL values with NA", {
-    expect_equal(AsIntegerOrNA(NULL), NA)
+    expect_equal(.AsIntegerOrNA(NULL), NA)
   })
 })
 
-describe("AsCharacterOrNA", {
+describe(".AsCharacterOrNA", {
   it("applies idx", {
-    expect_equal(AsCharacterOrNA(list("a", "b"), 2), "b")
+    expect_equal(.AsCharacterOrNA(list("a", "b"), 2), "b")
   })
   it("returns characters unmodified", {
-    expect_equal(AsCharacterOrNA("a"), "a")
+    expect_equal(.AsCharacterOrNA("a"), "a")
   })
   it("replaces NULL values with NA", {
-    expect_equal(AsCharacterOrNA(NULL), NA)
+    expect_equal(.AsCharacterOrNA(NULL), NA)
   })
 })
 
-test_that("FlattenInt converts lists to atomic integer vectors", {
-  expect_equal(FlattenInt(list(list(1L, 2L), NULL, list(3L))), c(1L, NA, 3L))
+test_that(".FlattenInt converts lists to atomic integer vectors", {
+  expect_equal(.FlattenInt(list(list(1L, 2L), NULL, list(3L))), c(1L, NA, 3L))
 })
 
-test_that("FlattenChr converts lists to atomic character vectors", {
+test_that(".FlattenChr converts lists to atomic character vectors", {
   expect_equal(
-    FlattenChr(list(list("a", "b"), NULL, list("c"))),
+    .FlattenChr(list(list("a", "b"), NULL, list("c"))),
     c("a", NA, "c")
   )
 })

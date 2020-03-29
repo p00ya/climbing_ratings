@@ -58,6 +58,16 @@ Tests can be run using:
 python3 -m unittest discover -s tests
 ```
 
+### R package
+
+The `climbr` sub-directory contains an R package with utility functions for data preparation and results analysis.  Those functions are called from the top-level R scripts.
+
+Tests can be run using:
+
+```
+Rscript --vanilla -e 'devtools::check("climbr")'
+```
+
 ### R scripts
 
 A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  The scripts use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  The packages can be installed from R:
@@ -66,9 +76,9 @@ A collection of R scripts are used for data preparation and results analysis.  T
 install.packages(c("tidyverse", "jsonlite", "caret"))
 ```
 
-Together, `00-data_prep_functions.R` and `01-data_prep.R` create appropriate input CSV files for `02-run_estimation.py`.
+`01-data_prep.R` creates appropriate input CSV files for `02-run_estimation.py`.
 
-Together, `00-post_estimation_functions.R` and `03-post_estimation.R` merge the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.  `00-wiener_smooth.R` provides some additional functions required for `PlotProgression`.
+`03-post_estimation.R` merges the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
 
 The `cross_validation.R` script performs repeated k-fold cross-validation on the model.
 
@@ -76,10 +86,10 @@ With the file `data/raw_ascents.csv` already present, the entire pipeline can be
 
 ```
 data_dir <- "data"
-source("00-data_prep_functions.R")
+devtools::load_all("climbr")
+library(climbr)
 source("01-data_prep.R")
 system2("./02-run_estimation.py", data_dir)
-source("00-post_estimation_functions.R")
 source("03-post_estimation.R")
 ```
 

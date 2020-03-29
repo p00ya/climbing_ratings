@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Make sure to source("00-data_prep_functions.R") before sourcing this script.
+
+library(climbr)
 
 period_length <- 604800 # seconds in 1 week
 
@@ -30,7 +31,7 @@ df_clean <- CleanAscents(df_raw)
 message(SummarizeAscents(df_clean))
 
 dfs <- NormalizeTables(df_clean, period_length)
-dfs$routes <- mutate(
+dfs$routes <- dplyr::mutate(
   dfs$routes,
   rating = TransformGrade(grade, 0.02, ref = 259)
 )
