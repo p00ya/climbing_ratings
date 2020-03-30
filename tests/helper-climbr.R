@@ -16,3 +16,14 @@
 
 devtools::load_all("../climbr")
 library(climbr)
+
+#' Asserts that two CSV files have identical contents.
+#'
+#' @param filename character basename of both CSV files.
+#' @param src_dir character directory containing the golden file.
+#' @param data_dir character directory containg the test file.
+ExpectCsvsEqual <- function(filename, src_dir, data_dir) {
+  actual_file <- file.path(data_dir, filename)
+  expected_file <- file.path(src_dir, filename)
+  expect_equal(read.csv(!!actual_file), read.csv(!!expected_file))
+}

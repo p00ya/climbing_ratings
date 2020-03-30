@@ -36,18 +36,14 @@ teardown({
   suppressWarnings(unlink(data_dir, recursive = TRUE))
 })
 
-# Asserts that two CSV files both named "filename" in the src_dir and data_dir
-# have identical contents.
-ExpectCsvsEqual <- function(filename) {
-  actual_file <- file.path(data_dir, filename)
-  expected_file <- file.path(src_dir, filename)
-  actual <- read.csv(actual_file)
-  expected <- read.csv(expected_file)
-  expect_equal(actual, expected)
-}
-
-test_that("data_prep_json outputs match goldens", {
-  ExpectCsvsEqual("ascents.csv")
-  ExpectCsvsEqual("pages.csv")
-  ExpectCsvsEqual("routes.csv")
+describe("data_prep_json", {
+  it("ascents.csv matches golden", {
+    ExpectCsvsEqual("ascents.csv", src_dir, data_dir)
+  })
+  it("pages.csv matches golden", {
+    ExpectCsvsEqual("pages.csv", src_dir, data_dir)
+  })
+  it("routes.csv matches golden", {
+    ExpectCsvsEqual("routes.csv", src_dir, data_dir)
+  })
 })
