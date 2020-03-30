@@ -1,12 +1,13 @@
 # .gitignore
 
+.*
 *.pyc
 *.c
 *.so
+*.tar.gz
 /dist/
 /build/
 /*.egg-info
 /*.egg
-
+/data
 /climbr/man
-
