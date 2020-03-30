@@ -27,7 +27,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
                             wsq = 1 / (86400 * 7 * 52)) {
   df_friends <- df_pages %>%
     dplyr::filter(.data$climber %in% names(friends)) %>%
-    transform(
+    dplyr::mutate(
       date = as.POSIXct(.data$timestamp, origin = "1970-01-01"),
       climber = dplyr::recode(.data$climber, !!!friends)
     ) %>%
@@ -55,7 +55,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
 PlotSelectedRoutes <- function(df_routes, selected, alpha = 0.05) {
   df <- df_routes %>%
     dplyr::filter(.data$route %in% names(selected)) %>%
-    transform(
+    dplyr::mutate(
       error = qnorm(alpha / 2, sd = sqrt(.data$var)),
       route = dplyr::recode(.data$route, !!!selected)
     )
