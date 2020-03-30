@@ -1,0 +1,14 @@
+# https://travis-ci.com/github/p00ya/climbing_ratings
+
+language: python
+python:
+  - "3.7"
+install:
+  - python3 -VV
+  - pip3 install setuptools cython numpy
+  - python3 setup.py develop
+  - pip3 freeze --all
+  - env
+script:
+  - python3 setup.py test
+  - python3 -m unittest discover -s tests
