@@ -1,14 +1,57 @@
-# https://travis-ci.com/github/p00ya/climbing_ratings
+# Travis CI build configuration.
 
+# Copyright Contributors to the Climbing Ratings project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# See status at https://travis-ci.com/github/p00ya/climbing_ratings
+
+jobs:
+  include:
+    - language: python
+      python: "3.7"
+      install:
+        - python3 -VV
+        - pip3 install setuptools cython numpy
+        - python3 setup.py develop
+        - pip3 freeze --all
+        - env
+      env:
+        CC: clang
+      script:
+        - python3 setup.py test
+        - python3 -m unittest discover -s tests
+    - language: r
+      r: "3.6.2"
+      use_devtools: true
+      # These things are big and slow.
+      pandoc: false
+      latex: false
+      before_install:
+        # Use Travis's default installation logic, which assumes the working
+        # directory is an R package.
+        - cd climbr
+      before_script:
+        # Change back to the top-level directory before running tests.
+        - cd "$TRAVIS_BUILD_DIR"
+      script:
+        - Rscript --vanilla -e 'devtools::test("climbr")'
+        - Rscript --vanilla -e 'testthat::test_dir("tests")'
 language: python
-python:
-  - "3.7"
-install:
-  - python3 -VV
-  - pip3 install setuptools cython numpy
-  - python3 setup.py develop
-  - pip3 freeze --all
-  - env
-script:
-  - python3 setup.py test
-  - python3 -m unittest discover -s tests
+os: linux
+env:
+  TZ: UTC
+cache:
+  packages: true
+  pip: true
