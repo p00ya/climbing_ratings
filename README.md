@@ -113,7 +113,7 @@ source("01-data_prep_json.R")
 Tests can be run using:
 
 ```
-Rscript --vanilla -e 'testthat::test_dir("tests")'
+TZ=UTC Rscript --vanilla -e 'testthat::test_dir("tests")'
 ```
 
 ## Interpreting ratings

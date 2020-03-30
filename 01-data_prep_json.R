@@ -18,6 +18,9 @@
 library(climbr)
 
 period_length <- 604800 # seconds in 1 week
+if (!exists("now")) {
+  now <- Sys.time()
+}
 
 df_raw <- ReadAllJsonAscents(data_dir)
 message(
@@ -27,7 +30,7 @@ message(
     prettyNum(nlevels(df_raw$route), big.mark = ","), "routes\n"
   )
 )
-df_clean <- CleanAscents(df_raw)
+df_clean <- CleanAscents(df_raw, max_time = now)
 message(SummarizeAscents(df_clean))
 
 dfs <- NormalizeTables(df_clean, period_length)

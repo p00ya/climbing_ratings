@@ -18,6 +18,9 @@
 library(climbr)
 
 period_length <- 604800 # seconds in 1 week
+if (!exists("now")) {
+  now <- Sys.time()
+}
 
 # Read in the ascents table.
 df_raw <- read.csv(
@@ -33,7 +36,7 @@ df_raw <- read.csv(
   )
 )
 
-df_clean <- CleanAscents(df_raw)
+df_clean <- CleanAscents(df_raw, max_time = now)
 message(SummarizeAscents(df_clean))
 dfs <- NormalizeTables(df_clean, period_length)
 dfs$routes <- dplyr::mutate(dfs$routes, rating = TransformGrade(grade))

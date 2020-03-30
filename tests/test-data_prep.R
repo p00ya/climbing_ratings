@@ -19,6 +19,7 @@ context("Tests for 01-data_prep.R")
 
 src_dir <- "testdata"
 data_dir <- tempfile("dir")
+now <- 1582243200L # 2020-02-21
 
 setup({
   # Create temporary directory and copy testdata data there.
