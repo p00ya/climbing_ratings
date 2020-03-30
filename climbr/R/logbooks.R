@@ -39,10 +39,10 @@ ReadLogbook <- function(filename) {
       .data$Ascent.Date
     ) %>%
     dplyr::mutate(
-      route = factor(.data$Route.ID),
-      climber = .data$climber,
-      tick = factor(NormalizeAscentType(.data$Ascent.Type)),
-      grade = as.integer(.data$Route.Grade),
+      route = .data$Route.ID,
+      climber = climber,
+      tick = NormalizeAscentType(.data$Ascent.Type),
+      grade = suppressWarnings(as.integer(.data$Route.Grade)),
       timestamp = .data$Ascent.Date %>%
         as.POSIXct(format = "%FT%H:%M:%SZ", optional = TRUE) %>%
         as.integer()
