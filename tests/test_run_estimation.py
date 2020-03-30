@@ -17,7 +17,7 @@
 # limitations under the License.
 
 import contextlib
-import filecmp
+import csv
 import os.path
 import shutil
 import subprocess
@@ -43,13 +43,39 @@ class TestRunEstimation(unittest.TestCase):
         return os.path.join("tests", "testdata", filename)
 
     def assert_matches_golden(self, filename):
-        """Raise an exception if the golden and generated files do not match."""
-        is_equal = filecmp.cmp(
-            os.path.join("tests", "testdata", filename),
-            os.path.join(self._tmpdir.name, filename),
-        )
-        if not is_equal:
-            raise self.failureException("%s did not match golden" % filename)
+        """Raise an exception if the golden and generated CSVs do not match.
+
+        Assumes the first row and first column can be compared as strings,
+        while all other cells are compared approximately as floating points.
+        """
+        try:
+            fp_actual = open(
+                os.path.join(self._tmpdir.name, filename), newline=""
+            )
+            fp = open(self.get_golden(filename), newline="")
+            reader_actual = iter(csv.reader(fp_actual))
+            reader = iter(csv.reader(fp))
+
+            # Check header rows.
+            self.assertEqual(next(reader_actual), next(reader))
+
+            for line, goldens in enumerate(reader):
+                actuals = next(reader_actual)
+
+                for i, _ in enumerate(goldens):
+                    msg = "did not match golden at %s:%d" % (filename, line + 1)
+                    if i == 0:
+                        self.assertEqual(actuals[i], goldens[i], msg)
+                    else:
+                        # Tolerate small differences in floating point values.
+                        self.assertAlmostEqual(
+                            float(actuals[i]), float(goldens[i]),
+                            msg=msg
+                        )
+
+        finally:
+            fp.close()
+            fp_actual.close()
 
     def test_run_estimation(self):
         """Test run_estimation"""
