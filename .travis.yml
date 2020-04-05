@@ -50,7 +50,7 @@ jobs:
         - cd "$TRAVIS_BUILD_DIR"
       script:
         - Rscript --vanilla -e 'quit(status = any(styler::style_dir()$changed))'
-        - Rscript --vanilla -e 'devtools::test("climbr")'
+        - Rscript --vanilla -e 'devtools::check("climbr")'
         - Rscript --vanilla -e 'testthat::test_dir("tests")'
 language: python
 os: linux
