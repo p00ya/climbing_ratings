@@ -23,13 +23,14 @@ jobs:
       python: "3.7"
       install:
         - python3 -VV
-        - pip3 install setuptools cython numpy
+        - pip3 install setuptools cython numpy black
         - python3 setup.py develop
         - pip3 freeze --all
         - env
       env:
         CC: clang
       script:
+        - python3 -m black --check climbing_ratings setup.py tests/*.py
         - python3 setup.py test
         - python3 -m unittest discover -s tests
     - language: r
