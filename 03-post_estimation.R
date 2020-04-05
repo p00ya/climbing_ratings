@@ -39,27 +39,31 @@ log_loss <- -mean(log(ifelse(
 
 # Plots the "predicted" probability of clean ascents vs the actual proportion
 # of clean ascents.  Ideally the fit follows the y=x line.
-accuracy_plot <- ggplot(dfs$ascents, aes(predicted, clean)) + geom_smooth() +
+accuracy_plot <- ggplot(dfs$ascents, aes(predicted, clean)) +
+  geom_smooth() +
   geom_abline(slope = 1)
 
 # Indicates the relative frequency of different prediction values.  A weak
 # model would have a mode near the "average" number of clean ascents; i.e.
 # it isn't adding much value over summary statistics.
-prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) + geom_density()
+prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) +
+  geom_density()
 
 # Plots the residuals vs the conventional grade of routes.  Ideally the fit
 # follows the y=0 line.
 residuals_grade_plot <- ggplot(
   dfs$ascents %>% inner_join(dfs$routes, by = "route"),
   aes(grade, clean - predicted)
-) + geom_smooth()
+) +
+  geom_smooth()
 
 # Plots the residuals vs the estimated natural route rating.  Ideally the fit
 # follows the y=0 line.
 residuals_route_rating_plot <- ggplot(
   dfs$ascents %>% inner_join(dfs$routes, by = "route"),
   aes(r, clean - predicted)
-) + geom_smooth()
+) +
+  geom_smooth()
 
 # Plots conventional grades vs the estimated "natural rating" of routes.
 # Outliers are labeled.
