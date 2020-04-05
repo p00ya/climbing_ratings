@@ -49,9 +49,7 @@ class TestRunEstimation(unittest.TestCase):
         while all other cells are compared approximately as floating points.
         """
         try:
-            fp_actual = open(
-                os.path.join(self._tmpdir.name, filename), newline=""
-            )
+            fp_actual = open(os.path.join(self._tmpdir.name, filename), newline="")
             fp = open(self.get_golden(filename), newline="")
             reader_actual = iter(csv.reader(fp_actual))
             reader = iter(csv.reader(fp))
@@ -69,8 +67,7 @@ class TestRunEstimation(unittest.TestCase):
                     else:
                         # Tolerate small differences in floating point values.
                         self.assertAlmostEqual(
-                            float(actuals[i]), float(goldens[i]),
-                            msg=msg
+                            float(actuals[i]), float(goldens[i]), msg=msg
                         )
 
         finally:
