@@ -39,6 +39,8 @@ jobs:
       # These things are big and slow.
       pandoc: false
       latex: false
+      r_packages:
+        - styler
       before_install:
         # Use Travis's default installation logic, which assumes the working
         # directory is an R package.
@@ -47,6 +49,7 @@ jobs:
         # Change back to the top-level directory before running tests.
         - cd "$TRAVIS_BUILD_DIR"
       script:
+        - Rscript --vanilla -e 'quit(status = any(styler::style_dir()$changed))'
         - Rscript --vanilla -e 'devtools::test("climbr")'
         - Rscript --vanilla -e 'testthat::test_dir("tests")'
 language: python
