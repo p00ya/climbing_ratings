@@ -39,7 +39,7 @@ python3 setup.py build
 Unit tests can be run using:
 
 ```
-python3 setup.py test
+python3 -m pytest climbing_ratings
 ```
 
 ### Estimation script
@@ -55,7 +55,8 @@ It will typically run in less than 5 seconds per 100,000 ascents (measured on an
 Tests can be run using:
 
 ```
-python3 -m unittest discover -s tests
+python3 setup.py build_ext --inplace
+python3 -m pytest tests
 ```
 
 ### R package

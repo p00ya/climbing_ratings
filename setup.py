@@ -74,7 +74,7 @@ if __name__ == "__main__":
         install_requires=["numpy"],
         setup_requires=["cython"],
         test_suite="climbing_ratings.tests.test_suite",
-        tests_require=["numpy"],
+        tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
             [bradley_terry, climber_helpers],
             compiler_directives={
