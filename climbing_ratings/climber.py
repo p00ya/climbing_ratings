@@ -19,144 +19,14 @@ import math
 import numpy as np
 from .climber_helpers import (
     add_wiener_gradient,
-    solve_lu_d,
-    solve_ul_d,
+    lu_decompose,
+    ul_decompose,
     solve_x,
     solve_y,
+    TriDiagonal,
+    TriDiagonalLU,
 )
 from .normal_distribution import NormalDistribution
-
-
-class TriDiagonal(collections.namedtuple("TriDiagonal", ["d", "u", "l"])):
-    """Stores a tri-diagonal matrix.
-
-    We decompose the matrix into three arrays:
-    - d (main diagonal)
-    - u (upper sub-diagonal)
-    - l (lower sub-diagonal)
-
-    or in matrix notation:
-
-         | d0 u0 ..  0 |
-     M = | l0 d1 `.  : |
-         |  : `. `. um |
-         |  0 .. lm dn |
-    """
-
-
-class TriDiagonalLU(collections.namedtuple("TriDiagonalLU", ["d", "b", "a"])):
-    """Stores the LU-decomposition of a tri-diagonal matrix.
-
-    We decompose the LU matrices into 3 arrays:
-    - d (main diagonal of U matrix)
-    - b (upper sub-diagonal of U matrix)
-    - a (lower sub-diagonal of L matrix)
-
-             |  1  0  0 .. 0 | | d0 b0  0 ..  0 |
-             | a0  1  0 .. 0 | |  0 d1 b1 ..  0 |
-    M = LU = |  0 a1  1  . 0 | |  0  0 d2 `.  : |
-             |  :  . `. `. : | |  :  .  . `. bm |
-             |  0  0  . am 1 | |  0  0  0 .. dn |
-
-    Similarly, for UL decompositions:
-    - d (main diagonal of L' matrix)
-    - b (lower sub-diagonal of L' matrix)
-    - a (upper sub-diagonal of U' matrix)
-
-               |  1 a0  0 ..  0 | | d0  0  0 ..  0 |
-               |  0  1 a1 ..  0 | | b0 d1  0 ..  0 |
-    M = U'L' = |  0  0  1 `.  0 | |  0 b1 d2 ..  0 |
-               |  :  .  . `. am | |  :  . `. `.  : |
-               |  0  0  0 ..  1 | |  0  0  0 bm dn |
-
-    Note the indices are always 0-based (in WHR the indices are the 1-based row
-    number).
-    """
-
-
-def lu_decompose(tri_diagonal):
-    """Decompose a tri-diagonal matrix into LU form.
-
-    Parameters
-    ----------
-    tri_diagonal : TriDiagonal
-        Represents the matrix to decompose.
-    """
-    # WHR Appendix B: perform LU decomposition
-    #
-    # d[0] = hd[0]
-    # b[i] = hu[i]
-    #
-    # Iterative algorithm:
-    #   d[i] = hd[i] - hu[i-1] a[i-1]
-    #   a[i] = hl[i] / d[i]
-
-    hd, hu, hl = tri_diagonal
-    b = hu
-
-    # We want to vectorize the calculation of d and a as much as possible,
-    # instead of using WHR's iterative algorithm directly.
-    #
-    # Substitute a[i-1] into the expression for d[i] to get a recurrence
-    # relation for d:
-    #
-    #   d[i] = hd[i] - hu[i-1] a[i-1]
-    #        = hd[i] - hu[i-1] * hl[i-1] / d[i-1]
-    #
-    # Let c[i] = hu[i-1] * hl[i-1].
-    # c[0] = 0, which is meaningless but convenient for the helper.
-    #
-    #   d[i] = hd[i] - c[i] / d[i-1]
-    c = np.empty_like(hd)
-    c[0] = 0.0
-    np.multiply(hu, hl, c[1:])
-    np.negative(c, c)
-    d = hd.copy()
-    solve_lu_d(c, d)
-
-    # a[i] = hl[i] / d[i]
-    a = np.divide(hl, d[:-1])
-    return TriDiagonalLU(d, b, a)
-
-
-def ul_decompose(tri_diagonal):
-    """Decompose a tri-diagonal matrix into U'L' form.
-
-    Parameters
-    ----------
-    tri_diagonal : TriDiagonal
-        Represents the matrix to decompose.
-    """
-    # WHR Appendix B.2
-    # d'[n] = hd[n]
-    # b'[i] = hl[i]
-
-    hd, hu, hl = tri_diagonal
-    b = hl
-
-    # We want to vectorize the calculation of d and a as much as possible,
-    # instead of using WHR's iterative algorithm directly.
-    #
-    # Substitute a'[i] into the expression for d'[i] to get a recurrence
-    # relation for d':
-    #
-    #   d'[i] = hd[i] - b'[i] * a'[i]
-    #         = hd[i] - hl[i] * hu[i] / d'[i+1]
-    #
-    # Let c[i] = hl[i] * hu[i].
-    # c[-1] = 0, which is meaningless but convenient for the helper.
-    #
-    #   d'[i] = hd[i] - c[i] / d'[i+1]
-    c = np.empty_like(hd)
-    c[-1] = 0.0
-    np.multiply(hl, hu, c[:-1])
-    np.negative(c, c)
-    d = hd.copy()
-    solve_ul_d(c, d)
-
-    # a'[i] = hu[i] / d'[i+1]
-    a = np.divide(hu, d[1:])
-    return TriDiagonalLU(d, b, a)
 
 
 def invert_lu_dot_g(lu, g):

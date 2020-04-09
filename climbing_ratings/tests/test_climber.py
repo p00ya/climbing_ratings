@@ -19,56 +19,23 @@ import numpy as np
 from .. import climber
 from ..normal_distribution import NormalDistribution
 from .assertions import assert_close
+from ..climber_helpers import TriDiagonal, TriDiagonalLU
 
 
 class TestClimberFunctions(unittest.TestCase):
     """Tests for functions in the climber module"""
 
-    m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
-
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-
-    def test_lu_decompose(self):
-        """Test that for (L, U) = lu_decompose(M), LU = M"""
-        m = self.__class__.m
-        md = np.diag(m)
-        mu = np.diag(m, 1)
-        ml = np.diag(m, -1)
-        tri_diagonal = climber.TriDiagonal(md, mu, ml)
-        lu = climber.lu_decompose(tri_diagonal)
-
-        # Reconstruct the L and U matrices.
-        u_matrix = np.diagflat(lu.d) + np.diagflat(lu.b, 1)
-        l_matrix = np.eye(3) + np.diagflat(lu.a, -1)
-        lu_matrix = np.dot(l_matrix, u_matrix)
-        # Test that M = LU.
-        self.assert_close(m, lu_matrix, "M")
-
-    def test_ul_decompose(self):
-        """Test that for (U', L') = ul_decompose(M), U'L' = M"""
-        m = self.__class__.m
-        md = np.diag(m)
-        mu = np.diag(m, 1)
-        ml = np.diag(m, -1)
-        tri_diagonal = climber.TriDiagonal(md, mu, ml)
-        ul = climber.ul_decompose(tri_diagonal)
-
-        # Reconstruct the L and U matrices.
-        u_matrix = np.eye(3) + np.diagflat(ul.a, 1)
-        l_matrix = np.diagflat(ul.d) + np.diagflat(ul.b, -1)
-        ul_matrix = np.dot(u_matrix, l_matrix)
-        # Test that M = U'L'
-        self.assert_close(m, ul_matrix, "M")
 
     def test_invert_lu_dot_g(self):
         """Test that for X = invert_lu_dot_g(LU, G), LU X = G"""
         g = np.array([10.0, 5.0, 32.0])
         d = np.array([1.0, 3.0, 10.0])
-        b = np.array([-2, 1.0])
+        b = np.array([-2.0, 1.0])
         a = np.array([0.1, -2.0])
-        lu = climber.TriDiagonalLU(d, b, a)
+        lu = TriDiagonalLU(d, b, a)
         x = climber.invert_lu_dot_g(lu, g)
 
         u_matrix = np.diagflat(d) + np.diagflat(b, 1)
@@ -81,13 +48,19 @@ class TestClimberFunctions(unittest.TestCase):
 
     def test_invert_lu(self):
         """Test invert_lu(LU, U'L') M = -I"""
-        m = self.__class__.m
-        md = np.diag(m)
-        mu = np.diag(m, 1)
-        ml = np.diag(m, -1)
-        tri_diagonal = climber.TriDiagonal(md, mu, ml)
-        lu = climber.lu_decompose(tri_diagonal)
-        ul = climber.ul_decompose(tri_diagonal)
+        m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
+        md = np.diag(m).copy()
+        mu = np.diag(m, 1).copy()
+        ml = np.diag(m, -1).copy()
+        tri_diagonal = TriDiagonal(md, mu, ml)
+        lu = TriDiagonalLU(
+            np.array([1.0, 3.0, 10.0]), np.array([-2, 1.0]), np.array([0.5, 1.0])
+        )
+        ul = TriDiagonalLU(
+            np.array([30.0 / 19.0, 19.0 / 11.0, 11.0]),
+            np.array([0.5, 3.0]),
+            np.array([-22.0 / 19.0, 1.0 / 11.0]),
+        )
 
         d = np.empty([3])
         ld = np.empty([2])

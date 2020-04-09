@@ -16,6 +16,7 @@
 
 from setuptools import setup, Extension
 from Cython.Build import cythonize
+import numpy
 
 
 CYTHON_CFLAGS = [
@@ -38,6 +39,7 @@ climber_helpers = Extension(
     "climbing_ratings.climber_helpers",
     ["climbing_ratings/climber_helpers.pyx"],
     extra_compile_args=CYTHON_CFLAGS,
+    include_dirs=[numpy.get_include()],
 )
 
 long_description = """
@@ -72,7 +74,7 @@ if __name__ == "__main__":
         package_data={"climbing_ratings": ["*.pyx"]},
         platforms=["POSIX"],
         install_requires=["numpy"],
-        setup_requires=["cython"],
+        setup_requires=["cython", "numpy"],
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(

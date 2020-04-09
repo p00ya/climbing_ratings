@@ -23,9 +23,43 @@ from .assertions import assert_close
 class TestClimberHelpers(unittest.TestCase):
     """Tests for the climber_helpers extension."""
 
+    m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
+
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
+
+    def test_lu_decompose(self):
+        """Test that for (L, U) = lu_decompose(M), LU = M"""
+        m = self.__class__.m
+        md = np.diag(m).copy()
+        mu = np.diag(m, 1).copy()
+        ml = np.diag(m, -1).copy()
+        tri_diagonal = climber_helpers.TriDiagonal(md, mu, ml)
+        lu = climber_helpers.lu_decompose(tri_diagonal)
+
+        # Reconstruct the L and U matrices.
+        u_matrix = np.diagflat(lu.d) + np.diagflat(lu.b, 1)
+        l_matrix = np.eye(3) + np.diagflat(lu.a, -1)
+        lu_matrix = np.dot(l_matrix, u_matrix)
+        # Test that M = LU.
+        self.assert_close(m, lu_matrix, "M")
+
+    def test_ul_decompose(self):
+        """Test that for (U', L') = ul_decompose(M), U'L' = M"""
+        m = self.__class__.m
+        md = np.diag(m).copy()
+        mu = np.diag(m, 1).copy()
+        ml = np.diag(m, -1).copy()
+        tri_diagonal = climber_helpers.TriDiagonal(md, mu, ml)
+        ul = climber_helpers.ul_decompose(tri_diagonal)
+
+        # Reconstruct the L and U matrices.
+        u_matrix = np.eye(3) + np.diagflat(ul.a, 1)
+        l_matrix = np.diagflat(ul.d) + np.diagflat(ul.b, -1)
+        ul_matrix = np.dot(u_matrix, l_matrix)
+        # Test that M = U'L'
+        self.assert_close(m, ul_matrix, "M")
 
     def test_add_wiener_gradient(self):
         """Test add_wiener_gradient()"""
@@ -34,22 +68,6 @@ class TestClimberHelpers(unittest.TestCase):
         gradient = np.zeros(2)
         climber_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
         self.assert_close([1.0, -1.0], gradient, "gradient")
-
-    def test_solve_lu_d(self):
-        """Test solve_lu_d()"""
-        c = np.array([0.0, 1.0, -3.0])
-        hd = np.array([1.0, 2.0, 11.0])
-        climber_helpers.solve_lu_d(c, hd)
-        d = hd  # output parameter
-        self.assert_close([1.0, 3.0, 10.0], d, "d")
-
-    def test_solve_ul_d(self):
-        """Test solve_lu_d()"""
-        c = np.array([0.0, 1.0, -3.0])
-        hd = np.array([1.0, 2.0, 11.0])
-        climber_helpers.solve_ul_d(c, hd)
-        d = hd  # output parameter
-        self.assert_close([1.0, 247.0 / 118.0, 118.0 / 11.0], d, "d")
 
     def test_solve_y(self):
         """Test solve_y()"""

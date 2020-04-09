@@ -21,7 +21,58 @@ access to numpy arrays is avoided.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+cimport numpy as cnp
 from libc.math cimport log
+
+cnp.import_array()
+
+
+class TriDiagonal(collections.namedtuple("TriDiagonal", ["d", "u", "l"])):
+    """Stores a tri-diagonal matrix.
+
+    We decompose the matrix into three arrays:
+    - d (main diagonal)
+    - u (upper sub-diagonal)
+    - l (lower sub-diagonal)
+
+    or in matrix notation:
+
+         | d0 u0 ..  0 |
+     M = | l0 d1 `.  : |
+         |  : `. `. um |
+         |  0 .. lm dn |
+    """
+
+
+class TriDiagonalLU(collections.namedtuple("TriDiagonalLU", ["d", "b", "a"])):
+    """Stores the LU-decomposition of a tri-diagonal matrix.
+
+    We decompose the LU matrices into 3 arrays:
+    - d (main diagonal of U matrix)
+    - b (upper sub-diagonal of U matrix)
+    - a (lower sub-diagonal of L matrix)
+
+             |  1  0  0 .. 0 | | d0 b0  0 ..  0 |
+             | a0  1  0 .. 0 | |  0 d1 b1 ..  0 |
+    M = LU = |  0 a1  1  . 0 | |  0  0 d2 `.  : |
+             |  :  . `. `. : | |  :  .  . `. bm |
+             |  0  0  . am 1 | |  0  0  0 .. dn |
+
+    Similarly, for UL decompositions:
+    - d (main diagonal of L' matrix)
+    - b (lower sub-diagonal of L' matrix)
+    - a (upper sub-diagonal of U' matrix)
+
+               |  1 a0  0 ..  0 | | d0  0  0 ..  0 |
+               |  0  1 a1 ..  0 | | b0 d1  0 ..  0 |
+    M = U'L' = |  0  0  1 `.  0 | |  0 b1 d2 ..  0 |
+               |  :  .  . `. am | |  :  . `. `.  : |
+               |  0  0  0 ..  1 | |  0  0  0 bm dn |
+
+    Note the indices are always 0-based (in WHR the indices are the 1-based row
+    number).
+    """
 
 
 def add_wiener_gradient(
@@ -54,30 +105,62 @@ def add_wiener_gradient(
         gradient[i + 1] -= d
 
 
-def solve_lu_d(double[::1] c, double[::1] hd):
-    """Compute the U-diagonal in the LU decomposition of a tri-diagonal matrix.
-
-    Computes the array "d" following the recurrence:
-    d[i] = hd[i] - c[i] / d[i-1]
+def lu_decompose(object tri_diagonal):
+    """Decompose a tri-diagonal matrix into LU form.
 
     Parameters
     ----------
-    c : contiguous ndarray with length N
-        The "c" term from the recurrence.
-    hd : contiguous ndarray with length N
-        The input is used as the "hd" term from the recurrence.  Also used as
-        the output array for the computed "d" terms.
+    tri_diagonal : TriDiagonal
+        Represents the matrix to decompose.
     """
-    cdef Py_ssize_t n = c.shape[0]
+    cdef double[::1] hd, hu, hl, d, b, a
+    hd, hu, hl = tri_diagonal
 
-    cdef double d_prev = 1.0
+    cdef Py_ssize_t n = hd.shape[0]
+    d = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
+    a = cnp.PyArray_EMPTY(1, [n - 1], cnp.NPY_DOUBLE, 0)
+
+    # WHR Appendix B: perform LU decomposition
+    b = hu
+    d[0] = hd[0]
+
+    cdef Py_ssize_t i
     cdef double t
-    for i in range(n):
-        t = c[i]
-        t /= d_prev
-        t += hd[i]
-        hd[i] = t
-        d_prev = t
+    for i in range(1, n):
+        t = hl[i - 1] / d[i - 1]
+        a[i - 1] = t
+        d[i] = hd[i] - hu[i - 1] * t
+
+    return TriDiagonalLU(d.base, b.base, a.base)
+
+
+def ul_decompose(object tri_diagonal):
+    """Decompose a tri-diagonal matrix into U'L' form.
+
+    Parameters
+    ----------
+    tri_diagonal : TriDiagonal
+        Represents the matrix to decompose.
+    """
+    cdef double[::1] hd, hu, hl, d, b, a
+    hd, hu, hl = tri_diagonal
+
+    cdef Py_ssize_t n = hd.shape[0]
+    d = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
+    a = cnp.PyArray_EMPTY(1, [n - 1], cnp.NPY_DOUBLE, 0)
+
+    # WHR Appendix B.2: Computing diagonal and sub-diagonal terms of H^-1
+    b = hl
+    d[n - 1] = hd[n - 1]
+
+    cdef Py_ssize_t i
+    cdef double t
+    for i in range(n - 2, -1, -1):
+        t = hu[i] / d[i + 1]
+        a[i] = t
+        d[i] = hd[i] - b[i] * t
+
+    return TriDiagonalLU(d.base, b.base, a.base)
 
 
 def solve_ul_d(double[::1] c, double[::1] hd):
