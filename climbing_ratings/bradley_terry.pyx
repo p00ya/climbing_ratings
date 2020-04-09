@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+cimport numpy as cnp
 from libc.math cimport fabs
+
+cnp.import_array()
 
 
 def expand_to_slices(double[::1] values, list slices):
@@ -31,8 +33,7 @@ def expand_to_slices(double[::1] values, list slices):
     """
     cdef tuple last_slice = slices[len(slices) - 1]
     cdef Py_ssize_t n = last_slice[1]
-    expanded_arr = np.empty([n], dtype=np.float)
-    cdef double[::1] expanded = expanded_arr
+    cdef double[::1] expanded = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
 
     cdef Py_ssize_t j = 0
     cdef Py_ssize_t i, end
@@ -40,10 +41,10 @@ def expand_to_slices(double[::1] values, list slices):
         while j < end:
             expanded[j] = values[i]
             j += 1
-    return expanded_arr
+    return expanded.base
 
 
-cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
+cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     """Get the Bradley-Terry summation terms for each player.
 
     A player is an abstraction for an entity with a rating; it will correspond
@@ -58,7 +59,7 @@ cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
 
     Returns
     -------
-    (d1_terms : ndarray, d2_terms : ndarray)
+    (d1_terms : MemoryView, d2_terms : MemoryView)
         d1_terms contains the "gamma / (gamma + adversary_gamma)" terms for each
         player.
 
@@ -83,11 +84,8 @@ cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     # P(loss) = (0 gamma_i + gamma_k) / (1 gamma_i + gamma_k)
     #    so A = 0, B = gamma_k, C = 1, D = gamma_k
     cdef Py_ssize_t n = gamma.shape[0]
-    d1_arr = np.empty([n], dtype=np.float)
-    d2_arr = np.empty([n], dtype=np.float)
-
-    cdef double[::1] d1_terms = d1_arr
-    cdef double[::1] d2_terms = d2_arr
+    cdef double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
+    cdef double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
 
     cdef double t, u
     for i in range(n):
@@ -102,7 +100,7 @@ cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
 
         d2_terms[i] = u
 
-    return (d1_arr, d2_arr)
+    return (d1_terms, d2_terms)
 
 
 def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
@@ -160,16 +158,14 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         Bradley-Terry log-likelihood a "player" wins, with respect to the
         "natural rating" of that player.
     """
-    d1_terms_arr, d2_terms_arr = cget_bt_summation_terms(gamma, adversary_gamma)
-    cdef double[::1] d1_terms = d1_terms_arr
-    cdef double[::1] d2_terms = d2_terms_arr
+    cdef double[::1] d1_terms, d2_terms
+    d1_terms, d2_terms = cget_bt_summation_terms(gamma, adversary_gamma)
 
     cdef Py_ssize_t num_slices = len(slices)
 
-    d1_arr = np.empty(num_slices)
-    d2_arr = np.empty(num_slices)
-    cdef double[::1] d1 = d1_arr
-    cdef double[::1] d2 = d2_arr
+    cdef double[::1] d1 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
+    cdef double[::1] d2 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
+
     cdef Py_ssize_t start, end
     cdef int i
     cdef double d1_sum, d2_sum
@@ -191,4 +187,4 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         # d^2 ln P / d r^2 = - sum( C_ij gamma_i D_ij / (C_ij + D_ij)^2 )
         d2[i] = -csum(d2_terms, start, end)
 
-    return (d1_arr, d2_arr)
+    return (d1.base, d2.base)

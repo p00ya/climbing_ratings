@@ -33,6 +33,7 @@ bradley_terry = Extension(
     "climbing_ratings.bradley_terry",
     ["climbing_ratings/bradley_terry.pyx"],
     extra_compile_args=CYTHON_CFLAGS,
+    include_dirs=[numpy.get_include()],
 )
 
 climber_helpers = Extension(
