@@ -16,7 +16,12 @@
 
 import numpy as np
 import unittest
-from ..bradley_terry import get_bt_summation_terms, get_bt_derivatives, sum
+from ..bradley_terry import (
+    expand_to_slices,
+    get_bt_summation_terms,
+    get_bt_derivatives,
+    sum,
+)
 from .assertions import assert_close
 
 
@@ -26,6 +31,13 @@ class TestBradleyTerryFunctions(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
+
+    def test_expand_to_slices(self):
+        """Test expand_to_slices()"""
+        slices = [(0, 2), (2, 5)]
+        values = np.array([1.0, 10.0])
+        expanded = expand_to_slices(values, slices)
+        self.assertSequenceEqual([1.0, 1.0, 10.0, 10.0, 10.0], expanded.tolist())
 
     def test_get_bt_summation_terms(self):
         """Test get_bt_summation_terms()"""

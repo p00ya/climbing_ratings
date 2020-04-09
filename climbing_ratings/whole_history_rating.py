@@ -18,27 +18,9 @@
 import collections
 import itertools
 import numpy as np
-from .bradley_terry import get_bt_derivatives
+from .bradley_terry import expand_to_slices, get_bt_derivatives
 from .climber import Climber
 from .normal_distribution import NormalDistribution
-
-
-def expand_to_slices(values, slices, dtype=None):
-    """Expand normalized values to contiguous blocks.
-
-    Parameters
-    ----------
-    values : ndarray
-        The normalized values.
-    slices : list of pairs
-        The (start, end) pairs corresponding to a slice in the output.  The
-        implied slices must be contiguous and in ascending order.
-    """
-    _, n = slices[-1]
-    expanded = np.empty([n], dtype=dtype)
-    for i, (start, end) in enumerate(slices):
-        expanded[start:end] = values[i]
-    return expanded
 
 
 def get_pages_gap(pages_timestamp):

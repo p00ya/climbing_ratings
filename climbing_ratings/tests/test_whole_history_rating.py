@@ -24,13 +24,6 @@ from .assertions import assert_close
 class TestWholeHistoryRatingFunctions(unittest.TestCase):
     """Tests for functions in the whole_history_rating module"""
 
-    def test_expand_to_slices(self):
-        """Test expand_to_slices()"""
-        slices = [(0, 2), (2, 5)]
-        values = np.array([1.0, 10.0])
-        expanded = whole_history_rating.expand_to_slices(values, slices)
-        self.assertSequenceEqual([1.0, 1.0, 10.0, 10.0, 10.0], expanded.tolist())
-
     def test_make_route_ascents(self):
         """Test make_route_ascents()"""
         ascents_clean = [0, 0, 0, 0, 0]

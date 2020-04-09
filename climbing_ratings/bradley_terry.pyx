@@ -18,6 +18,31 @@ import numpy as np
 from libc.math cimport fabs
 
 
+def expand_to_slices(double[::1] values, list slices):
+    """Expand normalized values to contiguous blocks.
+
+    Parameters
+    ----------
+    values : ndarray
+        The normalized values.
+    slices : list of pairs
+        The (start, end) pairs corresponding to a slice in the output.  The
+        implied slices must be contiguous and in ascending order.
+    """
+    cdef tuple last_slice = slices[len(slices) - 1]
+    cdef Py_ssize_t n = last_slice[1]
+    expanded_arr = np.empty([n], dtype=np.float)
+    cdef double[::1] expanded = expanded_arr
+
+    cdef Py_ssize_t j = 0
+    cdef Py_ssize_t i, end
+    for i, (_, end) in enumerate(slices):
+        while j < end:
+            expanded[j] = values[i]
+            j += 1
+    return expanded_arr
+
+
 cdef cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
     """Get the Bradley-Terry summation terms for each player.
 
