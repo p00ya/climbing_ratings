@@ -170,7 +170,7 @@ class WholeHistoryRating:
     # _route_ascents : Ascents
     #     Ascents in route order (no clean).
     # _pages_climber_slices : list of pairs
-    #     Start and end indices in _page_ratings for each climber.
+    #     Start and end indices in page_ratings for each climber.
     # _route_priors : NormalDistribution
     #     Distributions for the prior on each route's natural rating.
     # _climbers : list of Climber
