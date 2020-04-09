@@ -126,7 +126,7 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_ro
             rascents_page[ascent_to_rascent[a]] = page
 
     return Ascents(
-        np.array(route_wins, dtype=np.float64),
+        np.array(route_wins),
         rascents_route_slices,
         np.array(rascents_page, dtype=np.intp),
     )
@@ -206,7 +206,7 @@ class WholeHistoryRating:
             The time of the ascents for each page.
         """
         num_pages = len(ascents_page_slices)
-        self.route_ratings = np.array(routes_rating, dtype=np.float64)
+        self.route_ratings = np.array(routes_rating)
         self.page_ratings = np.full(num_pages, WholeHistoryRating.climber_mean)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.zeros(num_pages)
