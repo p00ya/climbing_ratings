@@ -57,7 +57,7 @@ if __name__ == "__main__":
         author_email="dos@scarff.id.au",
         description="Estimate climber and route ratings from ascents data",
         long_description=long_description,
-        version="3.0.0",
+        version="3.0.1",
         url="https://github.com/p00ya/climbing_ratings",
         classifiers=[
             "Development Status :: 5 - Production/Stable",
