@@ -1,6 +1,7 @@
 # .gitignore
 
 .*
+!/.travis.yml
 *.pyc
 *.c
 *.so
