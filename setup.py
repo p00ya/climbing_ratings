@@ -74,6 +74,7 @@ if __name__ == "__main__":
         packages=["climbing_ratings", "climbing_ratings.tests"],
         package_data={"climbing_ratings": ["*.pyx"]},
         platforms=["POSIX"],
+        python_requires=">=3.4",
         install_requires=["numpy"],
         setup_requires=["Cython", "numpy"],
         test_suite="climbing_ratings.tests.test_suite",
