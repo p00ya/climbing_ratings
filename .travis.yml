@@ -23,12 +23,10 @@ jobs:
       python: "3.7"
       install:
         - python3 -VV
-        - pip3 install setuptools Cython numpy pytest black
+        - pip3 install Cython numpy pytest black
         - python3 setup.py develop
         - pip3 freeze --all
         - env
-      env:
-        CC: clang
       script:
         - python3 -m black --check climbing_ratings setup.py tests/*.py
         - python3 setup.py build_ext --inplace
