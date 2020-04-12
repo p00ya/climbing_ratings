@@ -49,6 +49,10 @@ jobs:
       # These things are big and slow.
       pandoc: false
       latex: false
+      cache:
+        directories:
+          - $HOME/.cache/R/R.cache
+        packages: true
       r_packages:
         - styler
       before_install:
