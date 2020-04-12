@@ -23,7 +23,7 @@ jobs:
       python: "3.7"
       install:
         - python3 -VV
-        - pip3 install setuptools cython numpy pytest black
+        - pip3 install setuptools Cython numpy pytest black
         - python3 setup.py develop
         - pip3 freeze --all
         - env

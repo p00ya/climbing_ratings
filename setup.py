@@ -75,7 +75,7 @@ if __name__ == "__main__":
         package_data={"climbing_ratings": ["*.pyx"]},
         platforms=["POSIX"],
         install_requires=["numpy"],
-        setup_requires=["cython", "numpy"],
+        setup_requires=["Cython", "numpy"],
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
