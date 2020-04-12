@@ -54,6 +54,7 @@ jobs:
         - Rscript --vanilla -e 'testthat::test_dir("tests")'
 language: python
 os: linux
+dist: bionic
 env:
   TZ: UTC
 cache:
