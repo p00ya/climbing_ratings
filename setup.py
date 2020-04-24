@@ -19,28 +19,30 @@ from Cython.Build import cythonize
 import numpy
 
 
-CYTHON_CFLAGS = [
-    "-Ofast",
-    "-march=native",
-    "-mtune=native",
-    "-ffast-math",
-    "-fno-math-errno",
-    "-fno-associative-math",
-    "-fno-reciprocal-math",
-]
+# setuptools.Extension kwargs for building Cython extensions.
+cython_ext = {
+    "extra_compile_args": [
+        "-Ofast",
+        "-march=native",
+        "-mtune=native",
+        "-ffast-math",
+        "-fno-math-errno",
+        "-fno-associative-math",
+        "-fno-reciprocal-math",
+    ],
+    "include_dirs": [numpy.get_include()],
+}
 
 bradley_terry = Extension(
     "climbing_ratings.bradley_terry",
     ["climbing_ratings/bradley_terry.pyx"],
-    extra_compile_args=CYTHON_CFLAGS,
-    include_dirs=[numpy.get_include()],
+    **cython_ext,
 )
 
 climber_helpers = Extension(
     "climbing_ratings.climber_helpers",
     ["climbing_ratings/climber_helpers.pyx"],
-    extra_compile_args=CYTHON_CFLAGS,
-    include_dirs=[numpy.get_include()],
+    **cython_ext,
 )
 
 long_description = """
