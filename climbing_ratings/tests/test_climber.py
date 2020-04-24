@@ -77,6 +77,9 @@ class TestClimber(unittest.TestCase):
         climber.Climber.wiener_variance = 1.0
         self.initial_prior = NormalDistribution(0.0, 1.0)
 
+    def tearDown(self):
+        climber.Climber.wiener_variance = 1.0
+
     def test_init(self):
         """Test Climber initializes one_on_sigma_sq and wiener_d2"""
         gaps = np.array([1.0, 2.0])
