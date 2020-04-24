@@ -36,5 +36,5 @@ def assert_close(test_case, expected, actual, name):
     expected = np.array(expected)
     if np.allclose(expected, actual):
         return
-    msg = "expected %s = %s, got %s" % (name, expected, actual)
+    msg = "expected {} = {}, got {}".format(name, expected, actual)
     raise test_case.failureException(msg)
