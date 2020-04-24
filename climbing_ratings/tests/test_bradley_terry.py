@@ -55,7 +55,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assertEqual(6.0, sum(x, 1, 3))
         self.assertEqual(7.0, sum(x, 0, 3))
 
-    def test_sum(self):
+    def test_sum_error(self):
         """Test sum() error compensation"""
         x = np.full([10], 0.1)
         self.assertEqual(1.0, sum(x, 0, 10))
