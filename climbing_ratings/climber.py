@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-import math
 import numpy as np
 from .climber_helpers import (
     add_wiener_gradient,
@@ -24,9 +22,7 @@ from .climber_helpers import (
     solve_x,
     solve_y,
     TriDiagonal,
-    TriDiagonalLU,
 )
-from .normal_distribution import NormalDistribution
 
 
 def invert_lu_dot_g(lu, g):

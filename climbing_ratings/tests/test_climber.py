@@ -19,7 +19,7 @@ import numpy as np
 from .. import climber
 from ..normal_distribution import NormalDistribution
 from .assertions import assert_close
-from ..climber_helpers import TriDiagonal, TriDiagonalLU
+from ..climber_helpers import TriDiagonalLU
 
 
 class TestClimberFunctions(unittest.TestCase):
@@ -49,10 +49,6 @@ class TestClimberFunctions(unittest.TestCase):
     def test_invert_lu(self):
         """Test invert_lu(LU, U'L') M = -I"""
         m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
-        md = np.diag(m).copy()
-        mu = np.diag(m, 1).copy()
-        ml = np.diag(m, -1).copy()
-        tri_diagonal = TriDiagonal(md, mu, ml)
         lu = TriDiagonalLU(
             np.array([1.0, 3.0, 10.0]), np.array([-2, 1.0]), np.array([0.5, 1.0])
         )

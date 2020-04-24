@@ -15,9 +15,6 @@
 # limitations under the License.
 
 
-import numpy as np
-
-
 class NormalDistribution:
     """Models variables drawn from a Gaussian distribution."""
 
