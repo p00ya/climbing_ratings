@@ -132,6 +132,50 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_ro
     )
 
 
+class Hyperparameters(
+    collections.namedtuple(
+        "Hyperparameters",
+        [
+            "climber_prior_mean",
+            "climber_prior_variance",
+            "climber_wiener_variance",
+            "route_prior_variance",
+        ],
+        defaults=[0.0, 1.0, 1.0, 1.0],
+    )
+):
+    """Hyperparameters for the climbing ratings model.
+
+    Encapsulates values that are common to all climber or route priors.
+
+    A normal distribution is used as a prior on the natural rating for each
+    climber, in the first time period (page) in which they record an ascent.
+
+    A Wiener process is used as a prior on how each climber's natural rating
+    may vary over time.
+
+    Normal distributions are used as priors on the natural rating for each
+    route.  While the mean can be informed on a per-route basis, the variance
+    is common.
+
+    Route ratings are assumed to be time-invariant.
+
+    Attributes
+    ----------
+    climber_prior_mean : float
+        Mean of the prior distribution for the initial natural rating of each
+        climber.
+    climber_prior_variance : float
+        Variance of the prior distribution for the initial natural rating of
+        each climber.
+    climber_wiener_variance : float
+        Variance of the prior process for all climbers ratings over time.
+    route_prior_variance : float
+        Variance of the prior distribution for the natural rating of each
+        route.
+    """
+
+
 class WholeHistoryRating:
     """Performs optimization for route and climber ratings.
 
@@ -159,11 +203,6 @@ class WholeHistoryRating:
         Estimate of the variance of the natural rating of each route.
     """
 
-    climber_mean = 0.0
-    climber_variance = 1.0
-    climber_wiener_variance = 1.0
-    route_variance = 1.0
-
     # Private Attributes
     # ------------------
     # _page_ascents : Ascents
@@ -179,6 +218,7 @@ class WholeHistoryRating:
 
     def __init__(
         self,
+        hparams,
         ascents_route,
         ascents_clean,
         ascents_page_slices,
@@ -190,6 +230,8 @@ class WholeHistoryRating:
 
         Parameters
         ----------
+        hparams: Hyperparameters
+            Parameter values for use in priors across climbers and routes.
         ascents_route : array_like of int
             The 0-based ID of the route for each ascent.  The implied ascents
             must be in page order.
@@ -208,7 +250,7 @@ class WholeHistoryRating:
         """
         num_pages = len(ascents_page_slices)
         self.route_ratings = np.array(routes_rating)
-        self.page_ratings = np.full(num_pages, WholeHistoryRating.climber_mean)
+        self.page_ratings = np.full(num_pages, hparams.climber_prior_mean)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.zeros(num_pages)
         self.route_var = np.empty_like(self.route_ratings)
@@ -230,11 +272,11 @@ class WholeHistoryRating:
         )
 
         self._route_priors = NormalDistribution(
-            self.route_ratings, WholeHistoryRating.route_variance
+            self.route_ratings, hparams.route_prior_variance
         )
 
         climber_prior = NormalDistribution(
-            WholeHistoryRating.climber_mean, WholeHistoryRating.climber_variance
+            hparams.climber_prior_mean, hparams.climber_prior_variance
         )
 
         pages_gap = get_pages_gap(pages_timestamp)
@@ -242,7 +284,7 @@ class WholeHistoryRating:
         self._climbers = []
         for start, end in pages_climber_slices:
             climber = Process(
-                WholeHistoryRating.climber_wiener_variance,
+                hparams.climber_wiener_variance,
                 climber_prior,
                 pages_gap[start : end - 1],
             )

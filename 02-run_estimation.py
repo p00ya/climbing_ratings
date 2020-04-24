@@ -92,7 +92,7 @@ import itertools
 import numpy as np
 import os
 import sys
-from climbing_ratings.whole_history_rating import WholeHistoryRating
+from climbing_ratings.whole_history_rating import Hyperparameters, WholeHistoryRating
 
 
 def read_ascents(dirname):
@@ -241,14 +241,14 @@ def parse_args(argv):
         metavar="sigma",
         type=float,
         default=1.0,
-        help="standard deviation of climbers' natural ratings prior",
+        help="variance of climbers' natural ratings prior",
     )
     parser.add_argument(
         "--route-prior-variance",
         metavar="sigma",
         type=float,
         default=1.0,
-        help="standard deviation of routes' natural ratings prior",
+        help="variance of routes' natural ratings prior",
     )
     return parser.parse_args(argv)
 
@@ -265,12 +265,15 @@ def main(argv):
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
-    WholeHistoryRating.climber_mean = args.climber_prior_mean
-    WholeHistoryRating.climber_variance = args.climber_prior_variance
-    WholeHistoryRating.climber_wiener_variance = args.wiener_variance
-    WholeHistoryRating.route_variance = args.route_prior_variance
+    hparams = Hyperparameters(
+        args.climber_prior_mean,
+        args.climber_prior_variance,
+        args.wiener_variance,
+        args.route_prior_variance,
+    )
 
     whr = WholeHistoryRating(
+        hparams,
         ascents_route,
         ascents_clean,
         ascents_page_slices,

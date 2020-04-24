@@ -68,6 +68,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         routes_grade = [0.0, 0.0, 0.0]
         pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
+            whole_history_rating.Hyperparameters(),
             ascents_route,
             ascents_clean,
             ascents_page_slices,
@@ -123,6 +124,7 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         routes_grade = [0.0, 0.0, 0.0]
         pages_timestamp = np.array([0.0, 1.0])
         self.whr = whole_history_rating.WholeHistoryRating(
+            whole_history_rating.Hyperparameters(),
             ascents_route,
             ascents_clean,
             ascents_page_slices,
@@ -159,6 +161,7 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         routes_grade = [0.0, 0.0, 0.0]
         pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
+            whole_history_rating.Hyperparameters(),
             ascents_route,
             ascents_clean,
             ascents_page_slices,
@@ -191,6 +194,7 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         routes_grade = np.log([1.0, 2.0, 2.0])
         pages_timestamp = np.array([0.0])
         self.whr = whole_history_rating.WholeHistoryRating(
+            whole_history_rating.Hyperparameters(),
             ascents_route,
             ascents_clean,
             ascents_page_slices,
@@ -223,6 +227,7 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         routes_grade = [0.0, 0.0, 0.0]
         pages_timestamp = np.array([0.0, 1.0])
         self.whr = whole_history_rating.WholeHistoryRating(
+            whole_history_rating.Hyperparameters(),
             ascents_route,
             ascents_clean,
             ascents_page_slices,
