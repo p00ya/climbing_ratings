@@ -90,6 +90,7 @@ import argparse
 import csv
 import itertools
 import numpy as np
+import os
 import sys
 from climbing_ratings.climber import Climber
 from climbing_ratings.whole_history_rating import WholeHistoryRating
@@ -97,7 +98,7 @@ from climbing_ratings.whole_history_rating import WholeHistoryRating
 
 def read_ascents(dirname):
     """Read the ascents table."""
-    filename = "%s/ascents.csv" % dirname
+    filename = os.path.join(dirname, "ascents.csv")
     routes = []
     cleans = []
     pages = []
@@ -116,7 +117,7 @@ def read_ascents(dirname):
 
 def read_routes(dirname):
     """Read the routes table."""
-    filename = "%s/routes.csv" % dirname
+    filename = os.path.join(dirname, "routes.csv")
     names = []
     ratings = []
     with open(filename, newline="") as fp:
@@ -133,7 +134,7 @@ def read_routes(dirname):
 
 def read_pages(dirname):
     """Read the pages table."""
-    filename = "%s/pages.csv" % dirname
+    filename = os.path.join(dirname, "pages.csv")
     climbers = []
     timestamps = []
     with open(filename, newline="") as fp:
@@ -182,7 +183,7 @@ def extract_slices(values, num_slices):
 
 
 def write_route_ratings(dirname, routes_name, route_ratings, route_var):
-    filename = "%s/route_ratings.csv" % dirname
+    filename = os.path.join(dirname, "route_ratings.csv")
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
         writer.writerow(["route", "rating", "var"])
@@ -191,7 +192,7 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
 
 
 def write_page_ratings(dirname, pages_climber, page_ratings, page_var, page_cov):
-    filename = "%s/page_ratings.csv" % dirname
+    filename = os.path.join(dirname, "page_ratings.csv")
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
         writer.writerow(["climber", "rating", "var", "cov"])
