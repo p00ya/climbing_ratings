@@ -137,9 +137,8 @@ ParseJsonAscents <- function(json) {
 #' @return a "raw ascents" data frame with columns "ascentId", "route",
 #' "climber", "tick", "grade" and "timestamp".
 ReadAllJsonAscents <- function(dir) {
-  responses <- Sys.glob(file.path(dir, "ascents-*.json"))
-  purrr::map(responses, jsonlite::read_json) %>%
-    purrr::map(ParseJsonAscents) %>%
+  Sys.glob(file.path(dir, "ascents-*.json")) %>%
+    purrr::map(function(file) ParseJsonAscents(jsonlite::read_json(file))) %>%
     dplyr::bind_rows() %>%
     dplyr::mutate(
       route = factor(.data$route),

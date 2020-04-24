@@ -24,5 +24,6 @@ Imports:
     rlang,
     stats,
     stringr,
+    tidyr,
     utils
 RoxygenNote: 7.0.2
