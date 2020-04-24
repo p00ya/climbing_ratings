@@ -1,4 +1,4 @@
-"""Tests for the climber module"""
+"""Tests for the process module"""
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -16,13 +16,13 @@
 
 import unittest
 import numpy as np
-from .. import climber
+from .. import process
 from ..normal_distribution import NormalDistribution
+from ..process_helpers import TriDiagonalLU
 from .assertions import assert_close
-from ..climber_helpers import TriDiagonalLU
 
 
-class TestClimberFunctions(unittest.TestCase):
+class TestProcessFunctions(unittest.TestCase):
     """Tests for functions in the climber module"""
 
     def setUp(self):
@@ -36,7 +36,7 @@ class TestClimberFunctions(unittest.TestCase):
         b = np.array([-2.0, 1.0])
         a = np.array([0.1, -2.0])
         lu = TriDiagonalLU(d, b, a)
-        x = climber.invert_lu_dot_g(lu, g)
+        x = process.invert_lu_dot_g(lu, g)
 
         u_matrix = np.diagflat(d) + np.diagflat(b, 1)
         l_matrix = np.eye(3) + np.diagflat(a, -1)
@@ -60,7 +60,7 @@ class TestClimberFunctions(unittest.TestCase):
 
         d = np.empty([3])
         ld = np.empty([2])
-        climber.invert_lu(lu, ul, d, ld)
+        process.invert_lu(lu, ul, d, ld)
 
         # Test that M^-1 M = -I for the two diagonals
         expected = -np.linalg.inv(m)
@@ -68,45 +68,40 @@ class TestClimberFunctions(unittest.TestCase):
         self.assert_close(np.diag(expected, -1), ld, "ld")
 
 
-class TestClimber(unittest.TestCase):
-    """Tests for the Climber class"""
+class TestProcess(unittest.TestCase):
+    """Tests for the Process class"""
 
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        climber.Climber.wiener_variance = 1.0
         self.initial_prior = NormalDistribution(0.0, 1.0)
 
-    def tearDown(self):
-        climber.Climber.wiener_variance = 1.0
-
     def test_init(self):
-        """Test Climber initializes one_on_sigma_sq and wiener_d2"""
+        """Test Process initializes one_on_sigma_sq and wiener_d2"""
         gaps = np.array([1.0, 2.0])
-        climber.Climber.wiener_variance = 10.0
-        c = climber.Climber(self.initial_prior, gaps)
-        self.assert_close([0.1, 0.05], c._one_on_sigma_sq, "one_on_sigma_sq")
-        self.assert_close([-0.1, -0.15, -0.05], c._wiener_d2, "wiener_d2")
+        p = process.Process(10.0, self.initial_prior, gaps)
+        self.assert_close([0.1, 0.05], p._one_on_sigma_sq, "one_on_sigma_sq")
+        self.assert_close([-0.1, -0.15, -0.05], p._wiener_d2, "wiener_d2")
 
     def test_get_ratings_adjustment(self):
-        """Test Climber.get_ratings_adjustment"""
+        """Test Process.get_ratings_adjustment"""
         gaps = np.array([1.0])
         ratings = np.log([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
-        c = climber.Climber(self.initial_prior, gaps)
-        delta = c.get_ratings_adjustment(ratings, bt_d1, bt_d2)
+        p = process.Process(1.0, self.initial_prior, gaps)
+        delta = p.get_ratings_adjustment(ratings, bt_d1, bt_d2)
         self.assert_close([0.50918582, -0.55155649], delta, "delta")
 
     def test_get_covariance(self):
-        """Test Climber.get_covariance"""
+        """Test Process.get_covariance"""
         gaps = np.array([1.0])
         ratings = np.log([6.0, 4.0])
         bt_d1 = np.array([0.5, 1.0])
         bt_d2 = np.array([-0.25, -0.625])
-        c = climber.Climber(self.initial_prior, gaps)
+        p = process.Process(1.0, self.initial_prior, gaps)
         var = np.empty(2)
         cov = np.empty(1)
-        c.get_covariance(ratings, bt_d1, bt_d2, var, cov)
+        p.get_covariance(ratings, bt_d1, bt_d2, var, cov)
         self.assert_close([0.61176471, 0.84705882], var, "var")
         self.assert_close([0.37647059], cov, "cov")

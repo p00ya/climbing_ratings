@@ -19,8 +19,8 @@ import collections
 import itertools
 import numpy as np
 from .bradley_terry import expand_to_slices, get_bt_derivatives
-from .climber import Climber
 from .normal_distribution import NormalDistribution
+from .process import Process
 
 
 def get_pages_gap(pages_timestamp):
@@ -161,6 +161,7 @@ class WholeHistoryRating:
 
     climber_mean = 0.0
     climber_variance = 1.0
+    climber_wiener_variance = 1.0
     route_variance = 1.0
 
     # Private Attributes
@@ -173,7 +174,7 @@ class WholeHistoryRating:
     #     Start and end indices in page_ratings for each climber.
     # _route_priors : NormalDistribution
     #     Distributions for the prior on each route's natural rating.
-    # _climbers : list of Climber
+    # _climbers : list of Process
     #     Climbers (in the same order as _pages_climber_slices).
 
     def __init__(
@@ -240,7 +241,11 @@ class WholeHistoryRating:
 
         self._climbers = []
         for start, end in pages_climber_slices:
-            climber = Climber(climber_prior, pages_gap[start : end - 1])
+            climber = Process(
+                WholeHistoryRating.climber_wiener_variance,
+                climber_prior,
+                pages_gap[start : end - 1],
+            )
             self._climbers.append(climber)
 
     def update_page_ratings(self, should_update_covariance=False):

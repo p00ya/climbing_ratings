@@ -92,7 +92,6 @@ import itertools
 import numpy as np
 import os
 import sys
-from climbing_ratings.climber import Climber
 from climbing_ratings.whole_history_rating import WholeHistoryRating
 
 
@@ -266,9 +265,9 @@ def main(argv):
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
     pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
-    Climber.wiener_variance = args.wiener_variance
     WholeHistoryRating.climber_mean = args.climber_prior_mean
     WholeHistoryRating.climber_variance = args.climber_prior_variance
+    WholeHistoryRating.climber_wiener_variance = args.wiener_variance
     WholeHistoryRating.route_variance = args.route_prior_variance
 
     whr = WholeHistoryRating(

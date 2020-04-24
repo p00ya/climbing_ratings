@@ -1,4 +1,4 @@
-"""Tests for the climber_helpers extension"""
+"""Tests for the process_helpers extension"""
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -16,12 +16,12 @@
 
 import numpy as np
 import unittest
-from .. import climber_helpers
+from .. import process_helpers
 from .assertions import assert_close
 
 
-class TestClimberHelpers(unittest.TestCase):
-    """Tests for the climber_helpers extension."""
+class TestProcessHelpers(unittest.TestCase):
+    """Tests for the process_helpers extension."""
 
     m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
 
@@ -35,8 +35,8 @@ class TestClimberHelpers(unittest.TestCase):
         md = np.diag(m).copy()
         mu = np.diag(m, 1).copy()
         ml = np.diag(m, -1).copy()
-        tri_diagonal = climber_helpers.TriDiagonal(md, mu, ml)
-        lu = climber_helpers.lu_decompose(tri_diagonal)
+        tri_diagonal = process_helpers.TriDiagonal(md, mu, ml)
+        lu = process_helpers.lu_decompose(tri_diagonal)
 
         # Reconstruct the L and U matrices.
         u_matrix = np.diagflat(lu.d) + np.diagflat(lu.b, 1)
@@ -51,8 +51,8 @@ class TestClimberHelpers(unittest.TestCase):
         md = np.diag(m).copy()
         mu = np.diag(m, 1).copy()
         ml = np.diag(m, -1).copy()
-        tri_diagonal = climber_helpers.TriDiagonal(md, mu, ml)
-        ul = climber_helpers.ul_decompose(tri_diagonal)
+        tri_diagonal = process_helpers.TriDiagonal(md, mu, ml)
+        ul = process_helpers.ul_decompose(tri_diagonal)
 
         # Reconstruct the L and U matrices.
         u_matrix = np.eye(3) + np.diagflat(ul.a, 1)
@@ -66,14 +66,14 @@ class TestClimberHelpers(unittest.TestCase):
         one_on_sigma_sq = np.array([1.0])
         ratings = np.array([1.0, 2.0])
         gradient = np.zeros(2)
-        climber_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
+        process_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
         self.assert_close([1.0, -1.0], gradient, "gradient")
 
     def test_solve_y(self):
         """Test solve_y()"""
         g = np.array([10.0, 5.0, 32.0])
         a = np.array([0.0, -0.1, 2.0])
-        climber_helpers.solve_y(g, a)
+        process_helpers.solve_y(g, a)
         y = a  # output parameter
         self.assert_close([10.0, 4.0, 40.0], y, "y")
 
@@ -82,6 +82,6 @@ class TestClimberHelpers(unittest.TestCase):
         b = np.array([-2, 1.0])
         d = np.array([1.0, 3.0, 10.0])
         y = np.array([10.0, 4.0, 40.0])
-        climber_helpers.solve_x(b, d, y)
+        process_helpers.solve_x(b, d, y)
         x = y  # output parameter
         self.assert_close([10.0, 0.0, 4.0], x, "x")

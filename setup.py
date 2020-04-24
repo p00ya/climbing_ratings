@@ -39,9 +39,9 @@ bradley_terry = Extension(
     **cython_ext,
 )
 
-climber_helpers = Extension(
-    "climbing_ratings.climber_helpers",
-    ["climbing_ratings/climber_helpers.pyx"],
+process_helpers = Extension(
+    "climbing_ratings.process_helpers",
+    ["climbing_ratings/process_helpers.pyx"],
     **cython_ext,
 )
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
-            [bradley_terry, climber_helpers],
+            [bradley_terry, process_helpers],
             compiler_directives={
                 "language_level": 3,
                 "boundscheck": False,

@@ -1,4 +1,4 @@
-"""WHR model of a climber"""
+"""WHR Wiener process model"""
 
 # Copyright Contributors to the Climbing Ratings project
 #
@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import numpy as np
-from .climber_helpers import (
+from .process_helpers import (
     add_wiener_gradient,
     lu_decompose,
     ul_decompose,
@@ -95,21 +95,15 @@ def invert_lu(lu, ul, d_arr, l_arr):
     np.negative(b, b)
 
 
-class Climber:
-    """Models a climber.
+class Process:
+    """Models ratings over time, as a Wiener process.
 
-    A climber has an associated set of "ratings", each corresponding to a
-    particular period (a page).  Each page corresponds to zero or more ascents.
+    A ratings process has an associated set of samples, each corresponding to a
+    particular time period (a page).  Each page corresponds to zero or more
+    ascents.
 
     Instances store state that is invariant over estimation.
-
-    Class attributes
-    ----------------
-    wiener_variance : float
-        The variance of the climber's Wiener process per unit time.
     """
-
-    wiener_variance = 1.0
 
     # Private attributes
     # -------------------
@@ -122,21 +116,22 @@ class Climber:
     #     The second derivative terms (diagonal of the Hessian matrix) from the
     #     Wiener prior, for each page.
 
-    def __init__(self, initial_prior, gaps):
-        """Initialize a Climber.
+    def __init__(self, wiener_variance, initial_prior, gaps):
+        """Initialize a Process.
 
         Parameters
         ----------
+        wiener_variance : float
+            The variance of the Wiener process per unit time.
         initial_prior : NormalDistribution
             Prior distribution for the first page of the climber.
         gaps : ndarray
             gaps[i] is the time interval between the page i and page i + 1.
-            Must be consistent with the time scale for Climber.wiener_variance.
             The length of gaps should be 1 fewer than the number of pages.
         """
         self._initial_prior = initial_prior
-        s = np.full_like(gaps, Climber.wiener_variance)
-        s *= gaps
+        s = gaps * wiener_variance
+
         np.reciprocal(s, s)
         self._one_on_sigma_sq = s
         # WHR Appendix A.2 Terms of the Wiener prior:
