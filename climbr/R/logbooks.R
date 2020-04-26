@@ -24,6 +24,7 @@
 #' "climber", "tick", "grade", and "timestamp".
 .ParseLogbook <- function(df, climber) {
   df %>%
+    dplyr::arrange(.data$Log.Date) %>%
     dplyr::transmute(
       ascentId = .data$Ascent.ID,
       route = .data$Route.ID,

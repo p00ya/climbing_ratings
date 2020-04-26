@@ -62,4 +62,29 @@ describe(".ParseLogbook", {
     )
     expect_equal(.ParseLogbook(df, "me"), raw)
   })
+  it("orders by log date", {
+    df <- data.frame(
+      Ascent.ID = c("4294967296", "4294967297"),
+      Ascent.Type = c("Onsight", "Onsight"),
+      Route.ID = c("8589934592", "8589934593"),
+      Route.Grade = c("18", "19"),
+      Ascent.Date = c("2019-07-21T00:00:00Z", "2019-07-21T00:00:00Z"),
+      # Row 1 was logged after row 2.
+      Log.Date = c("2020-01-01T01:23:45Z", "2019-07-22T01:23:45Z"),
+      stringsAsFactors = FALSE
+    )
+    raw <- data.frame(
+      ascentId = c("4294967297", "4294967296"),
+      route = c("8589934593", "8589934592"),
+      climber = c("me", "me"),
+      tick = c("onsight", "onsight"),
+      grade = c(19L, 18L),
+      timestamp = c(1563667200L, 1563667200L),
+      stringsAsFactors = FALSE
+    )
+    expect_equal(.ParseLogbook(df, "me"), raw)
+    # Reverse the input row-order; output order should be the same.
+    df <- df[order(nrow(df):1), ]
+    expect_equal(.ParseLogbook(df, "me"), raw)
+  })
 })
