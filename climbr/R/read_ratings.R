@@ -26,7 +26,8 @@ ReadRatings <- function(dir) {
   )
 
   df_route_ratings <- utils::read.csv(file.path(dir, "route_ratings.csv"),
-    colClasses = c("factor", "numeric", "numeric")
+    colClasses = c("factor", "numeric", "numeric"),
+    stringsAsFactors = FALSE
   )
 
   list(routes = df_route_ratings, pages = df_page_ratings)

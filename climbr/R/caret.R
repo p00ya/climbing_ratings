@@ -123,7 +123,8 @@ MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
         "Route ratings variance",
         "Grade scaling",
         "Reference grade"
-      )
+      ),
+      stringsAsFactors = FALSE
     ),
     grid = NULL,
     type = "Classification",

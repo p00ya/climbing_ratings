@@ -33,7 +33,8 @@ df_raw <- read.csv(
     tick = "factor",
     grade = "integer",
     timestamp = "integer"
-  )
+  ),
+  stringsAsFactors = FALSE
 )
 
 df_clean <- CleanAscents(df_raw, max_time = now)

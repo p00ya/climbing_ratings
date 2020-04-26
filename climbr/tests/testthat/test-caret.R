@@ -46,7 +46,7 @@ page_ratings <- data.frame(
 )
 
 route_ratings <- data.frame(
-  route = c("R1", "R2"),
+  route = factor(c("R1", "R2")),
   rating = c(0, 1),
   var = c(1, 1)
 )
