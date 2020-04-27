@@ -160,7 +160,10 @@ ReadAllJsonAscents <- function(dir) {
 #' @param dir character directory to save JSON responses.
 #' @param start integer first page to read.
 #' @param per_page integer number of ascents per page.
-FetchJsonAscentsFromApi <- function(area, api_key, dir, start = 1L, per_page = 5000L) {
+#' @param host character hostname for theCrag's server.
+FetchJsonAscentsFromApi <- function(area, api_key, dir, start = 1L,
+                                    per_page = 5000L,
+                                    host = "sandpit.thecrag.com") {
   flatten_param <- paste(
     "data[numberAscents", "page", "perPage", "ascents[id", "route[id]",
     "account[id]", "tick[label]", "gradeID", "gradeScore", "date",
@@ -168,7 +171,7 @@ FetchJsonAscentsFromApi <- function(area, api_key, dir, start = 1L, per_page = 5
     sep = ","
   )
   base_url <- paste0(
-    "https://sandpit.thecrag.com/api",
+    "https://", host, "/api",
     "/facet/ascents/at/", area,
     "/with-route-gear-style/sport",
     "/in-setting/natural",
