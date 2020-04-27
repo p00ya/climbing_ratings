@@ -18,10 +18,10 @@
 #' Returns an object of class WienerSmooth.  This class supports the `predict()`
 #' generic function.
 #'
-#' @param formula the formula.  If NULL, default as if it was "y ~ x".
-#' @param data a data frame with the variables `x`, 'y', (or equivalents
-#' defined by the RHS and LFS of "formula" respectively), "var", and "cov";
-#' rows should be in increasing order of "x".
+#' @param formula the formula.  If NULL, default as if it was `y ~ x`.
+#' @param data a data frame with the variables `x`, `y`, (or equivalents
+#' defined by the RHS and LFS of "formula" respectively), `var`, and `cov`;
+#' rows should be in increasing order of `x`.
 #' @param wsq the Wiener variance.
 #' @param ... ignored.
 WienerSmooth <- function(formula = NULL, data, wsq, ...) {
@@ -37,8 +37,9 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
   structure(list(df = df, wsq = wsq), class = "WienerSmooth")
 }
 
-#' For each a[i] find the smallest j such that a[i] < b[j], or length(b) + 1 if
-#' no such element exists.  Both a and b should be increasing.
+#' For each `a[i]` find the smallest j such that `a[i] < b[j]`, or
+#' `length(b) + 1` if no such element exists.  Both a and b should be
+#' increasing.
 #'
 #' @param a a numeric vector in increasing order.
 #' @param b a numeric vector in increasing order.
@@ -58,7 +59,7 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
   ii
 }
 
-#' Implements the `stats::predict()` generic function for WienerSmooth.
+#' Implements the [stats::predict()] generic function for WienerSmooth.
 #'
 #' Interpolates intervals for a Wiener process where the mean, variance and
 #' covariance are known only for a set of samples.
@@ -68,7 +69,8 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #' the x-values should be a subset of the range of the x-values in the model.
 #' @param level the confidence level.
 #' @param ... ignored.
-#' @return list(fit = list(fit, lwr, upr), se.fit), like [stats::predict.lm].
+#' @return `list(fit = list(fit, lwr, upr), se.fit)`, like
+#' [stats::predict.lm()].
 predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
   z <- qnorm((1 - level) / 2)
   n <- nrow(object$df)

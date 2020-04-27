@@ -124,7 +124,7 @@ CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
 
 #' Summarizes ascents data.
 #'
-#' @param df a data frame containing ascents (as produced by "CleanAscents").
+#' @param df a data frame containing ascents (as produced by [CleanAscents()]).
 #' @return a character summary of the ascents.
 SummarizeAscents <- function(df) {
   paste(
@@ -138,7 +138,7 @@ SummarizeAscents <- function(df) {
 #' Normalizes ascents to ascent, page and route tables.
 #'
 #' @param df a data frame containing filtered ascents (as produced by
-#' "CleanAscents").
+#' [CleanAscents()]).
 #' @param period_length the number of seconds per page.
 NormalizeTables <- function(df, period_length) {
   df_routes <- df %>%

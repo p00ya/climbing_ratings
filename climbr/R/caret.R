@@ -49,10 +49,11 @@
 #'
 #' @param dfs_full list of data frames (ascents, pages, routes).
 #' @param max_iterations integer maximum number of WHR iterations.
-#' @param threshold the minimum predicted probability of a clean ascent to classify as CLEAN.
+#' @param threshold the minimum predicted probability of a clean ascent to
+#' classify as CLEAN.
 #' @param run_script function to run the estimation script; only exposed for
 #' testing purposes.
-#' @return model that can be passed to `caret::train`.
+#' @return model that can be passed to [caret::train()].
 MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
                          run_script = .RunEstimationScript) {
   # Columns expected to be in an ascents (explanatory variables) table.

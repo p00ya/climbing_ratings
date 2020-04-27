@@ -22,7 +22,7 @@
 #' the values are corresponding labels to apply in the plot.
 #' @param level the width of the intervals.
 #' @param wsq the Wiener variance per second (should be consistent with the
-#' estimation --wiener-variance flag, but potentially with different units).
+#' estimation `--wiener-variance` flag, but potentially with different units).
 PlotProgression <- function(df_pages, friends, level = 0.5,
                             wsq = 1 / (86400 * 7 * 52)) {
   df_friends <- df_pages %>%
