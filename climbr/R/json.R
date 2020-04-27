@@ -123,7 +123,7 @@ ParseJsonAscents <- function(json) {
             pitch.tick = .AsCharacterOrNA(p, 2)
           )
         }) %>%
-          na.omit() %>%
+          tidyr::drop_na() %>%
           dplyr::transmute(
             ascentId = paste0(ascentId, "P", .data$pitch.number),
             tick = NormalizeAscentType(unlist(.data$pitch.tick)),
