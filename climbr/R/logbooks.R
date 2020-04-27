@@ -66,6 +66,7 @@
       timestamp = .data$Ascent.Date %>%
         as.POSIXct(format = "%FT%H:%M:%SZ", optional = TRUE, tz = "UTC") %>%
         as.integer(),
+      style = 0L,
       pitches = purrr::map_int(.data$Comment, .GetPitchCount)
     ) %>%
     tidyr::drop_na(-.data$pitches)
@@ -102,6 +103,7 @@ ReadLogbook <- function(filename) {
 #' * climber: character normalized climber (derived from the filename)
 #' * tick: character normalized tick type
 #' * grade: integer grade (e.g. Ewbank's grade)
+#' * style: integer always 0 (column present for consistency with JSON)
 #' * timestamp: integer seconds since UNIX epoch at date of ascent
 #' * pitches: integer or NA number of pitches logged
 ReadLogbooks <- function(dir) {

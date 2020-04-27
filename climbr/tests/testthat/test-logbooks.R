@@ -70,6 +70,7 @@ describe(".ParseLogbook", {
       tick = "onsight",
       grade = 18L,
       timestamp = 1563667200L,
+      style = 0L,
       pitches = NA_integer_,
       stringsAsFactors = FALSE
     )
@@ -93,6 +94,7 @@ describe(".ParseLogbook", {
       tick = character(),
       grade = integer(),
       timestamp = integer(),
+      style = integer(),
       pitches = integer(),
       stringsAsFactors = FALSE
     )
@@ -116,6 +118,7 @@ describe(".ParseLogbook", {
       tick = c("redpoint", "redpoint"),
       grade = c(18L, 18L),
       timestamp = c(1563667200L, 1563667200L),
+      style = c(0L, 0L),
       pitches = c(NA, 2L),
       stringsAsFactors = FALSE
     )
@@ -140,7 +143,8 @@ describe(".ParseLogbook", {
       tick = c("onsight", "onsight"),
       grade = c(19L, 18L),
       timestamp = c(1563667200L, 1563667200L),
-      pitches = NA_integer_,
+      style = c(0L, 0L),
+      pitches = c(NA_integer_, NA_integer_),
       stringsAsFactors = FALSE
     )
     expect_equal(.ParseLogbook(df, "me"), raw)

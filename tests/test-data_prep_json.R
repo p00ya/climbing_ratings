@@ -25,7 +25,7 @@ setup({
   # Create temporary directory and copy testdata data there.
   dir.create(data_dir)
   file.copy(
-    file.path(src_dir, "ascents-001.json"),
+    file.path(src_dir, c("ascents-001.json", "ascents-002.json")),
     file.path(data_dir)
   )
 

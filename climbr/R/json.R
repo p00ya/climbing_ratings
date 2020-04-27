@@ -65,8 +65,7 @@ NormalizeAscentType <- function(ascent_type) {
 #'
 #' @param json a parsed JSON object as returned by using jsonlite to
 #' parse the files written by "FetchJsonAscentsFromApi".
-#' @return a "raw ascents" data frame with columns "ascentId", "route",
-#' "climber", "tick", "grade" and "timestamp".
+#' @return a "raw ascents" data frame (see [ReadAllJsonAscents()]).
 ParseJsonAscents <- function(json) {
   names(json) <- "data"
   names(json$data) <- c("numberAscents", "page", "perPage", "ascents")
@@ -78,11 +77,11 @@ ParseJsonAscents <- function(json) {
     do.call(rbind, json$data$ascents),
     stringsAsFactors = FALSE
   )
-  # These columns must be consistent with the "flatten"
+  # These columns must be consistent with the "flatten" parameter in the URL.
   colnames(df_json) <-
     c(
       "id", "routeID", "accountID", "tick", "gradeID", "gradeScore",
-      "date", "pitch"
+      "cprStyle", "date", "pitch"
     )
   df_json %>%
     dplyr::transmute(
@@ -96,44 +95,46 @@ ParseJsonAscents <- function(json) {
         as.integer() %>%
         suppressWarnings(),
       grade = .FlattenInt(.data$gradeScore),
+      style = relevel(as.factor(.FlattenChr(.data$cprStyle)), "Sport"),
       .data$pitch
     ) %>%
-    purrr::pmap_dfr(
-      function(ascentId, route, tick, climber, timestamp, grade, pitch, ...) {
-        if (is.null(pitch)) {
-          # Return a list rather than a data.frame here, because
-          # data.frame is horribly slow.
-          return(
-            list(
-              ascentId = ascentId,
-              tick = tick,
-              route = route,
-              grade = grade,
-              climber = climber,
-              timestamp = timestamp
-            )
-          )
-        }
-        # Split an ascent of a multipitch route into multiple ascents
-        # corresponding to each pitch.  Suffix the ascent and route IDs, e.g.
-        # with a "P2" suffix for pitch 2.
-        purrr::map_dfr(pitch, function(p) {
+    purrr::pmap_dfr(function(ascentId, route, tick, climber, timestamp, grade,
+                             style, pitch, ...) {
+      if (is.null(pitch)) {
+        # Return a list rather than a data.frame here, because
+        # data.frame is horribly slow.
+        return(
           list(
-            pitch.number = .AsIntegerOrNA(p, 1),
-            pitch.tick = .AsCharacterOrNA(p, 2)
-          )
-        }) %>%
-          tidyr::drop_na() %>%
-          dplyr::transmute(
-            ascentId = paste0(ascentId, "P", .data$pitch.number),
-            tick = NormalizeAscentType(unlist(.data$pitch.tick)),
-            route = paste0(route, "P", .data$pitch.number),
+            ascentId = ascentId,
+            tick = tick,
+            route = route,
             grade = grade,
+            style = style,
             climber = climber,
             timestamp = timestamp
           )
+        )
       }
-    )
+      # Split an ascent of a multipitch route into multiple ascents
+      # corresponding to each pitch.  Suffix the ascent and route IDs, e.g.
+      # with a "P2" suffix for pitch 2.
+      purrr::map_dfr(pitch, function(p) {
+        list(
+          pitch.number = .AsIntegerOrNA(p, 1),
+          pitch.tick = .AsCharacterOrNA(p, 2)
+        )
+      }) %>%
+        tidyr::drop_na() %>%
+        dplyr::transmute(
+          ascentId = paste0(ascentId, "P", .data$pitch.number),
+          tick = NormalizeAscentType(unlist(.data$pitch.tick)),
+          route = paste0(route, "P", .data$pitch.number),
+          grade = grade,
+          style = style,
+          climber = climber,
+          timestamp = timestamp
+        )
+    })
 }
 
 #' Reads all ascent JSON in directory "dir".
@@ -166,14 +167,13 @@ FetchJsonAscentsFromApi <- function(area, api_key, dir, start = 1L,
                                     host = "sandpit.thecrag.com") {
   flatten_param <- paste(
     "data[numberAscents", "page", "perPage", "ascents[id", "route[id]",
-    "account[id]", "tick[label]", "gradeID", "gradeScore", "date",
+    "account[id]", "tick[label]", "gradeID", "gradeScore", "cprStyle", "date",
     "pitch[number", "tick[label]]]]",
     sep = ","
   )
   base_url <- paste0(
     "https://", host, "/api",
     "/facet/ascents/at/", area,
-    "/with-route-gear-style/sport",
     "/in-setting/natural",
     "?key=", api_key,
     "&flatten=", flatten_param,
