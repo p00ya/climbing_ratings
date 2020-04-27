@@ -20,7 +20,8 @@
 #' @param ascent_type a label like "Hang dog"
 NormalizeAscentType <- function(ascent_type) {
   ascent_type %>%
-    stringr::str_to_lower() %>%
+    # tolower() is about 10x faster than stringr::str_to_lower().
+    tolower() %>%
     stringr::str_remove_all(stringr::fixed(" ")) %>%
     dplyr::recode(hangdog = "dog")
 }
@@ -100,10 +101,16 @@ ParseJsonAscents <- function(json) {
     purrr::pmap_dfr(
       function(ascentId, route, tick, climber, timestamp, grade, pitch, ...) {
         if (is.null(pitch)) {
+          # Return a list rather than a data.frame here, because
+          # data.frame is horribly slow.
           return(
-            data.frame(
-              ascentId, tick, grade, climber, timestamp, route,
-              stringsAsFactors = FALSE
+            list(
+              ascentId = ascentId,
+              tick = tick,
+              route = route,
+              grade = grade,
+              climber = climber,
+              timestamp = timestamp
             )
           )
         }
@@ -111,10 +118,9 @@ ParseJsonAscents <- function(json) {
         # corresponding to each pitch.  Suffix the ascent and route IDs, e.g.
         # with a "P2" suffix for pitch 2.
         purrr::map_dfr(pitch, function(p) {
-          data.frame(
+          list(
             pitch.number = .AsIntegerOrNA(p, 1),
-            pitch.tick = .AsCharacterOrNA(p, 2),
-            stringsAsFactors = FALSE
+            pitch.tick = .AsCharacterOrNA(p, 2)
           )
         }) %>%
           na.omit() %>%
