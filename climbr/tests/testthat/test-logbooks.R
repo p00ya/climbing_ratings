@@ -18,6 +18,38 @@
 context("Tests for logbooks.R")
 
 
+describe(".GetPitchCount", {
+  it("with no pitch info", {
+    expect_identical(.GetPitchCount(""), NA_integer_)
+    expect_identical(.GetPitchCount("just a comment"), NA_integer_)
+    expect_identical(.GetPitchCount("multiline\ncomment"), NA_integer_)
+    expect_identical(.GetPitchCount("1 :"), NA_integer_)
+  })
+  it("with comments after pitch info", {
+    expect_identical(
+      .GetPitchCount("comment\n1: lead by me\ncomment"), NA_integer_
+    )
+  })
+  it("with pitch info", {
+    expect_identical(.GetPitchCount("1:"), 1L)
+    expect_identical(.GetPitchCount("1:[18]"), 1L)
+    expect_identical(.GetPitchCount("1:[ABC]"), 1L)
+    expect_identical(.GetPitchCount("1: lead by me"), 1L)
+    expect_identical(.GetPitchCount("1:[18] lead by me"), 1L)
+    expect_identical(.GetPitchCount("comment\n1:"), 1L)
+  })
+  it("with multiple pitches", {
+    expect_identical(.GetPitchCount("1:\n2:"), 2L)
+    expect_identical(.GetPitchCount("1: lead by me\n2: lead by me"), 2L)
+    expect_identical(.GetPitchCount("comment\n1:\n2:"), 2L)
+  })
+  it("with missing pitches", {
+    # The pitch numbers may be sparse, e.g. if users didn't log linked pitches.
+    expect_identical(.GetPitchCount("2:"), 1L)
+    expect_identical(.GetPitchCount("1:\n3:"), 3L)
+  })
+})
+
 describe(".ParseLogbook", {
   it("extracts raw ascents", {
     # This is a subset of the fields in the actual logbook exports.
@@ -26,6 +58,7 @@ describe(".ParseLogbook", {
       Ascent.Type = "Onsight",
       Route.ID = "8589934592",
       Route.Grade = "18",
+      Comment = "",
       Ascent.Date = "2019-07-21T00:00:00Z",
       Log.Date = "2019-07-22T01:23:45Z",
       stringsAsFactors = FALSE
@@ -37,6 +70,7 @@ describe(".ParseLogbook", {
       tick = "onsight",
       grade = 18L,
       timestamp = 1563667200L,
+      pitches = NA_integer_,
       stringsAsFactors = FALSE
     )
     expect_equal(.ParseLogbook(df, "me"), raw)
@@ -47,6 +81,7 @@ describe(".ParseLogbook", {
       Ascent.Type = "Onsight",
       Route.ID = "8589934592",
       Route.Grade = "V8",
+      Comment = "",
       Ascent.Date = "2019-07-21T00:00:00Z",
       Log.Date = "2019-07-22T01:23:45Z",
       stringsAsFactors = FALSE
@@ -58,6 +93,30 @@ describe(".ParseLogbook", {
       tick = character(),
       grade = integer(),
       timestamp = integer(),
+      pitches = integer(),
+      stringsAsFactors = FALSE
+    )
+    expect_equal(.ParseLogbook(df, "me"), raw)
+  })
+  it("with pitches", {
+    df <- data.frame(
+      Ascent.ID = c("4294967296", "4294967297"),
+      Ascent.Type = c("Redpoint", "Redpoint"),
+      Route.ID = c("8589934592", "8589934592"),
+      Route.Grade = c("18", "18"),
+      Comment = c("", "1: lead by me\n2: lead by you"),
+      Ascent.Date = c("2019-07-21T00:00:00Z", "2019-07-21T00:00:00Z"),
+      Log.Date = c("2020-01-01T01:23:45Z", "2020-01-01T01:23:45Z"),
+      stringsAsFactors = FALSE
+    )
+    raw <- data.frame(
+      ascentId = c("4294967296", "4294967297"),
+      route = c("8589934592", "8589934592"),
+      climber = c("me", "me"),
+      tick = c("redpoint", "redpoint"),
+      grade = c(18L, 18L),
+      timestamp = c(1563667200L, 1563667200L),
+      pitches = c(NA, 2L),
       stringsAsFactors = FALSE
     )
     expect_equal(.ParseLogbook(df, "me"), raw)
@@ -68,6 +127,7 @@ describe(".ParseLogbook", {
       Ascent.Type = c("Onsight", "Onsight"),
       Route.ID = c("8589934592", "8589934593"),
       Route.Grade = c("18", "19"),
+      Comment = c("", ""),
       Ascent.Date = c("2019-07-21T00:00:00Z", "2019-07-21T00:00:00Z"),
       # Row 1 was logged after row 2.
       Log.Date = c("2020-01-01T01:23:45Z", "2019-07-22T01:23:45Z"),
@@ -80,6 +140,7 @@ describe(".ParseLogbook", {
       tick = c("onsight", "onsight"),
       grade = c(19L, 18L),
       timestamp = c(1563667200L, 1563667200L),
+      pitches = NA_integer_,
       stringsAsFactors = FALSE
     )
     expect_equal(.ParseLogbook(df, "me"), raw)
