@@ -225,8 +225,8 @@ def parse_args(argv):
         "--wiener-variance",
         metavar="w",
         type=float,
-        # Assume a 1 point variance over 1 year, with time units of 1 week.
-        default=1.0 / 52.0,
+        # Assume a 1 point variance over 1 year, with time units of 1s.
+        default=1.0 / 86400.0 / 364.0,
         help="variance of climber ratings per time unit",
     )
     parser.add_argument(

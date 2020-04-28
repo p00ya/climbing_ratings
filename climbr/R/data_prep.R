@@ -147,14 +147,14 @@ NormalizeTables <- function(df, period_length) {
 
   df_ascents <- df %>%
     dplyr::mutate(
-      t = (.data$timestamp - min(!!df$timestamp)) %/% period_length,
+      timestamp = (.data$timestamp %/% period_length) * period_length,
       clean = as.numeric(.data$clean)
     ) %>%
-    dplyr::arrange(.data$climber, .data$t)
+    dplyr::arrange(.data$climber, .data$timestamp)
 
   df_pages <- df_ascents %>%
-    dplyr::group_by(.data$climber, .data$t) %>%
-    dplyr::summarise(timestamp = dplyr::first(.data$timestamp))
+    dplyr::group_by(.data$climber, .data$timestamp) %>%
+    dplyr::summarise()
 
   # Set first_page[c] to be the index in df_pages of the first page for climber
   # c.
@@ -167,10 +167,10 @@ NormalizeTables <- function(df, period_length) {
   df_pages <- df_pages %>%
     dplyr::ungroup() %>%
     dplyr::mutate(page = dplyr::row_number()) %>%
-    dplyr::select(.data$climber, .data$t, .data$page, .data$timestamp)
+    dplyr::select(.data$page, .data$climber, .data$timestamp)
 
   df_ascents <- df_ascents %>%
-    dplyr::inner_join(df_pages, by = c("climber", "t")) %>%
+    dplyr::inner_join(df_pages, by = c("climber", "timestamp")) %>%
     dplyr::select(.data$route, .data$climber, .data$clean, .data$page)
 
   list(ascents = df_ascents, pages = df_pages, routes = df_routes)
@@ -213,7 +213,7 @@ WriteNormalizedTables <- function(dfs, dir) {
   )
   utils::write.csv(
     dfs$pages %>%
-      dplyr::select(.data$climber, timestamp = .data$t) %>%
+      dplyr::select(.data$climber, .data$timestamp) %>%
       dplyr::mutate(climber = as.integer(.data$climber) - 1),
     file.path(dir, "pages.csv"),
     row.names = FALSE

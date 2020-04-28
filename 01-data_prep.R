@@ -17,7 +17,7 @@
 
 library(climbr)
 
-period_length <- 604800 # seconds in 1 week
+period_length <- 604800L # seconds in 1 week
 if (!exists("now")) {
   now <- Sys.time()
 }

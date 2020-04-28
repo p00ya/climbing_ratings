@@ -27,7 +27,6 @@ ascents <- data.frame(
 
 pages <- data.frame(
   climber = factor(c("C1", "C2")),
-  t = c(0, 0),
   timestamp = c(0L, 0L)
 )
 
