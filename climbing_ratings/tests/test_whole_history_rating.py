@@ -17,12 +17,31 @@
 import unittest
 import math
 import numpy as np
-from .. import whole_history_rating
+from ..whole_history_rating import (
+    AscentsTable,
+    Hyperparameters,
+    PagesTable,
+    WholeHistoryRating,
+    extract_slices,
+    make_route_ascents,
+)
 from .assertions import assert_close
+
+
+# Hyperparameters defaults.
+_hparams = Hyperparameters(0.0, 1.0, 1.0, 1.0)
 
 
 class TestWholeHistoryRatingFunctions(unittest.TestCase):
     """Tests for functions in the whole_history_rating module"""
+
+    def test_extract_slices(self):
+        """Test extract_slices()"""
+        self.assertSequenceEqual([(0, 1)], extract_slices([0], 1))
+        self.assertSequenceEqual([(0, 2)], extract_slices([0, 0], 1))
+        self.assertSequenceEqual([(0, 1), (1, 2)], extract_slices([0, 1], 2))
+        self.assertSequenceEqual([(0, 0)], extract_slices([], 1))
+        self.assertSequenceEqual([(0, 0), (0, 1)], extract_slices([1], 2))
 
     def test_make_route_ascents(self):
         """Test make_route_ascents()"""
@@ -30,7 +49,7 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         ascents_page_slices = [(0, 5)]
         ascents_route = [0, 1, 0, 1, 0]
 
-        ascents = whole_history_rating.make_route_ascents(
+        ascents = make_route_ascents(
             ascents_clean, ascents_page_slices, ascents_route, 2
         )
         self.assertSequenceEqual([3.0, 2.0], ascents.wins.tolist())
@@ -43,7 +62,7 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         ascents_page_slices = [(0, 5)]
         ascents_route = [1, 2, 1, 2, 1]
 
-        ascents = whole_history_rating.make_route_ascents(
+        ascents = make_route_ascents(
             ascents_clean, ascents_page_slices, ascents_route, 4
         )
         self.assertSequenceEqual([0.0, 3.0, 2.0, 0.0], ascents.wins.tolist())
@@ -61,21 +80,15 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        ascents_route = [0, 0, 1, 1, 2, 2]
-        ascents_clean = np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
-        ascents_page_slices = [(0, 6)]
-        pages_climber_slices = [(0, 1)]
-        routes_grade = [0.0, 0.0, 0.0]
-        pages_timestamp = np.array([0.0])
-        self.whr = whole_history_rating.WholeHistoryRating(
-            whole_history_rating.Hyperparameters(0.0, 1.0, 1.0, 1.0),
-            ascents_route,
-            ascents_clean,
-            ascents_page_slices,
-            pages_climber_slices,
-            routes_grade,
-            pages_timestamp,
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0]),
+            page=[0, 0, 0, 0, 0, 0],
+            style_page=[-1, -1, -1, -1, -1, -1],
         )
+        pages = PagesTable(climber=[0], timestamp=[0.0])
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
     def test_initialization(self):
         """Test WholeHistoryRating initialization"""
@@ -117,21 +130,15 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        ascents_route = [0, 0, 1, 1, 2, 2]
-        ascents_clean = np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
-        ascents_page_slices = [(0, 2), (2, 6)]
-        pages_climber_slices = [(0, 2)]
-        routes_grade = [0.0, 0.0, 0.0]
-        pages_timestamp = np.array([0.0, 1.0])
-        self.whr = whole_history_rating.WholeHistoryRating(
-            whole_history_rating.Hyperparameters(0.0, 1.0, 1.0, 1.0),
-            ascents_route,
-            ascents_clean,
-            ascents_page_slices,
-            pages_climber_slices,
-            routes_grade,
-            pages_timestamp,
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0]),
+            page=[0, 0, 1, 1, 1, 1],
+            style_page=[-1, -1, -1, -1, -1, -1],
         )
+        pages = PagesTable(climber=[0, 0], timestamp=np.array([0.0, 1.0]))
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings is stable"""
@@ -154,21 +161,15 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        ascents_route = [0, 0, 1, 1, 2, 2]
-        ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-        ascents_page_slices = [(0, 6)]
-        pages_climber_slices = [(0, 1)]
-        routes_grade = [0.0, 0.0, 0.0]
-        pages_timestamp = np.array([0.0])
-        self.whr = whole_history_rating.WholeHistoryRating(
-            whole_history_rating.Hyperparameters(0.0, 1.0, 1.0, 1.0),
-            ascents_route,
-            ascents_clean,
-            ascents_page_slices,
-            pages_climber_slices,
-            routes_grade,
-            pages_timestamp,
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            page=[0, 0, 0, 0, 0, 0],
+            style_page=[-1, -1, -1, -1, -1, -1],
         )
+        pages = PagesTable(climber=[0], timestamp=np.array([0.0]))
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings converges"""
@@ -187,21 +188,15 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        ascents_route = [0, 0, 1, 1, 2, 2]
-        ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-        ascents_page_slices = [(0, 6)]
-        pages_climber_slices = [(0, 1)]
-        routes_grade = np.log([1.0, 2.0, 2.0])
-        pages_timestamp = np.array([0.0])
-        self.whr = whole_history_rating.WholeHistoryRating(
-            whole_history_rating.Hyperparameters(0.0, 1.0, 1.0, 1.0),
-            ascents_route,
-            ascents_clean,
-            ascents_page_slices,
-            pages_climber_slices,
-            routes_grade,
-            pages_timestamp,
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            page=[0, 0, 0, 0, 0, 0],
+            style_page=[-1, -1, -1, -1, -1, -1],
         )
+        pages = PagesTable(climber=[0], timestamp=np.array([0.0]))
+        routes_grade = np.log([1.0, 2.0, 2.0])
+        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings"""
@@ -220,21 +215,15 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
     def setUp(self):
         np.seterr(all="raise")
         self.assert_close = assert_close.__get__(self, self.__class__)
-        ascents_route = [0, 0, 1, 1, 2, 2]
-        ascents_clean = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-        ascents_page_slices = [(0, 4), (4, 6)]
-        pages_climber_slices = [(0, 2)]
-        routes_grade = [0.0, 0.0, 0.0]
-        pages_timestamp = np.array([0.0, 1.0])
-        self.whr = whole_history_rating.WholeHistoryRating(
-            whole_history_rating.Hyperparameters(0.0, 1.0, 1.0, 1.0),
-            ascents_route,
-            ascents_clean,
-            ascents_page_slices,
-            pages_climber_slices,
-            routes_grade,
-            pages_timestamp,
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            page=[0, 0, 0, 0, 1, 1],
+            style_page=[-1, -1, -1, -1, -1, -1],
         )
+        pages = PagesTable(climber=[0, 0], timestamp=np.array([0.0, 1.0]))
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
     def test_update_page_ratings(self):
         """Test WholeHistoryRating.update_page_ratings converges"""

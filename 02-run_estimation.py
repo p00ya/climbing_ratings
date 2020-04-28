@@ -107,11 +107,15 @@ cov
 
 import argparse
 import csv
-import itertools
 import numpy as np
 import os
 import sys
-from climbing_ratings.whole_history_rating import Hyperparameters, WholeHistoryRating
+from climbing_ratings.whole_history_rating import (
+    AscentsTable,
+    Hyperparameters,
+    PagesTable,
+    WholeHistoryRating,
+)
 
 
 def read_ascents(dirname):
@@ -184,39 +188,6 @@ def read_style_pages(dirname):
             timestamps.append(float(timestamp))
 
     return (climber_styles, timestamps)
-
-
-def extract_slices(values, num_slices):
-    """Extract slices of contiguous values.
-
-    Parameters
-    ----------
-    values : list of int
-        A list of values in ascending order.
-    num_slices : int
-        The length of the list to return.
-
-    Returns
-    -------
-    list of (start, end) tuples
-        Returns a list x such that x[i] is a tuple (start, end) where start is
-        the earliest index of the least value >= i, and end is the latest index
-        of the greatest value <= i.
-    """
-    slices = []
-    start = end = 0
-    i = 0
-    for j, value in enumerate(itertools.chain(values, [num_slices])):
-        if i < value:
-            slices.append((start, end))
-            # Add missing values:
-            slices.extend([(end, end)] * (value - i - 1))
-            i = value
-            start = j
-
-        end = j + 1
-
-    return slices
 
 
 def write_route_ratings(dirname, routes_name, route_ratings, route_var):
@@ -296,13 +267,10 @@ def main(argv):
     args = parse_args(argv[1:])
     data = args.data_dir
 
-    ascents_route, ascents_clean, ascents_page, _ = read_ascents(data)
-    pages_climber, pages_timestamp = read_pages(data)
+    ascents = AscentsTable(*read_ascents(data))
+    pages = PagesTable(*read_pages(data))
     read_style_pages(data)  # not currently used
     routes_name, routes_rating = read_routes(data)
-
-    ascents_page_slices = extract_slices(ascents_page, len(pages_climber))
-    pages_climber_slices = extract_slices(pages_climber, pages_climber[-1] + 1)
 
     hparams = Hyperparameters(
         args.climber_prior_mean,
@@ -311,15 +279,7 @@ def main(argv):
         args.route_prior_variance,
     )
 
-    whr = WholeHistoryRating(
-        hparams,
-        ascents_route,
-        ascents_clean,
-        ascents_page_slices,
-        pages_climber_slices,
-        routes_rating,
-        pages_timestamp,
-    )
+    whr = WholeHistoryRating(hparams, ascents, pages, routes_rating)
 
     np.seterr(all="ignore")
     last_log_lik = float("-inf")
@@ -345,7 +305,7 @@ def main(argv):
 
         write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
         write_page_ratings(
-            output, pages_climber, whr.page_ratings, whr.page_var, whr.page_cov
+            output, pages.climber, whr.page_ratings, whr.page_var, whr.page_cov
         )
 
 

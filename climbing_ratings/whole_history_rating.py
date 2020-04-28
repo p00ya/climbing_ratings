@@ -42,27 +42,37 @@ def get_pages_gap(pages_timestamp):
     return pages_gap
 
 
-class Ascents(
-    collections.namedtuple("Ascents", ["wins", "slices", "adversary", "clean"])
-):
-    """Stores ascents organized into contiguous slices.
+def extract_slices(values, num_slices):
+    """Extract slices of contiguous values.
 
-    Ascents are organized into player-order, where the player is a route or
-    a page.  Hence ascents with the same player are contiguous and can be
-    addressed by a slice.
-
-    Attributes
+    Parameters
     ----------
-    wins : ndarray
-        Count of wins for each player.
-    slices : list of pairs
-        (start, end) pairs defining the slice in the player-ordered ascents,
-        for each player.
-    adversary : ndarray of intp
-        The index of the adversary for each player-ordered ascent.
-    clean : ndarray or None
-        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
+    values : list of int
+        A list of values in ascending order.
+    num_slices : int
+        The length of the list to return.
+
+    Returns
+    -------
+    list of (start, end) tuples
+        Returns a list x such that x[i] is a tuple (start, end) where start is
+        the earliest index of the least value >= i, and end is the latest index
+        of the greatest value <= i.
     """
+    slices = []
+    start = end = 0
+    i = 0
+    for j, value in enumerate(itertools.chain(values, [num_slices])):
+        if i < value:
+            slices.append((start, end))
+            # Add missing values:
+            slices.extend([(end, end)] * (value - i - 1))
+            i = value
+            start = j
+
+        end = j + 1
+
+    return slices
 
 
 def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_routes):
@@ -123,12 +133,71 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_ro
         for a in range(start, end):
             rascents_page[ascent_to_rascent[a]] = page
 
-    return Ascents(
+    return SlicedAscents(
         np.array(route_wins),
         rascents_route_slices,
         np.array(rascents_page, dtype=np.intp),
         None,
     )
+
+
+class AscentsTable(
+    collections.namedtuple("AscentsTable", ["route", "clean", "page", "style_page"])
+):
+    """Normalized table of ascents.
+
+    The table must be ordered by page.
+
+    Attributes
+    ----------
+    route : array_like of int
+        The 0-based ID of the route for each ascent.
+    clean : array_like of float
+        1 for a clean ascent, 0 otherwise, for each ascent.  The implied
+        ascents must be in page order.
+    page : array_like of int
+        The 0-based ID of the page for each ascent.
+    style_page : array_like of int
+        The 0-based ID of the style-page for each ascent.
+    """
+
+
+class PagesTable(collections.namedtuple("PagesTable", ["climber", "timestamp"])):
+    """Normalized table of pages.
+
+    Pages must be sorted lexicographically by climber and timestamp.
+    Hence pages belonging to the same climber are all contiguous.
+
+    Attributes
+    ----------
+    climber : array_like of int
+        The 0-based ID of the climber (or climber_style) for each page.
+    timestamp : array_like of float
+        The time of the ascents for each page.
+    """
+
+
+class SlicedAscents(
+    collections.namedtuple("SlicedAscents", ["wins", "slices", "adversary", "clean"])
+):
+    """Stores ascents organized into contiguous slices.
+
+    Ascents are organized into player-order, where the player is a route or
+    a page.  Hence ascents with the same player are contiguous and can be
+    addressed by a slice.
+
+    Attributes
+    ----------
+    wins : ndarray
+        Count of wins for each player.
+    slices : list of pairs
+        (start, end) pairs defining the slice in the player-ordered ascents,
+        for each player.
+    adversary : ndarray of intp
+        The index of the adversary for each player-ordered ascent.
+    clean : ndarray or None
+        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
+    """
 
 
 class Hyperparameters(
@@ -177,7 +246,7 @@ class Hyperparameters(
 class WholeHistoryRating:
     """Performs optimization for route and climber ratings.
 
-    Initializes models for climbers and routes from raw ascent data.
+    Initializes models for climbers and routes from ascent tables.
     Stores an estimate for each rating and performs optimization using Newton's
     method.
 
@@ -203,9 +272,9 @@ class WholeHistoryRating:
 
     # Private Attributes
     # ------------------
-    # _page_ascents : Ascents
+    # _page_ascents : SlicedAscents
     #     Ascents in page order.
-    # _route_ascents : Ascents
+    # _route_ascents : SlicedAscents
     #     Ascents in route order (no clean).
     # _pages_climber_slices : list of pairs
     #     Start and end indices in page_ratings for each climber.
@@ -214,39 +283,24 @@ class WholeHistoryRating:
     # _climbers : list of Process
     #     Climbers (in the same order as _pages_climber_slices).
 
-    def __init__(
-        self,
-        hparams,
-        ascents_route,
-        ascents_clean,
-        ascents_page_slices,
-        pages_climber_slices,
-        routes_rating,
-        pages_timestamp,
-    ):
+    def __init__(self, hparams, ascents, pages, routes_rating):
         """Initialize a WHR model.
 
         Parameters
         ----------
         hparams: Hyperparameters
             Parameter values for use in priors across climbers and routes.
-        ascents_route : array_like of int
-            The 0-based ID of the route for each ascent.  The implied ascents
-            must be in page order.
-        ascents_clean : array_like of float
-            1 for a clean ascent, 0 otherwise, for each ascent.  The implied
-            ascents must be in page order.
-        ascents_page_slices : list of pairs
-            Each (start, end) entry defines the slice of the ascents for a page.
-        pages_climber_slices : list of pairs
-            Each (start, end) entry defines the slice of the pages for a
-            climber.
+        ascents : AscentsTable
+            Input ascents table.
+        pages : PagesTable
+            Input pages table.
         routes_rating : list
             Initial natural ratings for each route.
-        pages_timestamp : array_like of float
-            The time of the ascents for each page.
         """
-        num_pages = len(ascents_page_slices)
+        num_pages = len(pages.climber)
+        ascents_page_slices = extract_slices(ascents.page, num_pages)
+        pages_climber_slices = extract_slices(pages.climber, pages.climber[-1] + 1)
+
         self.route_ratings = np.array(routes_rating)
         self.page_ratings = np.full(num_pages, hparams.climber_prior_mean)
         self.page_var = np.empty(num_pages)
@@ -257,16 +311,16 @@ class WholeHistoryRating:
 
         page_wins = []
         for (start, end) in ascents_page_slices:
-            page_wins.append(np.add.reduce(ascents_clean[start:end]))
+            page_wins.append(np.add.reduce(ascents.clean[start:end]))
 
-        self._page_ascents = Ascents(
+        self._page_ascents = SlicedAscents(
             np.array(page_wins),
             ascents_page_slices,
-            np.array(ascents_route),
-            np.array(ascents_clean),
+            np.array(ascents.route),
+            np.array(ascents.clean),
         )
         self._route_ascents = make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route, len(routes_rating)
+            ascents.clean, ascents_page_slices, ascents.route, len(routes_rating)
         )
 
         self._route_priors = NormalDistribution(
@@ -277,7 +331,7 @@ class WholeHistoryRating:
             hparams.climber_prior_mean, hparams.climber_prior_variance
         )
 
-        pages_gap = get_pages_gap(pages_timestamp)
+        pages_gap = get_pages_gap(pages.timestamp)
 
         self._climbers = []
         for start, end in pages_climber_slices:
