@@ -43,6 +43,9 @@ describe("data_prep_json", {
   it("pages.csv matches golden", {
     ExpectCsvsEqual("pages.csv", src_dir, data_dir)
   })
+  it("style_pages.csv matches golden", {
+    ExpectCsvsEqual("style_pages.csv", src_dir, data_dir)
+  })
   it("routes.csv matches golden", {
     ExpectCsvsEqual("routes.csv", src_dir, data_dir)
   })

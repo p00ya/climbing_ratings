@@ -149,30 +149,56 @@ NormalizeTables <- function(df, period_length) {
       timestamp = (.data$timestamp %/% period_length) * period_length,
       clean = as.numeric(.data$clean)
     ) %>%
-    dplyr::arrange(.data$climber, .data$timestamp)
+    dplyr::arrange(.data$climber, .data$timestamp, .data$style)
+
+  df_style_pages <- df_ascents %>%
+    dplyr::group_by(.data$climber, .data$style, .data$timestamp) %>%
+    dplyr::summarise() %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(as.integer(.data$style) != 1L) %>%
+    dplyr::arrange(.data$climber, .data$style, .data$timestamp) %>%
+    dplyr::mutate(style_page = dplyr::row_number()) %>%
+    dplyr::select(.data$style_page, .data$climber, .data$style, .data$timestamp)
+
+  df_climber_styles <- df_style_pages %>%
+    dplyr::group_by(.data$climber, .data$style) %>%
+    dplyr::summarise() %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(climber_style = dplyr::row_number())
+
+  df_style_pages <- df_style_pages %>%
+    dplyr::inner_join(
+      df_climber_styles,
+      by = c("climber", "style")
+    )
 
   df_pages <- df_ascents %>%
     dplyr::group_by(.data$climber, .data$timestamp) %>%
-    dplyr::summarise()
-
-  # Set first_page[c] to be the index in df_pages of the first page for climber
-  # c.
-  first_page <- (
-    df_pages %>%
-      dplyr::group_by(.data$climber) %>%
-      dplyr::summarise(n = dplyr::n()) %>%
-      dplyr::mutate(idx = utils::head(cumsum(c(1, .data$n)), -1)))$idx
-
-  df_pages <- df_pages %>%
+    dplyr::summarise() %>%
     dplyr::ungroup() %>%
     dplyr::mutate(page = dplyr::row_number()) %>%
     dplyr::select(.data$page, .data$climber, .data$timestamp)
 
   df_ascents <- df_ascents %>%
-    dplyr::inner_join(df_pages, by = c("climber", "timestamp")) %>%
-    dplyr::select(.data$route, .data$climber, .data$clean, .data$page)
+    dplyr::inner_join(
+      df_pages,
+      by = c("climber", "timestamp")
+    ) %>%
+    dplyr::left_join(
+      df_style_pages,
+      by = c("climber", "style", "timestamp")
+    ) %>%
+    dplyr::mutate(
+      style_page = ifelse(is.na(.data$style_page), 0L, .data$style_page)
+    ) %>%
+    dplyr::select(
+      .data$route, .data$climber, .data$clean, .data$page, .data$style_page
+    )
 
-  list(ascents = df_ascents, pages = df_pages, routes = df_routes)
+  list(
+    ascents = df_ascents, pages = df_pages, style_pages = df_style_pages,
+    routes = df_routes
+  )
 }
 
 #' Performs a transformation of a grade to a natural rating.
@@ -199,7 +225,8 @@ WriteNormalizedTables <- function(dfs, dir) {
     dfs$ascents %>%
       dplyr::mutate(
         route = as.integer(.data$route) - 1,
-        page = .data$page - 1
+        page = .data$page - 1,
+        style_page = .data$style_page - 1
       ) %>%
       dplyr::select(-.data$climber),
     file.path(dir, "ascents.csv"),
@@ -212,9 +239,20 @@ WriteNormalizedTables <- function(dfs, dir) {
   )
   utils::write.csv(
     dfs$pages %>%
-      dplyr::select(.data$climber, .data$timestamp) %>%
-      dplyr::mutate(climber = as.integer(.data$climber) - 1),
+      dplyr::transmute(
+        climber = as.integer(.data$climber) - 1,
+        .data$timestamp,
+      ),
     file.path(dir, "pages.csv"),
+    row.names = FALSE
+  )
+  utils::write.csv(
+    dfs$style_pages %>%
+      dplyr::transmute(
+        climber_style = as.integer(.data$climber_style) - 1,
+        .data$timestamp
+      ),
+    file.path(dir, "style_pages.csv"),
     row.names = FALSE
   )
 }

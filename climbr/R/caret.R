@@ -57,7 +57,7 @@
 MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
                          run_script = .RunEstimationScript) {
   # Columns expected to be in an ascents (explanatory variables) table.
-  ascents_columns <- c("route", "page")
+  ascents_columns <- c("route", "page", "style_page")
 
   # Returns the probability each of the given ascents is clean, according
   # to the estimates in "ratings".

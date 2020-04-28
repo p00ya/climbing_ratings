@@ -23,17 +23,36 @@ clean
 page
     0-based page ID.  A page identifies a climber at an interval in time.  Acts
     as an index into the pages table.
+style_page
+    0-based style-page ID.  A style-page identifies a climber ascending in a
+    particular style, at an interval in time.  Acts as an index into the
+    style-pages table.  -1 indicates no style page (an ascent in the base
+    style).
 
 pages.csv
 ---------
+A page identifies a climber at an interval in time.  Pages must be sorted by
+lexicographically by climber and timestamp.
+
 climber
     0-based climber ID.  While there is no separate climbers table, the IDs
-    should behave like an index into such a table.  Pages corresponding to the
-    same climber must be contiguous.
+    should behave like an index into such a table.
 timestamp
-    Number representing the time of all ascents for this page.  The pages for a
-    given climber must be ordered by timestamp.  The time unit must be
-    consistent with the "wiener-variance" option.
+    Number representing the time of all ascents for this page.  The time unit
+    must be consistent with the "wiener-variance" option.
+
+style_pages.csv
+---------------
+A style-page identifies a climber ascending in a particular style, at an
+interval in time.  Pages must be sorted lexicographically by climber
+and timestamp.
+
+climber_style
+    0-based climber/style ID.  This ID should be unique for each combination
+    of climber and style, and IDs for the same climber should be contiguous.
+timestamp
+    Number representing the time of all ascents for this page.  The time unit
+    must be consistent with the "wiener-variance" option.
 
 routes.csv
 ----------
@@ -50,7 +69,7 @@ route_ratings.csv
 Output file.
 
 route
-    Tag from routes.csv
+    Tag from routes.csv.
 rating
     WHR natural rating for each route.
 var
@@ -101,17 +120,19 @@ def read_ascents(dirname):
     routes = []
     cleans = []
     pages = []
+    style_pages = []
     with open(filename, newline="") as fp:
         reader = iter(csv.reader(fp))
 
-        assert next(reader) == ["route", "clean", "page"]
+        assert next(reader) == ["route", "clean", "page", "style_page"]
         for line in reader:
-            route, clean, page = line
+            route, clean, page, style_page = line
             routes.append(int(route))
             cleans.append(float(clean))
             pages.append(int(page))
+            style_pages.append(int(style_page))
 
-    return (routes, cleans, pages)
+    return (routes, cleans, pages, style_pages)
 
 
 def read_routes(dirname):
@@ -146,6 +167,23 @@ def read_pages(dirname):
             timestamps.append(float(timestamp))
 
     return (climbers, timestamps)
+
+
+def read_style_pages(dirname):
+    """Read the style-pages table."""
+    filename = os.path.join(dirname, "style_pages.csv")
+    climber_styles = []
+    timestamps = []
+    with open(filename, newline="") as fp:
+        reader = iter(csv.reader(fp))
+
+        assert next(reader) == ["climber_style", "timestamp"]
+        for line in reader:
+            climber_style, timestamp = line
+            climber_styles.append(int(climber_style))
+            timestamps.append(float(timestamp))
+
+    return (climber_styles, timestamps)
 
 
 def extract_slices(values, num_slices):
@@ -258,8 +296,9 @@ def main(argv):
     args = parse_args(argv[1:])
     data = args.data_dir
 
-    ascents_route, ascents_clean, ascents_page = read_ascents(data)
+    ascents_route, ascents_clean, ascents_page, _ = read_ascents(data)
     pages_climber, pages_timestamp = read_pages(data)
+    read_style_pages(data)  # not currently used
     routes_name, routes_rating = read_routes(data)
 
     ascents_page_slices = extract_slices(ascents_page, len(pages_climber))

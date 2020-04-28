@@ -19,8 +19,9 @@ Notable differences are:
 -   Routes are like players except their rating does not change with time.
 -   The normal distribution is used for the prior distribution of route and initial climber ratings.
 -   A "page" is the model of a climber in a particular time interval (like a page in a climber's logbook).  This is equivalent to a player on a particular day in WHR, except that the time may be quantized with lower resolution (e.g. a week).
+-   Ascents can be labelled with a style.  Climbers' relative proficiency in alternative styles is modelled as a Wiener process.  The process is independent of their proficiency in the "base" style.  Hence a "climber-style" is like a climber and a "page-style" is like a page, but for a specific style.
 
-Results of analyzing a database of Australian ascents with this software are discussed in the paper:
+Results of analyzing a database of Australian ascents with an earlier version of this software are discussed in the paper:
 
 > Dean Scarff, "Estimation of Climbing Route Difficulty using Whole-History Rating", [arXiv:2001.05388](https://arxiv.org/abs/2001.05388) [stat.AP], 2020.
 

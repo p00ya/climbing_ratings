@@ -22,6 +22,7 @@ ascents <- data.frame(
   route = factor(c("R1", "R1", "R2", "R2")),
   climber = factor(c("C1", "C2", "C1", "C2")),
   page = c(1L, 2L, 1L, 2L),
+  style_page = c(1L, 2L, 1L, 2L),
   clean = c(1L, 1L, 1L, 0L)
 )
 
@@ -30,12 +31,19 @@ pages <- data.frame(
   timestamp = c(0L, 0L)
 )
 
+style_pages <- data.frame(
+  climber_style = factor(c("C1S2", "C2S2")),
+  timestamp = c(0L, 0L)
+)
+
 routes <- data.frame(
   route = factor(c("R1", "R2")),
   grade = c(15, 20)
 )
 
-dfs <- list(ascents = ascents, pages = pages, routes = routes)
+dfs <- list(
+  ascents = ascents, pages = pages, style_pages = style_pages, routes = routes
+)
 
 page_ratings <- data.frame(
   climber = c(1L, 2L),

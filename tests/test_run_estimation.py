@@ -36,6 +36,7 @@ class TestRunEstimation(unittest.TestCase):
             self.addCleanup(stack.pop_all().close)
         shutil.copy(self.get_golden("ascents.csv"), self._tmpdir.name)
         shutil.copy(self.get_golden("pages.csv"), self._tmpdir.name)
+        shutil.copy(self.get_golden("style_pages.csv"), self._tmpdir.name)
         shutil.copy(self.get_golden("routes.csv"), self._tmpdir.name)
 
     def get_golden(self, filename):
