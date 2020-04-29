@@ -22,8 +22,8 @@ from ..whole_history_rating import (
     Hyperparameters,
     PagesTable,
     WholeHistoryRating,
-    extract_slices,
-    make_route_ascents,
+    _extract_slices,
+    _make_route_ascents,
 )
 from .assertions import assert_close
 
@@ -36,20 +36,20 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
     """Tests for functions in the whole_history_rating module"""
 
     def test_extract_slices(self):
-        """Test extract_slices()"""
-        self.assertSequenceEqual([(0, 1)], extract_slices([0], 1))
-        self.assertSequenceEqual([(0, 2)], extract_slices([0, 0], 1))
-        self.assertSequenceEqual([(0, 1), (1, 2)], extract_slices([0, 1], 2))
-        self.assertSequenceEqual([(0, 0)], extract_slices([], 1))
-        self.assertSequenceEqual([(0, 0), (0, 1)], extract_slices([1], 2))
+        """Test _extract_slices()"""
+        self.assertSequenceEqual([(0, 1)], _extract_slices([0], 1))
+        self.assertSequenceEqual([(0, 2)], _extract_slices([0, 0], 1))
+        self.assertSequenceEqual([(0, 1), (1, 2)], _extract_slices([0, 1], 2))
+        self.assertSequenceEqual([(0, 0)], _extract_slices([], 1))
+        self.assertSequenceEqual([(0, 0), (0, 1)], _extract_slices([1], 2))
 
     def test_make_route_ascents(self):
-        """Test make_route_ascents()"""
+        """Test _make_route_ascents()"""
         ascents_clean = [0, 0, 0, 0, 0]
         ascents_page_slices = [(0, 5)]
         ascents_route = [0, 1, 0, 1, 0]
 
-        ascents = make_route_ascents(
+        ascents = _make_route_ascents(
             ascents_clean, ascents_page_slices, ascents_route, 2
         )
         self.assertSequenceEqual([3.0, 2.0], ascents.wins.tolist())
@@ -57,12 +57,12 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
 
     def test_make_route_ascents_sparse(self):
-        """Test make_route_ascents() for routes without ascents"""
+        """Test _make_route_ascents() for routes without ascents"""
         ascents_clean = [0, 0, 0, 0, 0]
         ascents_page_slices = [(0, 5)]
         ascents_route = [1, 2, 1, 2, 1]
 
-        ascents = make_route_ascents(
+        ascents = _make_route_ascents(
             ascents_clean, ascents_page_slices, ascents_route, 4
         )
         self.assertSequenceEqual([0.0, 3.0, 2.0, 0.0], ascents.wins.tolist())

@@ -23,183 +23,6 @@ from .normal_distribution import NormalDistribution
 from .process import Process
 
 
-def get_pages_gap(pages_timestamp):
-    """Calculate the time difference from each page to the following page.
-
-    Parameters
-    ----------
-    pages_timestamp : array_like of float
-        The time of the ascents for each page.
-
-    Returns
-    -------
-    ndarray
-        Time interval from each page to the next page.  The gap for the last
-        page of each climber is undefined.
-    """
-    pages_gap = np.array(pages_timestamp)
-    pages_gap[:-1] = pages_gap[1:] - pages_gap[:-1]
-    return pages_gap
-
-
-def extract_slices(values, num_slices):
-    """Extract slices of contiguous values.
-
-    Parameters
-    ----------
-    values : list of int
-        A list of values in ascending order.
-    num_slices : int
-        The length of the list to return.
-
-    Returns
-    -------
-    list of (start, end) tuples
-        Returns a list x such that x[i] is a tuple (start, end) where start is
-        the earliest index of the least value >= i, and end is the latest index
-        of the greatest value <= i.
-    """
-    slices = []
-    start = end = 0
-    i = 0
-    for j, value in enumerate(itertools.chain(values, [num_slices])):
-        if i < value:
-            slices.append((start, end))
-            # Add missing values:
-            slices.extend([(end, end)] * (value - i - 1))
-            i = value
-            start = j
-
-        end = j + 1
-
-    return slices
-
-
-def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_routes):
-    """Create a permutation of ascents in route-order.
-
-    Parameters
-    ----------
-    ascents_clean : array_like of float
-        1 if the ascent was clean, 0 otherwise.
-    ascents_route : ndarray of intp
-        Route index of each ascent.
-    ascents_page : ndarray of intp
-        Page index of each ascent.
-    num_routes : integer
-        Number of routes.  Route indices must be in the interval
-        [0, num_routes).  Routes may have zero ascents.
-
-    Returns
-    -------
-    Ascents
-        Ascents ordered by (and sliced by) route.  The "slices" list will have
-        length num_routes.  The "clean" attribute is unpopulated.
-    """
-    num_ascents = len(ascents_route)
-    route_wins = []
-    rascents_route_slices = []
-    rascents_page = [0] * num_ascents
-
-    permutation = [(route, a) for a, route in enumerate(ascents_route)]
-    permutation.sort()
-    ascent_to_rascent = [0] * num_ascents
-
-    # Add an additional ascent so the loop adds all routes.
-    permutation = itertools.chain(permutation, [(num_routes, -1)])
-
-    start = end = 0
-    i = 0
-    wins = 0.0
-
-    for j, (route, a) in enumerate(permutation):
-        if 0 <= a:
-            ascent_to_rascent[a] = j
-        if i < route:
-            rascents_route_slices.append((start, end))
-            route_wins.append(wins)
-
-            # Routes with no ascents:
-            rascents_route_slices.extend([(end, end)] * (route - i - 1))
-            route_wins.extend([0.0] * (route - i - 1))
-
-            i = route
-            start = j
-            wins = 0.0
-        end = j + 1
-        wins += 1.0 - ascents_clean[a]
-
-    for page, (start, end) in enumerate(ascents_page_slices):
-        for a in range(start, end):
-            rascents_page[ascent_to_rascent[a]] = page
-
-    return SlicedAscents(
-        np.array(route_wins),
-        rascents_route_slices,
-        np.array(rascents_page, dtype=np.intp),
-        None,
-    )
-
-
-class AscentsTable(
-    collections.namedtuple("AscentsTable", ["route", "clean", "page", "style_page"])
-):
-    """Normalized table of ascents.
-
-    The table must be ordered by page.
-
-    Attributes
-    ----------
-    route : array_like of int
-        The 0-based ID of the route for each ascent.
-    clean : array_like of float
-        1 for a clean ascent, 0 otherwise, for each ascent.  The implied
-        ascents must be in page order.
-    page : array_like of int
-        The 0-based ID of the page for each ascent.
-    style_page : array_like of int
-        The 0-based ID of the style-page for each ascent.
-    """
-
-
-class PagesTable(collections.namedtuple("PagesTable", ["climber", "timestamp"])):
-    """Normalized table of pages.
-
-    Pages must be sorted lexicographically by climber and timestamp.
-    Hence pages belonging to the same climber are all contiguous.
-
-    Attributes
-    ----------
-    climber : array_like of int
-        The 0-based ID of the climber (or climber_style) for each page.
-    timestamp : array_like of float
-        The time of the ascents for each page.
-    """
-
-
-class SlicedAscents(
-    collections.namedtuple("SlicedAscents", ["wins", "slices", "adversary", "clean"])
-):
-    """Stores ascents organized into contiguous slices.
-
-    Ascents are organized into player-order, where the player is a route or
-    a page.  Hence ascents with the same player are contiguous and can be
-    addressed by a slice.
-
-    Attributes
-    ----------
-    wins : ndarray
-        Count of wins for each player.
-    slices : list of pairs
-        (start, end) pairs defining the slice in the player-ordered ascents,
-        for each player.
-    adversary : ndarray of intp
-        The index of the adversary for each player-ordered ascent.
-    clean : ndarray or None
-        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
-    """
-
-
 class Hyperparameters(
     collections.namedtuple(
         "Hyperparameters",
@@ -243,6 +66,42 @@ class Hyperparameters(
     """
 
 
+class AscentsTable(
+    collections.namedtuple("AscentsTable", ["route", "clean", "page", "style_page"])
+):
+    """Normalized table of ascents.
+
+    The table must be ordered by page.
+
+    Attributes
+    ----------
+    route : array_like of int
+        The 0-based ID of the route for each ascent.
+    clean : array_like of float
+        1 for a clean ascent, 0 otherwise, for each ascent.  The implied
+        ascents must be in page order.
+    page : array_like of int
+        The 0-based ID of the page for each ascent.
+    style_page : array_like of int
+        The 0-based ID of the style-page for each ascent.
+    """
+
+
+class PagesTable(collections.namedtuple("PagesTable", ["climber", "timestamp"])):
+    """Normalized table of pages.
+
+    Pages must be sorted lexicographically by climber and timestamp.
+    Hence pages belonging to the same climber are all contiguous.
+
+    Attributes
+    ----------
+    climber : array_like of int
+        The 0-based ID of the climber (or climber_style) for each page.
+    timestamp : array_like of float
+        The time of the ascents for each page.
+    """
+
+
 class WholeHistoryRating:
     """Performs optimization for route and climber ratings.
 
@@ -272,9 +131,9 @@ class WholeHistoryRating:
 
     # Private Attributes
     # ------------------
-    # _page_ascents : SlicedAscents
+    # _page_ascents : _SlicedAscents
     #     Ascents in page order.
-    # _route_ascents : SlicedAscents
+    # _route_ascents : _SlicedAscents
     #     Ascents in route order (no clean).
     # _pages_climber_slices : list of pairs
     #     Start and end indices in page_ratings for each climber.
@@ -298,8 +157,8 @@ class WholeHistoryRating:
             Initial natural ratings for each route.
         """
         num_pages = len(pages.climber)
-        ascents_page_slices = extract_slices(ascents.page, num_pages)
-        pages_climber_slices = extract_slices(pages.climber, pages.climber[-1] + 1)
+        ascents_page_slices = _extract_slices(ascents.page, num_pages)
+        pages_climber_slices = _extract_slices(pages.climber, pages.climber[-1] + 1)
 
         self.route_ratings = np.array(routes_rating)
         self.page_ratings = np.full(num_pages, hparams.climber_prior_mean)
@@ -313,13 +172,13 @@ class WholeHistoryRating:
         for (start, end) in ascents_page_slices:
             page_wins.append(np.add.reduce(ascents.clean[start:end]))
 
-        self._page_ascents = SlicedAscents(
+        self._page_ascents = _SlicedAscents(
             np.array(page_wins),
             ascents_page_slices,
             np.array(ascents.route),
             np.array(ascents.clean),
         )
-        self._route_ascents = make_route_ascents(
+        self._route_ascents = _make_route_ascents(
             ascents.clean, ascents_page_slices, ascents.route, len(routes_rating)
         )
 
@@ -331,7 +190,7 @@ class WholeHistoryRating:
             hparams.climber_prior_mean, hparams.climber_prior_variance
         )
 
-        pages_gap = get_pages_gap(pages.timestamp)
+        pages_gap = _get_pages_gap(pages.timestamp)
 
         self._climbers = []
         for start, end in pages_climber_slices:
@@ -477,3 +336,144 @@ class WholeHistoryRating:
 
         x -= denominator
         return np.sum(x)
+
+
+class _SlicedAscents(
+    collections.namedtuple("_SlicedAscents", ["wins", "slices", "adversary", "clean"])
+):
+    """Stores ascents organized into contiguous slices.
+
+    Ascents are organized into player-order, where the player is a route or
+    a page.  Hence ascents with the same player are contiguous and can be
+    addressed by a slice.
+
+    Attributes
+    ----------
+    wins : ndarray
+        Count of wins for each player.
+    slices : list of pairs
+        (start, end) pairs defining the slice in the player-ordered ascents,
+        for each player.
+    adversary : ndarray of intp
+        The index of the adversary for each player-ordered ascent.
+    clean : ndarray or None
+        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
+    """
+
+
+def _get_pages_gap(pages_timestamp):
+    """Calculate the time difference from each page to the following page.
+
+    Parameters
+    ----------
+    pages_timestamp : array_like of float
+        The time of the ascents for each page.
+
+    Returns
+    -------
+    ndarray
+        Time interval from each page to the next page.  The gap for the last
+        page of each climber is undefined.
+    """
+    pages_gap = np.array(pages_timestamp)
+    pages_gap[:-1] = pages_gap[1:] - pages_gap[:-1]
+    return pages_gap
+
+
+def _extract_slices(values, num_slices):
+    """Extract slices of contiguous values.
+
+    Parameters
+    ----------
+    values : list of int
+        A list of values in ascending order.
+    num_slices : int
+        The length of the list to return.
+
+    Returns
+    -------
+    list of (start, end) tuples
+        Returns a list x such that x[i] is a tuple (start, end) where start is
+        the earliest index of the least value >= i, and end is the latest index
+        of the greatest value <= i.
+    """
+    slices = []
+    start = end = 0
+    i = 0
+    for j, value in enumerate(itertools.chain(values, [num_slices])):
+        if i < value:
+            slices.append((start, end))
+            # Add missing values:
+            slices.extend([(end, end)] * (value - i - 1))
+            i = value
+            start = j
+
+        end = j + 1
+
+    return slices
+
+
+def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_routes):
+    """Create a permutation of ascents in route-order.
+
+    Parameters
+    ----------
+    ascents_clean : array_like of float
+        1 if the ascent was clean, 0 otherwise.
+    ascents_route : ndarray of intp
+        Route index of each ascent.
+    ascents_page : ndarray of intp
+        Page index of each ascent.
+    num_routes : integer
+        Number of routes.  Route indices must be in the interval
+        [0, num_routes).  Routes may have zero ascents.
+
+    Returns
+    -------
+    Ascents
+        Ascents ordered by (and sliced by) route.  The "slices" list will have
+        length num_routes.  The "clean" attribute is unpopulated.
+    """
+    num_ascents = len(ascents_route)
+    route_wins = []
+    rascents_route_slices = []
+    rascents_page = [0] * num_ascents
+
+    permutation = [(route, a) for a, route in enumerate(ascents_route)]
+    permutation.sort()
+    ascent_to_rascent = [0] * num_ascents
+
+    # Add an additional ascent so the loop adds all routes.
+    permutation = itertools.chain(permutation, [(num_routes, -1)])
+
+    start = end = 0
+    i = 0
+    wins = 0.0
+
+    for j, (route, a) in enumerate(permutation):
+        if 0 <= a:
+            ascent_to_rascent[a] = j
+        if i < route:
+            rascents_route_slices.append((start, end))
+            route_wins.append(wins)
+
+            # Routes with no ascents:
+            rascents_route_slices.extend([(end, end)] * (route - i - 1))
+            route_wins.extend([0.0] * (route - i - 1))
+
+            i = route
+            start = j
+            wins = 0.0
+        end = j + 1
+        wins += 1.0 - ascents_clean[a]
+
+    for page, (start, end) in enumerate(ascents_page_slices):
+        for a in range(start, end):
+            rascents_page[ascent_to_rascent[a]] = page
+
+    return _SlicedAscents(
+        np.array(route_wins),
+        rascents_route_slices,
+        np.array(rascents_page, dtype=np.intp),
+        None,
+    )
