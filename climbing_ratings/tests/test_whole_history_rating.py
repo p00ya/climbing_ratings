@@ -114,6 +114,14 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
         )
 
+    def test_update_ratings(self):
+        """Test WholeHistoryRating.update_ratings"""
+        self.whr.update_ratings(True)
+        self.assert_close([0.4], self.whr.page_var, "page_var")
+        self.assert_close(
+            [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
+        )
+
     def test_get_log_likelihood(self):
         """Test WholeHistoryRating.get_log_likelihood"""
         log_lik = self.whr.get_log_likelihood()

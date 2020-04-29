@@ -293,8 +293,7 @@ def main(argv):
                 break
             last_log_lik = log_lik
 
-    whr.update_page_ratings(should_update_covariance=True)
-    whr.update_route_ratings(should_update_variance=True)
+    whr.update_ratings(True)
 
     print(whr.get_log_likelihood())
 

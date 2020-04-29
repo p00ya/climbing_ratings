@@ -283,12 +283,18 @@ class WholeHistoryRating:
             np.reciprocal(d2, self.route_var)
             np.negative(self.route_var, self.route_var)
 
-    def update_ratings(self):
-        """Update ratings for all routes and pages"""
+    def update_ratings(self, should_update_variance=False):
+        """Update ratings for all routes and pages.
+
+        Parameters
+        ----------
+        should_update_variance : boolean
+            If true, updates page_var, page_cov and route_var attributes.
+        """
         # Update pages first because we have better priors/initial values for
         # the routes.
-        self.update_page_ratings()
-        self.update_route_ratings()
+        self.update_page_ratings(should_update_variance)
+        self.update_route_ratings(should_update_variance)
 
     def get_log_likelihood(self):
         """Calculate the marginal log-likelihood.
