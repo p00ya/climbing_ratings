@@ -25,76 +25,6 @@ from .process_helpers import (
 )
 
 
-def invert_lu_dot_g(lu, g):
-    """Compute M^-1 G.
-
-    Where M = LU, and LU X = G, this is equivalent to solving X.
-
-    See WHR Appendix B.1.
-
-    Parameters
-    ----------
-    lu : TriDiagonalLU
-        The tri-diagonal LU decomposition for a square matrix of shape (N, N)
-    g : contiguous ndarray with length N
-    """
-    d, b, a = lu
-
-    # Create a copy of "a", negated and padded with a leading 0.
-    a1 = np.empty_like(d)
-    a1[0] = 0.0
-    a1[1:] = np.negative(a)
-
-    y = a1  # output parameter
-    solve_y(g, a1)
-
-    x = y  # output parameter
-    solve_x(b, d, y)
-    return x
-
-
-def invert_lu(lu, ul, d_arr, l_arr):
-    """Compute -M^-1.
-
-    For the square matrix M = LU = U'L', solve the diagonal and lower
-    sub-diagonal of the negative inverse of M.
-
-    Parameters
-    ----------
-    lu : TriDiagonalLU
-        The tri-diagonal LU decomposition for the square matrix M
-    ul : TriDiagonalLU
-        The tri-diagonal UL decomposition for the square matrix M.
-    d : array_like
-        The output array for the diagonal of the negative inverse of M.
-    l : array_like
-        The output array for the lower sub-diagonal of the negative inverse
-        of M.
-    """
-    # WHR Appendix B.2: Computing Diagonal and Sub-diagonal Terms of H^-1
-    d = d_arr[:-1]
-    d_ul = ul.d[1:]
-
-    # d[i] d'[i+1]
-    np.copyto(d_arr, lu.d)
-    np.multiply(d, d_ul, d)
-
-    # b[i] b'[i]
-    b = np.multiply(lu.b, ul.b, l_arr)
-
-    # 1 / (b[i] b'[i] - d[i] d'[i+1])
-    np.subtract(b, d, d)
-    np.reciprocal(d_arr, d_arr)
-    d_arr[-1] *= -1.0
-
-    # diagonal[i] = d'[i+1] / (b[i] b'[i] - d[i] d'[i+1])
-    np.multiply(d, d_ul, d)
-
-    # subdiagonal[i] = -a[i] diagonal[i+1]
-    np.multiply(lu.a, d_arr[1:], b)
-    np.negative(b, b)
-
-
 class Process:
     """Models ratings over time, as a Wiener process.
 
@@ -142,7 +72,7 @@ class Process:
         hd[:-1] -= s
         self._wiener_d2 = hd
 
-    def get_derivatives(self, ratings, bt_d1, bt_d2):
+    def __get_derivatives(self, ratings, bt_d1, bt_d2):
         """Return the Hessian and gradient at the given ratings point.
 
         Evaluates the Hessian matrix and gradient vector for the conditional
@@ -207,9 +137,9 @@ class Process:
         ratings : ndarray
             Deltas to subtract from the current ratings.
         """
-        gradient, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
+        gradient, hessian = self.__get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
-        return invert_lu_dot_g(lu, gradient)
+        return _invert_lu_dot_g(lu, gradient)
 
     def get_covariance(self, ratings, bt_d1, bt_d2, var, cov):
         """Return the covariance matrix for the ratings.
@@ -228,7 +158,77 @@ class Process:
             The output array for the covariance between the natural ratings of
             each page the next page.
         """
-        _, hessian = self.get_derivatives(ratings, bt_d1, bt_d2)
+        _, hessian = self.__get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         ul = ul_decompose(hessian)
-        return invert_lu(lu, ul, var, cov)
+        return _invert_lu(lu, ul, var, cov)
+
+
+def _invert_lu_dot_g(lu, g):
+    """Compute M^-1 G.
+
+    Where M = LU, and LU X = G, this is equivalent to solving X.
+
+    See WHR Appendix B.1.
+
+    Parameters
+    ----------
+    lu : TriDiagonalLU
+        The tri-diagonal LU decomposition for a square matrix of shape (N, N)
+    g : contiguous ndarray with length N
+    """
+    d, b, a = lu
+
+    # Create a copy of "a", negated and padded with a leading 0.
+    a1 = np.empty_like(d)
+    a1[0] = 0.0
+    a1[1:] = np.negative(a)
+
+    y = a1  # output parameter
+    solve_y(g, a1)
+
+    x = y  # output parameter
+    solve_x(b, d, y)
+    return x
+
+
+def _invert_lu(lu, ul, d_arr, l_arr):
+    """Compute -M^-1.
+
+    For the square matrix M = LU = U'L', solve the diagonal and lower
+    sub-diagonal of the negative inverse of M.
+
+    Parameters
+    ----------
+    lu : TriDiagonalLU
+        The tri-diagonal LU decomposition for the square matrix M
+    ul : TriDiagonalLU
+        The tri-diagonal UL decomposition for the square matrix M.
+    d : array_like
+        The output array for the diagonal of the negative inverse of M.
+    l : array_like
+        The output array for the lower sub-diagonal of the negative inverse
+        of M.
+    """
+    # WHR Appendix B.2: Computing Diagonal and Sub-diagonal Terms of H^-1
+    d = d_arr[:-1]
+    d_ul = ul.d[1:]
+
+    # d[i] d'[i+1]
+    np.copyto(d_arr, lu.d)
+    np.multiply(d, d_ul, d)
+
+    # b[i] b'[i]
+    b = np.multiply(lu.b, ul.b, l_arr)
+
+    # 1 / (b[i] b'[i] - d[i] d'[i+1])
+    np.subtract(b, d, d)
+    np.reciprocal(d_arr, d_arr)
+    d_arr[-1] *= -1.0
+
+    # diagonal[i] = d'[i+1] / (b[i] b'[i] - d[i] d'[i+1])
+    np.multiply(d, d_ul, d)
+
+    # subdiagonal[i] = -a[i] diagonal[i+1]
+    np.multiply(lu.a, d_arr[1:], b)
+    np.negative(b, b)

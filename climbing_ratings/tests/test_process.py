@@ -36,7 +36,7 @@ class TestProcessFunctions(unittest.TestCase):
         b = np.array([-2.0, 1.0])
         a = np.array([0.1, -2.0])
         lu = TriDiagonalLU(d, b, a)
-        x = process.invert_lu_dot_g(lu, g)
+        x = process._invert_lu_dot_g(lu, g)
 
         u_matrix = np.diagflat(d) + np.diagflat(b, 1)
         l_matrix = np.eye(3) + np.diagflat(a, -1)
@@ -60,7 +60,7 @@ class TestProcessFunctions(unittest.TestCase):
 
         d = np.empty([3])
         ld = np.empty([2])
-        process.invert_lu(lu, ul, d, ld)
+        process._invert_lu(lu, ul, d, ld)
 
         # Test that M^-1 M = -I for the two diagonals
         expected = -np.linalg.inv(m)
