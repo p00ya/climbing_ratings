@@ -18,6 +18,7 @@ import numpy as np
 import unittest
 from ..bradley_terry import (
     expand_to_slices,
+    expand_to_slices_sparse,
     get_bt_summation_terms,
     get_bt_derivatives,
     sum,
@@ -36,8 +37,15 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         """Test expand_to_slices()"""
         slices = [(0, 2), (2, 5)]
         values = np.array([1.0, 10.0])
-        expanded = expand_to_slices(values, slices)
+        expanded = expand_to_slices(values, slices, 5)
         self.assertSequenceEqual([1.0, 1.0, 10.0, 10.0, 10.0], expanded.tolist())
+
+    def test_expand_to_slices_sparse(self):
+        """Test expand_to_slices_sparse()"""
+        slices = [(1, 2), (3, 4)]
+        values = np.array([1.0, 10.0])
+        expanded = expand_to_slices_sparse(values, slices, 5)
+        self.assertSequenceEqual([0.0, 1.0, 0.0, 10.0, 0.0], expanded.tolist())
 
     def test_get_bt_summation_terms(self):
         """Test get_bt_summation_terms()"""

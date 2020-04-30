@@ -20,7 +20,7 @@ from libc.math cimport fabs
 cnp.import_array()
 
 
-def expand_to_slices(double[::1] values, list slices):
+def expand_to_slices(double[::1] values, list slices, Py_ssize_t n):
     """Expand normalized values to contiguous blocks.
 
     Parameters
@@ -30,9 +30,15 @@ def expand_to_slices(double[::1] values, list slices):
     slices : list of pairs
         The (start, end) pairs corresponding to a slice in the output.  The
         implied slices must be contiguous and in ascending order.
+    n : Py_ssize_t
+        Size of the output array.
+
+    Returns
+    -------
+    ndarray
+        A member of the returned array x[i] will equal values[j] if
+        slices[j][0] <= i < slices[j][1].
     """
-    cdef tuple last_slice = slices[len(slices) - 1]
-    cdef Py_ssize_t n = last_slice[1]
     cdef double[::1] expanded = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
 
     cdef Py_ssize_t j = 0
@@ -41,6 +47,39 @@ def expand_to_slices(double[::1] values, list slices):
         while j < end:
             expanded[j] = values[i]
             j += 1
+
+    return expanded.base
+
+
+def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
+    """Expand normalized values to non-overlapping blocks.
+
+    Parameters
+    ----------
+    values : ndarray
+        The normalized values.
+    slices : list of pairs
+        The (start, end) pairs corresponding to a slice in the output.  The
+        slices should not overlap.
+    n : Py_ssize_t
+        Size of the output array.
+
+    Returns
+    -------
+    ndarray
+        A member of the returned array x[i] will equal values[j] if
+        slices[j][0] <= i < slices[j][1], otherwise it will equal 0.0.
+    """
+    cdef double[::1] expanded = cnp.PyArray_ZEROS(1, [n], cnp.NPY_DOUBLE, 0)
+
+    cdef Py_ssize_t j
+    cdef Py_ssize_t i, start, end
+    cdef double v
+    for i, (start, end) in enumerate(slices):
+        v = values[i]
+        for j in range(start, end):
+            expanded[j] = v
+
     return expanded.base
 
 

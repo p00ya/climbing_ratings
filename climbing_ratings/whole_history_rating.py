@@ -232,7 +232,7 @@ class WholeHistoryRating:
         pages = self._bases
 
         ascent_page_gammas = expand_to_slices(
-            np.exp(pages.ratings), pages.ascents.slices
+            np.exp(pages.ratings), pages.ascents.slices, len(pages.ascents.adversary)
         )
         ascent_route_gammas = self._route_ratings[pages.ascents.adversary]
         np.exp(ascent_route_gammas, ascent_route_gammas)
@@ -274,7 +274,9 @@ class WholeHistoryRating:
         """
 
         rascents_route_gammas = expand_to_slices(
-            np.exp(self._route_ratings), self._route_ascents.slices
+            np.exp(self._route_ratings),
+            self._route_ascents.slices,
+            len(self._route_ascents.adversary),
         )
 
         rascents_page_gammas = self._bases.ratings[self._route_ascents.adversary]
@@ -339,7 +341,9 @@ class WholeHistoryRating:
         # over ascents (which is unavoidable for the denominator anyway).
         pages = self._bases
 
-        ascent_page_ratings = expand_to_slices(pages.ratings, pages.ascents.slices)
+        ascent_page_ratings = expand_to_slices(
+            pages.ratings, pages.ascents.slices, len(pages.ascents.adversary)
+        )
         ascent_route_ratings = self._route_ratings[pages.ascents.adversary]
 
         # log(P) = sum over ascents[ log( exp(r_i) / (exp(r_i) + exp(r_j)) ) ]
