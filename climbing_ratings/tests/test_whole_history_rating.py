@@ -22,6 +22,7 @@ from ..whole_history_rating import (
     Hyperparameters,
     PagesTable,
     WholeHistoryRating,
+    _SlicedAscents,
     _extract_slices,
     _make_route_ascents,
 )
@@ -45,26 +46,22 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
 
     def test_make_route_ascents(self):
         """Test _make_route_ascents()"""
-        ascents_clean = [0, 0, 0, 0, 0]
-        ascents_page_slices = [(0, 5)]
-        ascents_route = [0, 1, 0, 1, 0]
-
-        ascents = _make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route, 2
+        page_ascents = _SlicedAscents(
+            wins=[0], slices=[(0, 5)], adversary=[0, 1, 0, 1, 0], clean=[0, 0, 0, 0, 0]
         )
+
+        ascents = _make_route_ascents(page_ascents, 2)
         self.assertSequenceEqual([3.0, 2.0], ascents.wins.tolist())
         self.assertSequenceEqual([(0, 3), (3, 5)], ascents.slices)
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
 
     def test_make_route_ascents_sparse(self):
         """Test _make_route_ascents() for routes without ascents"""
-        ascents_clean = [0, 0, 0, 0, 0]
-        ascents_page_slices = [(0, 5)]
-        ascents_route = [1, 2, 1, 2, 1]
-
-        ascents = _make_route_ascents(
-            ascents_clean, ascents_page_slices, ascents_route, 4
+        page_ascents = _SlicedAscents(
+            wins=[0], slices=[(0, 5)], adversary=[1, 2, 1, 2, 1], clean=[0, 0, 0, 0, 0]
         )
+
+        ascents = _make_route_ascents(page_ascents, 4)
         self.assertSequenceEqual([0.0, 3.0, 2.0, 0.0], ascents.wins.tolist())
         self.assertSequenceEqual([(0, 0), (0, 3), (3, 5), (5, 5)], ascents.slices)
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())

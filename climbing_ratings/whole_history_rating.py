@@ -184,7 +184,7 @@ class WholeHistoryRating:
         )
         self._route_var = np.empty_like(self._route_ratings)
         self._route_ascents = _make_route_ascents(
-            ascents.clean, self._bases.ascents.slices, ascents.route, len(routes_rating)
+            self._bases.ascents, len(routes_rating)
         )
         self._route_priors = NormalDistribution(
             self._route_ratings, hparams.route_prior_variance
@@ -511,17 +511,14 @@ def _extract_slices(values, num_slices):
     return slices
 
 
-def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_routes):
+def _make_route_ascents(ascents, num_routes):
     """Create a permutation of ascents in route-order.
 
     Parameters
     ----------
-    ascents_clean : array_like of float
-        1 if the ascent was clean, 0 otherwise.
-    ascents_route : ndarray of intp
-        Route index of each ascent.
-    ascents_page : ndarray of intp
-        Page index of each ascent.
+    ascents : _SlicedAscents
+        Page-slicing of the ascents.  The adversary filed should correspond to
+        the route ID, and the clean field should not be None.
     num_routes : integer
         Number of routes.  Route indices must be in the interval
         [0, num_routes).  Routes may have zero ascents.
@@ -532,12 +529,12 @@ def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_r
         Ascents ordered by (and sliced by) route.  The "slices" list will have
         length num_routes.  The "clean" attribute is unpopulated.
     """
-    num_ascents = len(ascents_route)
+    num_ascents = len(ascents.adversary)
     route_wins = []
     rascents_route_slices = []
     rascents_page = [0] * num_ascents
 
-    permutation = [(route, a) for a, route in enumerate(ascents_route)]
+    permutation = [(route, a) for a, route in enumerate(ascents.adversary)]
     permutation.sort()
     ascent_to_rascent = [0] * num_ascents
 
@@ -551,6 +548,7 @@ def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_r
     for j, (route, a) in enumerate(permutation):
         if 0 <= a:
             ascent_to_rascent[a] = j
+
         if i < route:
             rascents_route_slices.append((start, end))
             route_wins.append(wins)
@@ -562,10 +560,11 @@ def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_r
             i = route
             start = j
             wins = 0.0
-        end = j + 1
-        wins += 1.0 - ascents_clean[a]
 
-    for page, (start, end) in enumerate(ascents_page_slices):
+        end = j + 1
+        wins += 1.0 - ascents.clean[a]
+
+    for page, (start, end) in enumerate(ascents.slices):
         for a in range(start, end):
             rascents_page[ascent_to_rascent[a]] = page
 
