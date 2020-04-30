@@ -202,49 +202,43 @@ class WholeHistoryRating:
             Initial natural ratings for each route.
         """
         num_pages = len(pages)
-        ascents_page_slices = _extract_slices(ascents.page, num_pages)
-        pages_climber_slices = _extract_slices(pages.climber, pages.climber[-1] + 1)
-
         self.route_ratings = np.array(routes_rating)
         self.page_ratings = np.full(num_pages, hparams.climber_prior_mean)
         self.page_var = np.empty(num_pages)
         self.page_cov = np.zeros(num_pages)
         self.route_var = np.empty_like(self.route_ratings)
-
-        self._pages_climber_slices = pages_climber_slices
-
-        page_wins = []
-        for (start, end) in ascents_page_slices:
-            page_wins.append(np.add.reduce(ascents.clean[start:end]))
-
-        self._page_ascents = _SlicedAscents(
-            np.array(page_wins),
-            ascents_page_slices,
-            np.array(ascents.route),
-            np.array(ascents.clean),
+        self._pages_climber_slices = _extract_slices(
+            pages.climber, pages.climber[-1] + 1
+        )
+        self._page_ascents = self.__make_page_ascents(ascents, num_pages)
+        self._climbers = self.__make_climbers(
+            hparams, pages, self._pages_climber_slices
         )
         self._route_ascents = _make_route_ascents(
-            ascents.clean, ascents_page_slices, ascents.route, len(routes_rating)
+            ascents.clean, self._page_ascents.slices, ascents.route, len(routes_rating)
         )
-
         self._route_priors = NormalDistribution(
             self.route_ratings, hparams.route_prior_variance
         )
 
-        climber_prior = NormalDistribution(
-            hparams.climber_prior_mean, hparams.climber_prior_variance
+    @staticmethod
+    def __make_page_ascents(ascents, num_pages):
+        """Slice ascents by pages."""
+        ascents_page_slices = _extract_slices(ascents.page, num_pages)
+        wins = np.array(_sum_slices(ascents.clean, ascents_page_slices))
+        return _SlicedAscents(
+            wins, ascents_page_slices, np.array(ascents.route), np.array(ascents.clean),
         )
 
+    @staticmethod
+    def __make_climbers(hparams, pages, pages_climber_slices):
+        """Make processes for each combination of climber and style."""
         pages_gap = _get_pages_gap(pages.timestamp)
-
-        self._climbers = []
-        for start, end in pages_climber_slices:
-            climber = Process(
-                hparams.climber_wiener_variance,
-                climber_prior,
-                pages_gap[start : end - 1],
-            )
-            self._climbers.append(climber)
+        prior = NormalDistribution(0.0, hparams.climber_prior_variance)
+        return [
+            Process(hparams.climber_wiener_variance, prior, pages_gap[start : end - 1])
+            for (start, end) in pages_climber_slices
+        ]
 
     def update_page_ratings(self, should_update_covariance=False):
         """Update the ratings of all pages.
@@ -528,3 +522,9 @@ def _make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_r
         np.array(rascents_page, dtype=np.intp),
         None,
     )
+
+
+def _sum_slices(values, slices):
+    """Sum the values in each slice."""
+    sum = np.sum  # save repeated lookup overhead
+    return [sum(values[start:end]) for start, end in slices]
