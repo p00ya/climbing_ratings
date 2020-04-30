@@ -66,40 +66,85 @@ class Hyperparameters(
     """
 
 
-class AscentsTable(
-    collections.namedtuple("AscentsTable", ["route", "clean", "page", "style_page"])
-):
+class AscentsTable:
     """Normalized table of ascents.
 
     The table must be ordered by page.
 
     Attributes
     ----------
-    route : array_like of int
+    route : ndarray of intp
         The 0-based ID of the route for each ascent.
-    clean : array_like of float
+    clean : ndarray
         1 for a clean ascent, 0 otherwise, for each ascent.  The implied
         ascents must be in page order.
-    page : array_like of int
+    page : ndarray of intp
         The 0-based ID of the page for each ascent.
-    style_page : array_like of int
+    style_page : ndarray of intp, or None
         The 0-based ID of the style-page for each ascent.
     """
 
+    __slots__ = ("route", "clean", "page", "style_page")
 
-class PagesTable(collections.namedtuple("PagesTable", ["climber", "timestamp"])):
+    def __init__(self, route, clean, page, style_page):
+        """Initializes an AscentsTable.
+
+        Parameters
+        ----------
+        route : array_like of int
+            The 0-based ID of the route for each ascent.
+        clean : array_like of float
+            1 for a clean ascent, 0 otherwise, for each ascent.  The implied
+            ascents must be in page order.
+        page : array_like of int
+            The 0-based ID of the page for each ascent.
+        style_page : array_like of int
+            The 0-based ID of the style-page for each ascent.
+        """
+        self.route = np.array(route, np.intp)
+        self.clean = np.array(clean, np.float_)
+        self.page = np.array(page, np.intp)
+        self.style_page = np.array(style_page, np.intp)
+
+    def __len__(self):
+        """Return the number of ascents in the table."""
+        return self.route.shape[0]
+
+
+class PagesTable:
     """Normalized table of pages.
 
-    Pages must be sorted lexicographically by climber and timestamp.
-    Hence pages belonging to the same climber are all contiguous.
+    Pages must be sorted lexicographically by climber, timestamp and style.
+    Hence pages belonging to the same climber are all contiguous, and pages
+    for the same climber and timestamp are all contiguous.  Style may be
+    omitted.
 
     Attributes
     ----------
-    climber : array_like of int
+    climber : ndarray of intp
         The 0-based ID of the climber (or climber_style) for each page.
-    timestamp : array_like of float
+    timestamp : ndarray
         The time of the ascents for each page.
     """
+
+    __slots__ = ("climber", "timestamp")
+
+    def __init__(self, climber, timestamp):
+        """Initialize a PagesTable.
+
+        Parameters
+        ----------
+        climber : array_like of int
+            The 0-based ID of the climber (or climber_style) for each page.
+        timestamp : array_like of float
+            The time of the ascents for each page.
+        """
+        self.climber = np.array(climber, np.intp)
+        self.timestamp = np.array(timestamp)
+
+    def __len__(self):
+        """Return the number of pages in the table."""
+        return self.climber.shape[0]
 
 
 class WholeHistoryRating:
@@ -156,7 +201,7 @@ class WholeHistoryRating:
         routes_rating : list
             Initial natural ratings for each route.
         """
-        num_pages = len(pages.climber)
+        num_pages = len(pages)
         ascents_page_slices = _extract_slices(ascents.page, num_pages)
         pages_climber_slices = _extract_slices(pages.climber, pages.climber[-1] + 1)
 

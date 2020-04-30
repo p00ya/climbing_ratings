@@ -82,7 +82,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
-            clean=np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0]),
+            clean=[1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
             page=[0, 0, 0, 0, 0, 0],
             style_page=[-1, -1, -1, -1, -1, -1],
         )
@@ -140,11 +140,11 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
-            clean=np.array([1.0, 0.0, 1.0, 0.0, 1.0, 0.0]),
+            clean=[1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
             page=[0, 0, 1, 1, 1, 1],
             style_page=[-1, -1, -1, -1, -1, -1],
         )
-        pages = PagesTable(climber=[0, 0], timestamp=np.array([0.0, 1.0]))
+        pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
@@ -171,11 +171,11 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
-            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             page=[0, 0, 0, 0, 0, 0],
             style_page=[-1, -1, -1, -1, -1, -1],
         )
-        pages = PagesTable(climber=[0], timestamp=np.array([0.0]))
+        pages = PagesTable(climber=[0], timestamp=[0.0])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
@@ -198,11 +198,11 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
-            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             page=[0, 0, 0, 0, 0, 0],
             style_page=[-1, -1, -1, -1, -1, -1],
         )
-        pages = PagesTable(climber=[0], timestamp=np.array([0.0]))
+        pages = PagesTable(climber=[0], timestamp=[0.0])
         routes_grade = np.log([1.0, 2.0, 2.0])
         self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
@@ -225,11 +225,11 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         self.assert_close = assert_close.__get__(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
-            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
             page=[0, 0, 0, 0, 1, 1],
             style_page=[-1, -1, -1, -1, -1, -1],
         )
-        pages = PagesTable(climber=[0, 0], timestamp=np.array([0.0, 1.0]))
+        pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
 
