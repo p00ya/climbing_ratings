@@ -18,7 +18,11 @@
 import collections
 import itertools
 import numpy as np
-from .bradley_terry import expand_to_slices, get_bt_derivatives
+from .bradley_terry import (
+    expand_to_slices,
+    expand_to_slices_sparse,
+    get_bt_derivatives,
+)
 from .normal_distribution import NormalDistribution
 from .process import Process
 
@@ -31,6 +35,8 @@ class Hyperparameters(
             "climber_prior_variance",
             "climber_wiener_variance",
             "route_prior_variance",
+            "style_prior_variance",
+            "style_wiener_variance",
         ],
     )
 ):
@@ -157,9 +163,15 @@ class WholeHistoryRating:
     We use two orderings for ascents:
     - page-order: ascents are ordered by page index
     - route-order: ascents are ordered by route index
+
+    Climbers have one ratings process per style in which they have logged
+    ascents.  Internally, these are represented as a base-style rating
+    (style-page -1) and a style rating for any other style that climber
+    has logged.  The style rating is added to the base-style rating to get the
+    natural rating for a particular ascent.
     """
 
-    def __init__(self, hparams, ascents, pages, routes_rating):
+    def __init__(self, hparams, ascents, pages, style_pages, routes_rating):
         """Initialize a WHR model.
 
         Parameters
@@ -170,18 +182,28 @@ class WholeHistoryRating:
             Input ascents table.
         pages : PagesTable
             Input pages table.
+        style_pages : PagesTable
+            Input style-pages table.
         routes_rating : list
             Initial natural ratings for each route.
         """
-        num_pages = len(pages)
-        self._route_ratings = np.array(routes_rating)
         self._bases = _PageModel(
             ascents,
             pages,
+            ascents.page,
             hparams.climber_prior_mean,
             hparams.climber_prior_variance,
             hparams.climber_wiener_variance,
         )
+        self._styles = _PageModel(
+            ascents,
+            style_pages,
+            ascents.style_page,
+            0.0,
+            hparams.style_prior_variance,
+            hparams.style_wiener_variance,
+        )
+        self._route_ratings = np.array(routes_rating)
         self._route_var = np.empty_like(self._route_ratings)
         self._route_ascents = _make_route_ascents(
             self._bases.ascents, len(routes_rating)
@@ -220,49 +242,96 @@ class WholeHistoryRating:
         """The variance of each route's natural rating, as an ndarray."""
         return self._route_var
 
-    def update_page_ratings(self, should_update_covariance=False):
+    def __get_page_bt_derivatives(self, pages, aux_pages):
+        """Gets the Bradley-Terry terms for page/style-page ratings.
+
+        Gets the first and second derivative of the Bradley-Terry model with
+        respect to the player's natural rating.  Auxilliary ratings allow the
+        player to be modeled with either base-ratings or style-ratings.
+
+        Parameters
+        ----------
+        pages : _PageModel
+            A slicing of ascents for the player's ratings.
+        aux_pages : _PageModel
+            A slicing of ascents for the auxilliary ratings.
+
+        Returns
+        -------
+        (d1 : ndarray, d2 : ndarray)
+            A pair of ndarrays of the first and second derivative of the
+            Bradley-Terry log-likelihood the player wins, with respect to
+            the player's natural rating.
+        """
+        ascents = pages.ascents
+        ratings = pages.ratings
+        aux_ratings = aux_pages.ratings
+        num_ascents = len(ascents.adversary)
+
+        ascent_page_gammas = expand_to_slices(
+            np.exp(ratings), ascents.slices, num_ascents
+        )
+        ascent_aux_gammas = expand_to_slices_sparse(
+            aux_ratings, aux_pages.ascents.slices, num_ascents
+        )
+        np.exp(ascent_aux_gammas, ascent_aux_gammas)
+
+        ascent_route_gammas = self.route_ratings[ascents.adversary]
+        np.exp(ascent_route_gammas, ascent_route_gammas)
+
+        return get_bt_derivatives(
+            ascents.slices,
+            ascents.wins,
+            ascent_page_gammas,
+            ascent_aux_gammas,
+            ascent_route_gammas,
+        )
+
+    def __update_page_ratings(self, pages, aux_pages, should_update_variance):
         """Update the ratings of all pages.
 
         Parameters
         ----------
-        should_update_covariance : boolean
-            If true, updates the "page_var" and "page_cov" attributes.
+        pages : _PageModel
+            Pages of the player to update.
+        aux_pages : _PageModel
+            Auxilliary pages for the player.
+        should_update_variance : boolean
+            If true, updates the page variance and covariance.
             This has no effect on rating estimation.
         """
-        pages = self._bases
+        bt_d1, bt_d2 = self.__get_page_bt_derivatives(pages, aux_pages)
 
-        ascent_page_gammas = expand_to_slices(
-            np.exp(pages.ratings), pages.ascents.slices, len(pages.ascents.adversary)
-        )
-        ascent_route_gammas = self._route_ratings[pages.ascents.adversary]
-        np.exp(ascent_route_gammas, ascent_route_gammas)
-
-        bt_d1, bt_d2 = get_bt_derivatives(
-            pages.ascents.slices,
-            pages.ascents.wins,
-            ascent_page_gammas,
-            np.ones_like(ascent_page_gammas),
-            ascent_route_gammas,
-        )
-
-        for i, (start, end) in enumerate(self._bases.slices):
+        ratings = pages.ratings
+        for i, (start, end) in enumerate(pages.slices):
             if start == end:
                 continue
             climber = pages.processes[i]
             delta = climber.get_ratings_adjustment(
-                pages.ratings[start:end], bt_d1[start:end], bt_d2[start:end]
+                ratings[start:end], bt_d1[start:end], bt_d2[start:end]
             )
             # r2 = r1 - delta
-            pages.ratings[start:end] -= delta
+            ratings[start:end] -= delta
 
-            if should_update_covariance:
+            if should_update_variance:
                 climber.get_covariance(
-                    pages.ratings[start:end],
+                    ratings[start:end],
                     bt_d1[start:end],
                     bt_d2[start:end],
                     pages.var[start:end],
                     pages.cov[start : end - 1],
                 )
+
+    def update_base_ratings(self, should_update_variance=False):
+        """Update the ratings of all (base) pages."""
+        self.__update_page_ratings(self._bases, self._styles, should_update_variance)
+
+    def update_style_ratings(self, should_update_variance=False):
+        """Update the ratings of all style pages."""
+        # TODO: uncomment to enable style estimation.  Disabled to check for
+        # regressions.
+        # self.__update_page_ratings(self._styles, self._bases, should_update_variance)
+        pass
 
     def update_route_ratings(self, should_update_variance=False):
         """Update the ratings of all routes.
@@ -313,12 +382,13 @@ class WholeHistoryRating:
         Parameters
         ----------
         should_update_variance : boolean
-            If true, updates page_var, page_cov and route_var attributes.
+            If true, updates page and route variances.
         """
         # Update pages first because we have better priors/initial values for
         # the routes.
-        self.update_page_ratings(should_update_variance)
+        self.update_base_ratings(should_update_variance)
         self.update_route_ratings(should_update_variance)
+        self.update_style_ratings(should_update_variance)
 
     def get_log_likelihood(self):
         """Calculate the marginal log-likelihood.
@@ -343,9 +413,8 @@ class WholeHistoryRating:
         # over ascents (which is unavoidable for the denominator anyway).
         pages = self._bases
 
-        ascent_page_ratings = expand_to_slices(
-            pages.ratings, pages.ascents.slices, len(pages.ascents.adversary)
-        )
+        ascent_page_ratings = pages.ascent_ratings()
+        ascent_page_ratings += self._styles.ascent_ratings()
         ascent_route_ratings = self._route_ratings[pages.ascents.adversary]
 
         # log(P) = sum over ascents[ log( exp(r_i) / (exp(r_i) + exp(r_j)) ) ]
@@ -415,13 +484,17 @@ class _PageModel:
 
     __slots__ = ("ratings", "var", "cov", "ascents", "slices", "processes")
 
-    def __init__(self, ascents, pages, prior_mean, prior_var, wiener_var):
+    def __init__(self, ascents, pages, ascents_page, prior_mean, prior_var, wiener_var):
         """Initialize a _PageModel.
 
         Parameters
         ----------
         ascents : AscentsTable
+            All ascents.
         pages : PagesTable
+            Slicing of the ascents (may be sparse).
+        ascents_page : ndarray
+            Page ID for each ascent (e.g. ascents.pages or ascents.style_pages).
         prior_mean : float
             Mean of the prior distribution for the initial natural rating of
             each process.
@@ -432,19 +505,20 @@ class _PageModel:
             Variance of the prior process for natural ratings over time.
         """
         num_pages = len(pages)
+        num_climbers = 0 if len(pages.climber) == 0 else pages.climber[-1] + 1
         self.ratings = np.full(num_pages, prior_mean)
         self.var = np.empty(num_pages)
         self.cov = np.zeros(num_pages)
-        self.ascents = self.__make_page_ascents(ascents, num_pages)
-        self.slices = _extract_slices(pages.climber, pages.climber[-1] + 1)
+        self.ascents = self.__make_page_ascents(ascents, ascents_page, num_pages)
+        self.slices = _extract_slices(pages.climber, num_climbers)
         self.processes = self.__make_processes(
             prior_var, wiener_var, pages, self.slices
         )
 
     @staticmethod
-    def __make_page_ascents(ascents, num_pages):
+    def __make_page_ascents(ascents, ascents_page, num_pages):
         """Slice ascents by pages."""
-        ascents_page_slices = _extract_slices(ascents.page, num_pages)
+        ascents_page_slices = _extract_slices(ascents_page, num_pages)
         wins = np.array(_sum_slices(ascents.clean, ascents_page_slices))
         return _SlicedAscents(
             wins, ascents_page_slices, np.array(ascents.route), np.array(ascents.clean)
@@ -459,6 +533,11 @@ class _PageModel:
             Process(wiener_var, prior, pages_gap[start : end - 1])
             for (start, end) in page_slices
         ]
+
+    def ascent_ratings(self):
+        """Page ratings for each ascent."""
+        num_ascents = len(self.ascents.adversary)
+        return expand_to_slices_sparse(self.ratings, self.ascents.slices, num_ascents)
 
 
 def _get_pages_gap(pages_timestamp):

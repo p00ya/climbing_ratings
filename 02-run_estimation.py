@@ -259,6 +259,25 @@ def parse_args(argv):
         default=1.0,
         help="variance of routes' natural ratings prior",
     )
+    parser.add_argument(
+        "--style-prior-variance",
+        metavar="sigma",
+        type=float,
+        # Should be less than the climber prior variance so that the majority
+        # of variation between climbers is captured in their base rating.
+        default=0.25,
+        help="variance of climber style natural ratings priors",
+    )
+    parser.add_argument(
+        "--style-wiener-variance",
+        metavar="w",
+        type=float,
+        # Should be less than climber Wiener variance so that the majority
+        # of variation in a climber's strength over time is captured in the
+        # climber's base rating.
+        default=0.25 / 86400.0 / 364.0,
+        help="variance of climber style ratings per time unit",
+    )
     return parser.parse_args(argv)
 
 
@@ -269,7 +288,7 @@ def main(argv):
 
     ascents = AscentsTable(*read_ascents(data))
     pages = PagesTable(*read_pages(data))
-    read_style_pages(data)  # not currently used
+    style_pages = PagesTable(*read_style_pages(data))
     routes_name, routes_rating = read_routes(data)
 
     hparams = Hyperparameters(
@@ -277,9 +296,11 @@ def main(argv):
         args.climber_prior_variance,
         args.wiener_variance,
         args.route_prior_variance,
+        args.style_prior_variance,
+        args.style_wiener_variance,
     )
 
-    whr = WholeHistoryRating(hparams, ascents, pages, routes_rating)
+    whr = WholeHistoryRating(hparams, ascents, pages, style_pages, routes_rating)
 
     np.seterr(all="ignore")
     last_log_lik = float("-inf")

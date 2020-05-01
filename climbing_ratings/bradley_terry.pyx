@@ -102,12 +102,14 @@ cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] aux_gamma,
     Returns
     -------
     (d1_terms : MemoryView, d2_terms : MemoryView)
-        d1_terms contains the "gamma / (gamma + adversary_gamma)" terms for each
-        player.
+        d1_terms contains the
+            aux_gamma gamma / (aux_gamma gamma + adversary_gamma)
+        terms for each player.
 
         d2_terms contains the
-        "gamma adversary_gamma / (gamma + adversary_gamma)^2" terms for each
-        player.
+            aux_gamma gamma adversary_gamma /
+            (aux_gamma gamma + adversary_gamma)^2
+        terms for each player.
     """
     # WHR Appendix A.1 Terms of the Bradley-Terry model:
     #

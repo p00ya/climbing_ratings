@@ -30,7 +30,7 @@ from .assertions import assert_close
 
 
 # Hyperparameters defaults.
-_hparams = Hyperparameters(0.0, 1.0, 1.0, 1.0)
+_hparams = Hyperparameters(0.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 
 
 class TestWholeHistoryRatingFunctions(unittest.TestCase):
@@ -86,8 +86,11 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = [0.0, 0.0, 0.0]
-        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
 
     def test_initialization(self):
         """Test WholeHistoryRating initialization"""
@@ -97,9 +100,9 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         page_ratings = self.whr.page_ratings
         self.assert_close([0.0], page_ratings, "page_ratings")
 
-    def test_update_page_ratings(self):
-        """Test WholeHistoryRating.update_page_ratings"""
-        self.whr.update_page_ratings(True)
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings"""
+        self.whr.update_base_ratings(True)
         self.assert_close([0.0, 0.0], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.4], self.whr.page_var, "page_var")
 
@@ -144,12 +147,15 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = [0.0, 0.0, 0.0]
-        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
 
-    def test_update_page_ratings(self):
-        """Test WholeHistoryRating.update_page_ratings is stable"""
-        self.whr.update_page_ratings(True)
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings is stable"""
+        self.whr.update_base_ratings(True)
         self.assert_close([0.0, 0.0], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.5, 0.625], self.whr.page_var, "page_var")
 
@@ -175,13 +181,16 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[0], timestamp=[0.0])
         routes_grade = [0.0, 0.0, 0.0]
-        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
 
-    def test_update_page_ratings(self):
-        """Test WholeHistoryRating.update_page_ratings converges"""
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_page_ratings(True)
+            self.whr.update_base_ratings(True)
         self.assert_close([1.29253960], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.49650051], self.whr.page_var, "page_var")
 
@@ -202,13 +211,16 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[0], timestamp=[0.0])
         routes_grade = np.log([1.0, 2.0, 2.0])
-        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
 
-    def test_update_page_ratings(self):
-        """Test WholeHistoryRating.update_page_ratings"""
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings"""
         for _ in range(4):
-            self.whr.update_page_ratings(True)
+            self.whr.update_base_ratings(True)
         self.assert_close([1.54631420], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.47001792], self.whr.page_var, "page_var")
 
@@ -229,12 +241,76 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
+        style_pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
         routes_grade = [0.0, 0.0, 0.0]
-        self.whr = WholeHistoryRating(_hparams, ascents, pages, routes_grade)
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
 
-    def test_update_page_ratings(self):
-        """Test WholeHistoryRating.update_page_ratings converges"""
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_page_ratings(True)
+            self.whr.update_base_ratings(True)
         self.assert_close([1.2394699, 1.5808267], self.whr.page_ratings, "page_ratings")
         self.assert_close([0.5216223, 1.0962046], self.whr.page_var, "page_var")
+
+
+class TestWholeHistoryRatingStyles(unittest.TestCase):
+    """Tests for the WholeHistoryRating class with page-styles.
+
+    1 climber, 1 page, 1 page-style.
+    """
+
+    def setUp(self):
+        np.seterr(all="raise")
+        self.assert_close = assert_close.__get__(self, self.__class__)
+        ascents = AscentsTable(
+            route=[0, 0, 1, 1, 2, 2],
+            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            page=[0, 0, 0, 0, 0, 0],
+            style_page=[-1, -1, -1, -1, 0, 0],
+        )
+        pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[0], timestamp=[0.0])
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
+
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings converges"""
+        for _ in range(4):
+            self.whr.update_base_ratings(True)
+        self.assert_close([1.29253960], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.49650051], self.whr.page_var, "page_var")
+
+
+class TestWholeHistoryRatingMultiplePagesAndStyles(unittest.TestCase):
+    """Tests for the WholeHistoryRating class with multiple page-styles.
+
+    1 climber, 1 page, 1 climber-style, 2 page-styles.  The climber-style is
+    not contiguous.
+    """
+
+    def setUp(self):
+        np.seterr(all="raise")
+        self.assert_close = assert_close.__get__(self, self.__class__)
+        ascents = AscentsTable(
+            route=[0, 1, 2, 0, 1, 2],
+            clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            page=[0, 0, 0, 1, 1, 1],
+            style_page=[-1, -1, 0, -1, -1, 1],
+        )
+        pages = PagesTable(climber=[0], timestamp=[0.0, 1.0])
+        style_pages = PagesTable(climber=[0], timestamp=[0.0, 1.0])
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
+
+    def test_update_base_ratings(self):
+        """Test WholeHistoryRating.update_base_ratings converges"""
+        for _ in range(4):
+            self.whr.update_base_ratings(True)
+        self.assert_close([0.87971224], self.whr.page_ratings, "page_ratings")
+        self.assert_close([0.61661873], self.whr.page_var, "page_var")
