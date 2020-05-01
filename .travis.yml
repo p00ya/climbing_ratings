@@ -17,6 +17,9 @@
 
 # See status at https://travis-ci.com/github/p00ya/climbing_ratings
 
+# Opt in to build config validation.
+version: ~> 1.0
+
 # Common configuration for all Python jobs.
 _python_job_tmpl: &python_job_tmpl
   install:
