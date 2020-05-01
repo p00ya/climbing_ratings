@@ -43,9 +43,7 @@ def get_pages_gap(pages_timestamp):
 
 
 class Ascents(
-    collections.namedtuple(
-        "Ascents", ["wins", "slices", "adversary", "clean"], defaults=[None]
-    )
+    collections.namedtuple("Ascents", ["wins", "slices", "adversary", "clean"])
 ):
     """Stores ascents organized into contiguous slices.
 
@@ -129,6 +127,7 @@ def make_route_ascents(ascents_clean, ascents_page_slices, ascents_route, num_ro
         np.array(route_wins),
         rascents_route_slices,
         np.array(rascents_page, dtype=np.intp),
+        None,
     )
 
 
@@ -141,7 +140,6 @@ class Hyperparameters(
             "climber_wiener_variance",
             "route_prior_variance",
         ],
-        defaults=[0.0, 1.0, 1.0, 1.0],
     )
 ):
     """Hyperparameters for the climbing ratings model.
