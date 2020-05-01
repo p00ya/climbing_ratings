@@ -241,6 +241,7 @@ class WholeHistoryRating:
             pages.ascents.slices,
             pages.ascents.wins,
             ascent_page_gammas,
+            np.ones_like(ascent_page_gammas),
             ascent_route_gammas,
         )
 
@@ -287,6 +288,7 @@ class WholeHistoryRating:
             self._route_ascents.slices,
             self._route_ascents.wins,
             rascents_route_gammas,
+            np.ones_like(rascents_route_gammas),
             rascents_page_gammas,
         )
 

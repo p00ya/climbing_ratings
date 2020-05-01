@@ -83,7 +83,8 @@ def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
     return expanded.base
 
 
-cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
+cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] aux_gamma,
+                                   double[::1] adversary_gamma):
     """Get the Bradley-Terry summation terms for each player.
 
     A player is an abstraction for an entity with a rating; it will correspond
@@ -93,6 +94,8 @@ cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamm
     ----------
     gamma : contiguous ndarray
         Rating of the "player" for each ascent.
+    aux_gamma : contiguous ndarray
+        Auxiliary coefficient to the player's rating for each ascent.
     adversary_gamma : contiguous ndarray
         Rating of the adversary for each ascent.
 
@@ -113,25 +116,26 @@ cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamm
     # WHR 2.2 Bradley-Terry Model:
     #
     # P(player i beats player k) =
-    #    gamma_i / gamma_i + gamma_k
+    #    aux_i gamma_i / (aux_i gamma_i + gamma_k)
     #
     # So for an ascent on a climb with rating gamma_k:
     #
-    # P(win) = (1 gamma_i + 0) / (1 gamma_i + gamma_k)
-    #    so A = 1, B = 0, C = 1, D = gamma_k
+    # P(win) = (aux_i gamma_i + 0) / (aux_i gamma_i + gamma_k)
+    #    so A = aux_i, B = 0, C = aux_i, D = gamma_k
     #
-    # P(loss) = (0 gamma_i + gamma_k) / (1 gamma_i + gamma_k)
-    #    so A = 0, B = gamma_k, C = 1, D = gamma_k
+    # P(loss) = (0 gamma_i + gamma_k) / (aux_i gamma_i + gamma_k)
+    #    so A = 0, B = gamma_k, C = aux_i, D = gamma_k
     cdef Py_ssize_t n = gamma.shape[0]
     cdef double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
     cdef double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
 
-    cdef double t, u
+    cdef double t, u, phi
     for i in range(n):
-        t = gamma[i] + adversary_gamma[i]
+        phi = aux_gamma[i] * gamma[i]
+        t = phi + adversary_gamma[i]
 
-        # gamma_i / (C_ij gamma_i + D_ij)
-        u = gamma[i] / t
+        # C_ij gamma_i / (C_ij gamma_i + D_ij)
+        u = phi / t
         d1_terms[i] = u
 
         # C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2
@@ -142,9 +146,10 @@ cdef tuple cget_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamm
     return (d1_terms, d2_terms)
 
 
-def get_bt_summation_terms(double[::1] gamma, double[::1] adversary_gamma):
+def get_bt_summation_terms(double[::1] gamma, double[::1] aux_gamma,
+                           double[::1] adversary_gamma):
     """Wraps cget_bt_summation_terms() for testing"""
-    return cget_bt_summation_terms(gamma, adversary_gamma)
+    return cget_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
 
 
 cdef double csum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
@@ -173,7 +178,7 @@ def sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
 
 
 def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
-                       double[::1] adversary_gamma):
+                       double[::1] aux_gamma, double[::1] adversary_gamma):
     """Get the derivatives of the log-likelihood for each player.
 
     A player is an abstraction for an entity with a rating; it will correspond
@@ -187,6 +192,8 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         Number of wins for each player.
     gamma : contiguous ndarray
         Rating of the "player" for each ascent.
+    aux_gamma : contiguous ndarray
+        Auxiliary coefficient to the player's rating for each ascent.
     adversary_gamma : contiguous ndarray
         Rating of the adversary for each ascent.
 
@@ -198,7 +205,9 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         "natural rating" of that player.
     """
     cdef double[::1] d1_terms, d2_terms
-    d1_terms, d2_terms = cget_bt_summation_terms(gamma, adversary_gamma)
+    d1_terms, d2_terms = cget_bt_summation_terms(
+        gamma, aux_gamma, adversary_gamma
+    )
 
     cdef Py_ssize_t num_slices = len(slices)
 
@@ -223,7 +232,7 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         # closer to unity.
         d1[i] = wins[i] - csum(d1_terms, start, end)
         # WHR Appendix A.1:
-        # d^2 ln P / d r^2 = - sum( C_ij gamma_i D_ij / (C_ij + D_ij)^2 )
+        # d^2 ln P / dr ^2 = -sum( C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2 )
         d2[i] = -csum(d2_terms, start, end)
 
     return (d1.base, d2.base)

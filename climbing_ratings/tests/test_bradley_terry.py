@@ -50,10 +50,20 @@ class TestBradleyTerryFunctions(unittest.TestCase):
     def test_get_bt_summation_terms(self):
         """Test get_bt_summation_terms()"""
         gamma = np.array([1.0, 2.0])
+        aux_gamma = np.array([1.0, 1.0])
         adversary_gamma = np.array([1.0, 2.0])
-        d1, d2 = get_bt_summation_terms(gamma, adversary_gamma)
+        d1, d2 = get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.5, 0.5], d1, "d1")
         self.assert_close([0.25, 0.25], d2, "d2")
+
+    def test_get_bt_summation_terms_auxiliary(self):
+        """Test get_bt_summation_terms() with non-unity aux_gamma"""
+        gamma = np.array([2.0])
+        aux_gamma = np.array([0.5])
+        adversary_gamma = np.array([1.0])
+        d1, d2 = get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
+        self.assert_close([0.5], d1, "d1")
+        self.assert_close([0.25], d2, "d2")
 
     def test_sum(self):
         """Test sum()"""
@@ -77,8 +87,9 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1)]
         wins = np.array([1.0])
         gamma = np.array([1.0])
+        aux_gamma = np.array([1.0])
         adversary_gamma = np.array([1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
@@ -87,8 +98,9 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1)]
         wins = np.array([0.0])
         gamma = np.array([1.0])
+        aux_gamma = np.array([1.0])
         adversary_gamma = np.array([1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
         self.assert_close([-0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
@@ -97,18 +109,31 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 4)]
         wins = np.array([0.0])
         gamma = np.array([4.0, 4.0, 4.0, 4.0])
+        aux_gamma = np.ones([4])
         adversary_gamma = np.array([1.0, 1.0, 1.0, 1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
         self.assert_close([-3.2], d1, "d1")
         self.assert_close([-0.64], d2, "d2")
+
+    def test_get_bt_derivatives_auxiliary(self):
+        """Test get_bt_derivatives() with non-unity aux_gamma"""
+        slices = [(0, 1)]
+        wins = np.array([1.0])
+        gamma = np.array([2.0])
+        aux_gamma = np.array([0.5])
+        adversary_gamma = np.array([1.0])
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
+        self.assert_close([0.5], d1, "d1")
+        self.assert_close([-0.25], d2, "d2")
 
     def test_get_bt_derivatives_no_ascents(self):
         """Test get_bt_derivatives() with no ascents"""
         slices = [(0, 0)]
         wins = np.array([])
         gamma = np.array([])
+        aux_gamma = np.array([])
         adversary_gamma = np.array([])
-        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.0], d1, "d1")
         self.assert_close([0.0], d2, "d2")
 
@@ -117,7 +142,8 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1), (1, 4)]
         wins = np.array([1.0, 2.0])
         gamma = np.array([6.0, 4.0, 4.0, 4.0])
+        aux_gamma = np.ones([4])
         adversary_gamma = np.array([6.0, 4.0, 12.0, 12.0])
-        d1, d2 = get_bt_derivatives(slices, wins, gamma, adversary_gamma)
+        d1, d2 = get_bt_derivatives(slices, wins, gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.5, 1.0], d1, "d1")
         self.assert_close([-0.25, -0.625], d2, "d2")
