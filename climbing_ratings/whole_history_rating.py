@@ -481,12 +481,14 @@ def _get_pages_gap(pages_timestamp):
 
 
 def _extract_slices(values, num_slices):
-    """Extract slices of contiguous values.
+    """Extract slices of contiguous IDs.
 
     Parameters
     ----------
     values : list of int
-        A list of values in ascending order.
+        Values are IDs such that 0 <= value < num_slices, or as a special case,
+        -1.  -1 may appear anywhere; all occurences of any other value must be
+        contiguous within the list.
     num_slices : int
         The length of the list to return.
 
@@ -497,18 +499,26 @@ def _extract_slices(values, num_slices):
         the earliest index of the least value >= i, and end is the latest index
         of the greatest value <= i.
     """
-    slices = []
+    slices = [None] * num_slices
     start = end = 0
-    i = 0
+    prev = -1
     for j, value in enumerate(itertools.chain(values, [num_slices])):
-        if i < value:
-            slices.append((start, end))
-            # Add missing values:
-            slices.extend([(end, end)] * (value - i - 1))
-            i = value
+        if prev != value:
+            if prev != -1:
+                slices[prev] = (start, end)
+
+            prev = value
             start = j
 
         end = j + 1
+
+    # Populate slices for IDs that never ocurred in values.
+    end = 0
+    for i, slice in enumerate(slices):
+        if slice is None:
+            slices[i] = (end, end)
+        else:
+            _, end = slice
 
     return slices
 

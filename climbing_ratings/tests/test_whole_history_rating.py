@@ -43,6 +43,8 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         self.assertSequenceEqual([(0, 1), (1, 2)], _extract_slices([0, 1], 2))
         self.assertSequenceEqual([(0, 0)], _extract_slices([], 1))
         self.assertSequenceEqual([(0, 0), (0, 1)], _extract_slices([1], 2))
+        self.assertSequenceEqual([(1, 2)], _extract_slices([-1, 0, -1], 1))
+        self.assertSequenceEqual([(1, 2), (2, 2)], _extract_slices([-1, 0, -1], 2))
 
     def test_make_route_ascents(self):
         """Test _make_route_ascents()"""
