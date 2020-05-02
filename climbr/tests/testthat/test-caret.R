@@ -52,13 +52,24 @@ page_ratings <- data.frame(
   cov = c(0, 0)
 )
 
+style_page_ratings <- data.frame(
+  climber_style = c(1L, 2L),
+  rating = c(0, 0),
+  var = c(1, 1),
+  cov = c(0, 0)
+)
+
 route_ratings <- data.frame(
   route = factor(c("R1", "R2")),
   rating = c(0, 1),
   var = c(1, 1)
 )
 
-ratings <- list(routes = route_ratings, pages = page_ratings)
+ratings <- list(
+  routes = route_ratings,
+  pages = page_ratings,
+  style_pages = style_page_ratings
+)
 
 describe("MakeWhrModel()$prob", {
   model <- MakeWhrModel(dfs)
@@ -107,14 +118,24 @@ describe("MakeWhrModel()$fit", {
   .fake_run_script_params <- NULL
   # Fake substitute for .RunEstimationScript, which captures the arguments and
   # writes output files.
-  .FakeRunScript <- function(w, sigma_c, sigma_r, max_iterations, data_dir) {
+  .FakeRunScript <- function(w2_c, w2_s, sigma2_c, sigma2_r, sigma2_s,
+                             max_iterations, data_dir) {
     .fake_run_script_params <<- list(
-      w = w, sigma_c = sigma_c, sigma_r = sigma_r,
+      w2_c = w2_c,
+      w2_s = w2_s,
+      sigma2_c = sigma2_c,
+      sigma2_r = sigma2_r,
+      sigma2_s = sigma2_s,
       max_iterations = max_iterations
     )
     write.csv(
       page_ratings,
       file.path(data_dir, "page_ratings.csv"),
+      row.names = FALSE
+    )
+    write.csv(
+      style_page_ratings,
+      file.path(data_dir, "style_page_ratings.csv"),
       row.names = FALSE
     )
     write.csv(
@@ -127,7 +148,13 @@ describe("MakeWhrModel()$fit", {
 
   model <- MakeWhrModel(dfs, run_script = .FakeRunScript)
   train_param <- list(
-    g0 = 0, b = 1, w = 10, sigma_c = 20, sigma_r = 30
+    g0 = 0,
+    b = 1,
+    w2_c = 10,
+    w2_s = 5,
+    sigma2_c = 20,
+    sigma2_r = 30,
+    sigma2_s = 40
   )
   fit <- model$fit(ascents, ascents$clean, NULL, train_param)
   it("return value", {
@@ -136,7 +163,14 @@ describe("MakeWhrModel()$fit", {
   it("estimation script parameters", {
     expect_equal(
       .fake_run_script_params,
-      list(w = 10, sigma_c = 20, sigma_r = 30, max_iterations = 64L)
+      list(
+        w2_c = 10,
+        w2_s = 5,
+        sigma2_c = 20,
+        sigma2_r = 30,
+        sigma2_s = 40,
+        max_iterations = 64L
+      )
     )
   })
 })

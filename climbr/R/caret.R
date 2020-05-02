@@ -17,21 +17,27 @@
 
 #' Runs the Python estimation script.
 #'
-#' @param w Wiener variance
-#' @param sigma_c climber standard deviation.
-#' @param sigma_r route standard deviation.
+#' @param w2_c climber Wiener variance.
+#' @param w2_s climber-style Wiener variance.
+#' @param sigma2_c climber variance.
+#' @param sigma2_r route variance.
+#' @param sigma2_s climber-style variance.
 #' @param max_iterations integer maximum number of WHR iterations.
 #' @param data_dir directory to read and write CSV files.
 #' @param script_path path to the Python estimation script.
 #' @return exit status of the estimation script.
-.RunEstimationScript <- function(w, sigma_c, sigma_r, max_iterations, data_dir, script_path = "02-run_estimation.py") {
+.RunEstimationScript <- function(w2_c, w2_s, sigma2_c, sigma2_r, sigma2_s,
+                                 max_iterations, data_dir,
+                                 script_path = "02-run_estimation.py") {
   system2(
     "python3",
     c(
       script_path,
-      "--wiener-variance", w,
-      "--climber-prior-variance", sigma_c,
-      "--route-prior-variance", sigma_r,
+      "--wiener-variance", w2_c,
+      "--style-wiener-variance", w2_s,
+      "--climber-prior-variance", sigma2_c,
+      "--route-prior-variance", sigma2_r,
+      "--style-prior-variance", sigma2_s,
       "--max-iterations", max_iterations,
       data_dir
     )
@@ -62,11 +68,11 @@ MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
   # Returns the probability each of the given ascents is clean, according
   # to the estimates in "ratings".
   #
-  # @param ratings list of data frames (routes, pages).
+  # @param ratings list of data frames (routes, pages, style_pages).
   # @param ascents ascents data frame.
   # @return numeric vector of the probability of clean ascents.
   .ProbClean <- function(ratings, ascents) {
-    stopifnot(all(c("routes", "pages") %in% names(ratings)))
+    stopifnot(all(c("routes", "pages", "style_pages") %in% names(ratings)))
     stopifnot(all(ascents_columns %in% colnames(ascents)))
     dfs <- dfs_full
     dfs$ascents <- ascents
@@ -98,8 +104,13 @@ MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
         dir.create(data_dir)
         WriteNormalizedTables(dfs, data_dir)
         status <- run_script(
-          w = param$w, sigma_c = param$sigma_c,
-          sigma_r = param$sigma_r, max_iterations, data_dir
+          w2_c = param$w2_c,
+          w2_s = param$w2_s,
+          sigma2_c = param$sigma2_c,
+          sigma2_r = param$sigma2_r,
+          sigma2_s = param$sigma2_s,
+          max_iterations,
+          data_dir
         )
         if (status != 0) stop("Error executing estimation script")
         ReadRatings(data_dir)
@@ -116,12 +127,16 @@ MakeWhrModel <- function(dfs_full, max_iterations = 64L, threshold = 0.5,
     library = NULL,
     loop = NULL,
     parameters = data.frame(
-      parameter = c("w", "sigma_c", "sigma_r", "b", "g0"),
-      class = rep("numeric", 5),
+      parameter = c(
+        "w2_c", "w2_s", "sigma2_c", "sigma2_r", "sigma2_s", "b", "g0"
+      ),
+      class = rep("numeric", 7),
       label = c(
-        "Wiener variance",
+        "Climber Wiener variance",
+        "Climber-style Wiener variance",
         "Climber ratings variance",
         "Route ratings variance",
+        "Climber-style ratings variance",
         "Grade scaling",
         "Reference grade"
       ),

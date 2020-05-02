@@ -82,6 +82,7 @@ class TestRunEstimation(unittest.TestCase):
 
         self.assert_matches_golden("page_ratings.csv")
         self.assert_matches_golden("route_ratings.csv")
+        self.assert_matches_golden("style_page_ratings.csv")
 
 
 if __name__ == "__main__":

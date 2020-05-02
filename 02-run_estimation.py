@@ -89,6 +89,22 @@ cov
     Covariance of the natural rating for each page with the natural rating
     of the climber's next page.  The value for the last page of a climber is
     meaningless.
+
+style_page_ratings.csv
+----------------------
+Output file.
+
+climber_style
+    0-based climber/style ID for each style-page.  Consistent with
+    style_pages.csv.
+rating
+    WHR natural rating for each style-page.
+var
+    Variance of the natural rating for each style-page.
+cov
+    Covariance of the natural rating for each style-page with the natural rating
+    of the climber-style's next style-page.  The value for the last style-page
+    of a climber-style is meaningless.
 """
 
 # Copyright Contributors to the Climbing Ratings project
@@ -199,15 +215,25 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
 
 
-def write_page_ratings(dirname, pages_climber, page):
-    filename = os.path.join(dirname, "page_ratings.csv")
+def _write_page_ratings(filename, climber_field, dirname, pages_climber, page):
+    filename = os.path.join(dirname, filename)
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
-        writer.writerow(["climber", "rating", "var", "cov"])
+        writer.writerow([climber_field, "rating", "var", "cov"])
         for climber, rating, var, cov in zip(
             pages_climber, page.ratings, page.var, page.cov
         ):
             writer.writerow([climber, rating, var, cov])
+
+
+def write_page_ratings(dirname, pages_climber, page):
+    _write_page_ratings("page_ratings.csv", "climber", dirname, pages_climber, page)
+
+
+def write_style_page_ratings(dirname, pages_climber, page):
+    _write_page_ratings(
+        "style_page_ratings.csv", "climber_style", dirname, pages_climber, page
+    )
 
 
 def parse_args(argv):
@@ -265,7 +291,7 @@ def parse_args(argv):
         type=float,
         # Should be less than the climber prior variance so that the majority
         # of variation between climbers is captured in their base rating.
-        default=0.25,
+        default=0.01,
         help="variance of climber style natural ratings priors",
     )
     parser.add_argument(
@@ -275,7 +301,7 @@ def parse_args(argv):
         # Should be less than climber Wiener variance so that the majority
         # of variation in a climber's strength over time is captured in the
         # climber's base rating.
-        default=0.25 / 86400.0 / 364.0,
+        default=0.01 / 86400.0 / 364.0,
         help="variance of climber style ratings per time unit",
     )
     return parser.parse_args(argv)
@@ -325,6 +351,7 @@ def main(argv):
 
         write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
         write_page_ratings(output, pages.climber, whr.page)
+        write_style_page_ratings(output, pages.climber, whr.style_page)
 
 
 if __name__ == "__main__":

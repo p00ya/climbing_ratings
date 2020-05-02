@@ -25,12 +25,21 @@ ReadRatings <- function(dir) {
     colClasses = c("integer", "numeric", "numeric", "numeric")
   )
 
+  df_style_page_ratings <- utils::read.csv(
+    file.path(dir, "style_page_ratings.csv"),
+    colClasses = c("integer", "numeric", "numeric", "numeric")
+  )
+
   df_route_ratings <- utils::read.csv(file.path(dir, "route_ratings.csv"),
     colClasses = c("factor", "numeric", "numeric"),
     stringsAsFactors = FALSE
   )
 
-  list(routes = df_route_ratings, pages = df_page_ratings)
+  list(
+    routes = df_route_ratings,
+    pages = df_page_ratings,
+    style_pages = df_style_page_ratings
+  )
 }
 
 #' Updates the data frames in "dfs" with ratings results.
@@ -42,11 +51,16 @@ MergeWithRatings <- function(dfs, ratings) {
   dfs$pages$var <- ratings$pages$var
   dfs$pages$cov <- ratings$pages$cov
 
+  dfs$style_pages$r <- ratings$style_pages$rating
+  dfs$style_pages$var <- ratings$style_pages$var
+  dfs$style_pages$cov <- ratings$style_pages$cov
+
   dfs$routes$r <- ratings$routes$rating
   dfs$routes$var <- ratings$routes$var
 
   dfs$routes$gamma <- exp(dfs$routes$r)
   dfs$pages$gamma <- exp(dfs$pages$r)
+  dfs$style_pages$gamma <- exp(dfs$style_pages$r)
   dfs$ascents$predicted <- PredictBradleyTerry(dfs)
   dfs
 }
@@ -56,9 +70,15 @@ MergeWithRatings <- function(dfs, ratings) {
 #'
 #' @param dfs a list of data frames.
 PredictBradleyTerry <- function(dfs) {
-  page_gamma <- dfs$pages$gamma[dfs$ascents$page]
+  # Ascents may be missing styles (style_page = 0L), so shift the indices
+  # and create a "default" style-page with natural rating 0.
+  style_r <- c(0, dfs$style_pages$r)[dfs$ascents$style_page + 1L]
+
+  # Combine base page and style-page ratings.
+  climber_gamma <- exp(dfs$pages$r[dfs$ascents$page] + style_r)
+
   route_gamma <- dfs$routes$gamma[dfs$ascents$route]
-  page_gamma / (page_gamma + route_gamma)
+  climber_gamma / (climber_gamma + route_gamma)
 }
 
 

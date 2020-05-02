@@ -249,6 +249,12 @@ class WholeHistoryRating:
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
+    def style_page(self):
+        """Return the estimated ratings of the (base) pages as a PageEstimates."""
+        pages = self._styles
+        return PageRatingsTable(pages.ratings, pages.var, pages.cov)
+
+    @property
     def route_ratings(self):
         """The natural rating of each route, as an ndarray."""
         return self._route_ratings
@@ -344,9 +350,7 @@ class WholeHistoryRating:
 
     def update_style_ratings(self, should_update_variance=False):
         """Update the ratings of all style pages."""
-        # TODO: uncomment to enable style estimation.  Disabled to check for
-        # regressions.
-        # self.__update_page_ratings(self._styles, self._bases, should_update_variance)
+        self.__update_page_ratings(self._styles, self._bases, should_update_variance)
         pass
 
     def update_route_ratings(self, should_update_variance=False):
