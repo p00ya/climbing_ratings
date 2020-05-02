@@ -153,6 +153,27 @@ class PagesTable:
         return self.climber.shape[0]
 
 
+class PageRatingsTable(
+    collections.namedtuple("PageRatingsTable", ["ratings", "var", "cov"])
+):
+    """Encapsulates the model for a particular page-slicing.
+
+    This model generalizes over both base pages and style-pages.  The rows
+    correspond 1:1 with rows in a PagesTable (in the same order).
+
+    Attributes
+    ----------
+    ratings : ndarray
+        Current estimate of the natural rating of each page.
+    var : ndarray
+        Estimate of the variance of the natural rating of each page.
+    cov : ndarray
+        Estimate of the covariance between the natural rating of each page and
+        the next page.  The covariance for the last page of each climber (or
+        climber_style) is not meaningful.
+    """
+
+
 class WholeHistoryRating:
     """Performs optimization for route and climber ratings.
 
@@ -222,24 +243,10 @@ class WholeHistoryRating:
         )
 
     @property
-    def page_ratings(self):
-        """The natural rating of each page, as an ndarray."""
-        return self._bases.ratings
-
-    @property
-    def page_var(self):
-        """The variance of each page's natural rating, as an ndarray."""
-        return self._bases.var
-
-    @property
-    def page_cov(self):
-        """The covariance between pages.
-
-        The returned ndarray contains the covariance between the natural rating
-        of each page and the next page, for each page.  The covariance for the
-        last page of each climber is not meaningful.
-        """
-        return self._bases.cov
+    def page(self):
+        """Return the estimated ratings of the (base) pages as a PageEstimates."""
+        pages = self._bases
+        return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
     def route_ratings(self):
@@ -472,6 +479,8 @@ class _SlicedAscents(
 
 class _PageModel:
     """Encapsulates the model for a particular page-slicing.
+
+    This model generalizes over both base pages and style-pages.
 
     Attributes
     ----------

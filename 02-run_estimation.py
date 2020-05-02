@@ -199,13 +199,13 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
 
 
-def write_page_ratings(dirname, pages_climber, page_ratings, page_var, page_cov):
+def write_page_ratings(dirname, pages_climber, page):
     filename = os.path.join(dirname, "page_ratings.csv")
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
         writer.writerow(["climber", "rating", "var", "cov"])
         for climber, rating, var, cov in zip(
-            pages_climber, page_ratings, page_var, page_cov
+            pages_climber, page.ratings, page.var, page.cov
         ):
             writer.writerow([climber, rating, var, cov])
 
@@ -324,9 +324,7 @@ def main(argv):
             output = data
 
         write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
-        write_page_ratings(
-            output, pages.climber, whr.page_ratings, whr.page_var, whr.page_cov
-        )
+        write_page_ratings(output, pages.climber, whr.page)
 
 
 if __name__ == "__main__":
