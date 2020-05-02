@@ -18,6 +18,8 @@
 class NormalDistribution:
     """Models variables drawn from a Gaussian distribution."""
 
+    __slots__ = ("_mu", "_sigma_sq")
+
     def __init__(self, mu, sigma_sq):
         """
         Parameters

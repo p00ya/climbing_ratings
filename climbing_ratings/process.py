@@ -45,6 +45,7 @@ class Process:
     # _wiener_d2 : array of float
     #     The second derivative terms (diagonal of the Hessian matrix) from the
     #     Wiener prior, for each page.
+    __slots__ = ("_initial_prior", "_one_on_sigma_sq", "_wiener_d2")
 
     def __init__(self, wiener_variance, initial_prior, gaps):
         """Initialize a Process.

@@ -171,6 +171,15 @@ class WholeHistoryRating:
     natural rating for a particular ascent.
     """
 
+    __slots__ = (
+        "_bases",
+        "_styles",
+        "_route_ratings",
+        "_route_var",
+        "_route_ascents",
+        "_route_priors",
+    )
+
     def __init__(self, hparams, ascents, pages, style_pages, routes_rating):
         """Initialize a WHR model.
 
