@@ -19,9 +19,9 @@ import unittest
 from ..bradley_terry import (
     expand_to_slices,
     expand_to_slices_sparse,
-    get_bt_summation_terms,
     get_bt_derivatives,
-    sum,
+    _get_bt_summation_terms,
+    _sum,
 )
 from .assertions import assert_close
 
@@ -48,39 +48,39 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assertSequenceEqual([0.0, 1.0, 0.0, 10.0, 0.0], expanded.tolist())
 
     def test_get_bt_summation_terms(self):
-        """Test get_bt_summation_terms()"""
+        """Test _get_bt_summation_terms()"""
         gamma = np.array([1.0, 2.0])
         aux_gamma = np.array([1.0, 1.0])
         adversary_gamma = np.array([1.0, 2.0])
-        d1, d2 = get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
+        d1, d2 = _get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.5, 0.5], d1, "d1")
         self.assert_close([0.25, 0.25], d2, "d2")
 
     def test_get_bt_summation_terms_auxiliary(self):
-        """Test get_bt_summation_terms() with non-unity aux_gamma"""
+        """Test _get_bt_summation_terms() with non-unity aux_gamma"""
         gamma = np.array([2.0])
         aux_gamma = np.array([0.5])
         adversary_gamma = np.array([1.0])
-        d1, d2 = get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
+        d1, d2 = _get_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
         self.assert_close([0.5], d1, "d1")
         self.assert_close([0.25], d2, "d2")
 
     def test_sum(self):
         """Test sum()"""
         x = np.array([1.0, 2.0, 4.0, 8.0])
-        self.assertEqual(15.0, sum(x, 0, 4))
-        self.assertEqual(0.0, sum(x, 0, 0))
-        self.assertEqual(6.0, sum(x, 1, 3))
-        self.assertEqual(7.0, sum(x, 0, 3))
+        self.assertEqual(15.0, _sum(x, 0, 4))
+        self.assertEqual(0.0, _sum(x, 0, 0))
+        self.assertEqual(6.0, _sum(x, 1, 3))
+        self.assertEqual(7.0, _sum(x, 0, 3))
 
     def test_sum_error(self):
         """Test sum() error compensation"""
         x = np.full([10], 0.1)
-        self.assertEqual(1.0, sum(x, 0, 10))
+        self.assertEqual(1.0, _sum(x, 0, 10))
         x = np.array([1e100, -1.0, -1e100, 1.0])
-        self.assertEqual(0.0, sum(x, 0, 4))
+        self.assertEqual(0.0, _sum(x, 0, 4))
         x = np.array([1e100, 1.0, -1e100, 1.0])
-        self.assertEqual(2.0, sum(x, 0, 4))
+        self.assertEqual(2.0, _sum(x, 0, 4))
 
     def test_get_bt_derivatives_single_win(self):
         """Test get_bt_derivatives() with a single win"""
