@@ -17,6 +17,13 @@
 cimport numpy as cnp
 from libc.math cimport fabs
 
+
+# Workaround for "expl" being missing from Cython's libc.math.
+# See: https://github.com/cython/cython/issues/3570
+cdef extern from "<math.h>" nogil:
+    long double expl(long double x)
+
+
 cnp.import_array()
 
 
@@ -83,8 +90,13 @@ def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
     return expanded.base
 
 
-def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
-                       double[::1] aux_gamma, double[::1] adversary_gamma):
+def get_bt_derivatives(
+    list slices,
+    double[::1] wins,
+    double[::1] player,
+    double[::1] aux,
+    double[::1] adversary,
+):
     """Get the derivatives of the log-likelihood for each player.
 
     A player is an abstraction for an entity with a rating; it will correspond
@@ -96,12 +108,12 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         (start, end) indices representing slices of the ascents for each player.
     wins : contiguous ndarray
         Number of wins for each player.
-    gamma : contiguous ndarray
-        Rating of the "player" for each ascent.
-    aux_gamma : contiguous ndarray
-        Auxiliary coefficient to the player's rating for each ascent.
-    adversary_gamma : contiguous ndarray
-        Rating of the adversary for each ascent.
+    player : contiguous ndarray
+        Natural rating of the "player" for each ascent.
+    aux : contiguous ndarray
+        Auxiliary term of the player's rating for each ascent.
+    adversary : contiguous ndarray
+        Natural rating of the adversary for each ascent.
 
     Returns
     -------
@@ -110,9 +122,9 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
         Bradley-Terry log-likelihood a "player" wins, with respect to the
         "natural rating" of that player.
     """
-    cdef double[::1] d1_terms, d2_terms
+    cdef long double[::1] d1_terms, d2_terms
     d1_terms, d2_terms = _cget_bt_summation_terms(
-        gamma, aux_gamma, adversary_gamma
+        player, aux, adversary
     )
 
     cdef Py_ssize_t num_slices = len(slices)
@@ -122,7 +134,6 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
 
     cdef Py_ssize_t start, end
     cdef int i
-    cdef double d1_sum, d2_sum
     cdef tuple pair
     for i, pair in enumerate(slices):
         start, end = pair
@@ -145,7 +156,7 @@ def get_bt_derivatives(list slices, double[::1] wins, double[::1] gamma,
 
 
 cdef tuple _cget_bt_summation_terms(
-    double[::1] gamma, double[::1] aux_gamma, double[::1] adversary_gamma
+    double[::1] player, double[::1] aux, double[::1] adversary
 ):
     """Get the Bradley-Terry summation terms for each player.
 
@@ -154,12 +165,12 @@ cdef tuple _cget_bt_summation_terms(
 
     Parameters
     ----------
-    gamma : contiguous ndarray
-        Rating of the "player" for each ascent.
-    aux_gamma : contiguous ndarray
-        Auxiliary coefficient to the player's rating for each ascent.
-    adversary_gamma : contiguous ndarray
-        Rating of the adversary for each ascent.
+    player : contiguous ndarray of longdouble
+        Natural rating of the "player" for each ascent.
+    aux : contiguous ndarray of longdouble
+        Auxiliary term of the player's rating for each ascent.
+    adversary : contiguous ndarray of longdouble
+        Natural rating of the adversary for each ascent.
 
     Returns
     -------
@@ -189,21 +200,26 @@ cdef tuple _cget_bt_summation_terms(
     #
     # P(loss) = (0 gamma_i + gamma_k) / (aux_i gamma_i + gamma_k)
     #    so A = 0, B = gamma_k, C = aux_i, D = gamma_k
-    cdef Py_ssize_t n = gamma.shape[0]
-    cdef double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
-    cdef double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
+    cdef Py_ssize_t n = player.shape[0]
 
-    cdef double t, u, phi
+    # Use extended precision to compensate for the loss of precision due to
+    # exponentiation.
+    cdef long double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
+    cdef long double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
+
+    cdef long double t, u, phi, gamma, adversary_gamma
     for i in range(n):
-        phi = aux_gamma[i] * gamma[i]
-        t = phi + adversary_gamma[i]
+        gamma = expl(<long double> player[i])
+        gamma *= expl(<long double> aux[i])
+        adversary_gamma = expl(<long double> adversary[i])
+        t = gamma + adversary_gamma
 
         # C_ij gamma_i / (C_ij gamma_i + D_ij)
-        u = phi / t
+        u = gamma / t
         d1_terms[i] = u
 
         # C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2
-        u *= adversary_gamma[i] / t
+        u *= adversary_gamma / t
 
         d2_terms[i] = u
 
@@ -211,21 +227,21 @@ cdef tuple _cget_bt_summation_terms(
 
 
 def _get_bt_summation_terms(
-    double[::1] gamma, double[::1] aux_gamma, double[::1] adversary_gamma
+    double[::1] player, double[::1] aux, double[::1] adversary
 ):
     """Wraps _cget_bt_summation_terms() for testing"""
-    return _cget_bt_summation_terms(gamma, aux_gamma, adversary_gamma)
+    return _cget_bt_summation_terms(player, aux, adversary)
 
 
-cdef double _csum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
+cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):
     """Compute the sum of x[start:end], with error compensation."""
     # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
     # this must be compiled with clang's "-fno-associative-math" or equivalent.
-    cdef double s = 0.0
+    cdef long double s = 0.0
     cdef Py_ssize_t i
 
-    cdef double c = 0.0
-    cdef double t
+    cdef long double c = 0.0
+    cdef long double t
     for i in range(start, end):
         t = s + x[i]
         if fabs(s) >= fabs(x[i]):
@@ -237,6 +253,6 @@ cdef double _csum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
     return s + c
 
 
-def _sum(const double[::1] x, Py_ssize_t start, Py_ssize_t end):
+def _sum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):
     """Wraps _csum() for testing"""
     return _csum(x, start, end)

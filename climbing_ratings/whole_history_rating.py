@@ -290,23 +290,15 @@ class WholeHistoryRating:
         aux_ratings = aux_pages.ratings
         num_ascents = len(ascents.adversary)
 
-        ascent_page_gammas = expand_to_slices(
-            np.exp(ratings), ascents.slices, num_ascents
-        )
-        ascent_aux_gammas = expand_to_slices_sparse(
+        page_ratings = expand_to_slices(ratings, ascents.slices, num_ascents)
+        aux_ratings = expand_to_slices_sparse(
             aux_ratings, aux_pages.ascents.slices, num_ascents
         )
-        np.exp(ascent_aux_gammas, ascent_aux_gammas)
 
-        ascent_route_gammas = self.route_ratings[ascents.adversary]
-        np.exp(ascent_route_gammas, ascent_route_gammas)
+        route_ratings = self.route_ratings[ascents.adversary]
 
         return get_bt_derivatives(
-            ascents.slices,
-            ascents.wins,
-            ascent_page_gammas,
-            ascent_aux_gammas,
-            ascent_route_gammas,
+            ascents.slices, ascents.wins, page_ratings, aux_ratings, route_ratings,
         )
 
     def __update_page_ratings(self, pages, aux_pages, should_update_variance):
@@ -363,22 +355,21 @@ class WholeHistoryRating:
             rating estimation.
         """
 
-        rascents_route_gammas = expand_to_slices(
-            np.exp(self._route_ratings),
+        route_ratings = expand_to_slices(
+            self._route_ratings,
             self._route_ascents.slices,
             len(self._route_ascents.adversary),
         )
 
-        rascents_page_gammas = self._bases.ratings[self._route_ascents.adversary]
-        np.exp(rascents_page_gammas, rascents_page_gammas)
+        page_ratings = self._bases.ratings[self._route_ascents.adversary]
 
         # Bradley-Terry terms.
         d1, d2 = get_bt_derivatives(
             self._route_ascents.slices,
             self._route_ascents.wins,
-            rascents_route_gammas,
-            np.ones_like(rascents_route_gammas),
-            rascents_page_gammas,
+            route_ratings,
+            np.zeros_like(route_ratings),
+            page_ratings,
         )
 
         # Prior terms.
