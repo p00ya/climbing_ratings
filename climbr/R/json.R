@@ -89,11 +89,11 @@ ParseJsonAscents <- function(json) {
       route = .FlattenChr(.data$routeID),
       tick = NormalizeAscentType(.FlattenChr(.data$tick)),
       climber = .FlattenChr(.data$accountID),
-      timestamp = .data$date %>%
-        .FlattenChr() %>%
-        as.POSIXct(format = "%FT%H:%M:%SZ", optional = TRUE) %>%
-        as.integer() %>%
-        suppressWarnings(),
+      timestamp = suppressWarnings(as.integer(as.POSIXct(
+        .FlattenChr(.data$date),
+        format = "%FT%H:%M:%SZ",
+        optional = TRUE
+      ))),
       grade = .FlattenInt(.data$gradeScore),
       style = relevel(as.factor(.FlattenChr(.data$cprStyle)), "Sport"),
       .data$pitch
