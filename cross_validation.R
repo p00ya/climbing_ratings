@@ -31,11 +31,13 @@ set.seed(1337L)
 train_result <- train(
   dfs$ascents,
   factor(dfs$ascents$clean, levels = c(0, 1), labels = c("ATTEMPT", "CLEAN")),
-  method = MakeWhrModel(dfs, max_iterations = 256L),
+  method = MakeWhrModel(dfs, max_iterations = 512L),
   tuneGrid = expand.grid(
-    w = 1:3 / 52,
-    sigma_c = (1:4)^2,
-    sigma_r = (1:4)^2,
+    w2_c = 1:3 / 52 / period_length,
+    w2_s = (c(1, 2, 5) / 10)^2 / 52 / period_length,
+    sigma2_c = (1:4)^2,
+    sigma2_r = (1:4)^2,
+    sigma2_s = (c(1, 2, 5) / 10)^2,
     b = c(0, 0.02),
     g0 = 259
   ),
