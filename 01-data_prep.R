@@ -36,9 +36,11 @@ df_raw <- read.csv(
   ),
   stringsAsFactors = FALSE
 )
+saveRDS(df_raw, file.path(data_dir, "df_raw.rds"))
 
 df_clean <- CleanAscents(df_raw, max_time = now)
 message(SummarizeAscents(df_clean))
 dfs <- NormalizeTables(df_clean, period_length)
 dfs$routes <- dplyr::mutate(dfs$routes, rating = TransformGrade(grade))
 WriteNormalizedTables(dfs, data_dir)
+saveRDS(dfs, file.path(data_dir, "dfs.rds"))

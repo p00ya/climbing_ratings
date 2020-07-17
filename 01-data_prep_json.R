@@ -23,6 +23,8 @@ if (!exists("now")) {
 }
 
 df_raw <- ReadAllJsonAscents(data_dir)
+saveRDS(df_raw, file.path(data_dir, "df_raw.rds"))
+
 message(
   paste(
     prettyNum(nrow(df_raw), big.mark = ","), "expanded ascents by",
@@ -39,3 +41,4 @@ dfs$routes <- dplyr::mutate(
   rating = TransformGrade(grade, 0.02, ref = 259)
 )
 WriteNormalizedTables(dfs, data_dir)
+saveRDS(dfs, file.path(data_dir, "dfs.rds"))
