@@ -59,7 +59,7 @@ IsTickClean <- function(ticktype) {
 #' Also prints a summary of the resulting data.
 #'
 #' @param df_raw data frame with the columns "ascentId", "route", "climber",
-#' "tick", "grade", "timestamp".
+#' "tick", "grade", "style", "timestamp".
 #' @param min_time a POSIXct; ascents from before this time are removed.
 #' @param max_time a POSIXct; ascents from after this time are removed.
 CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
