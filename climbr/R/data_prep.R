@@ -78,7 +78,7 @@ CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
   # route.  This means it will be used as the reference route (natural rating
   # prior with mode 0).  Having the most common grade and lots of ascents means
   # it is (hopefully) a good reference point.
-  route_grades <- routes %>% dplyr::count(.data$grade)
+  route_grades <- routes %>% dplyr::count(.data$grade, wt = dplyr::n())
   routes <- routes %>%
     dplyr::inner_join(
       route_grades,
