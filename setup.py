@@ -27,8 +27,6 @@ cython_ext = {
         "-mtune=native",
         "-ffast-math",
         "-fno-math-errno",
-        "-fno-associative-math",
-        "-fno-reciprocal-math",
     ],
     "include_dirs": [numpy.get_include()],
 }
@@ -36,7 +34,11 @@ cython_ext = {
 bradley_terry = Extension(
     "climbing_ratings.bradley_terry",
     ["climbing_ratings/bradley_terry.pyx"],
-    **cython_ext,
+    # Disable some maths optimizations that defeat precision-preserving
+    # ordering.
+    extra_compile_args=cython_ext["extra_compile_args"]
+    + ["-fno-associative-math", "-fno-reciprocal-math"],
+    include_dirs=cython_ext["include_dirs"],
 )
 
 process_helpers = Extension(
