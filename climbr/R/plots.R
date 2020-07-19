@@ -106,10 +106,10 @@ PlotRouteRating <- function(df_routes) {
 #' @param df_routes a data frame.
 PlotRatingsDensity <- function(df_pages, df_routes) {
   page_ratings <- df_pages %>%
-    dplyr::mutate(type = .data$climber) %>%
+    dplyr::mutate(type = "climber") %>%
     dplyr::select(.data$r, .data$type)
   route_ratings <- df_routes %>%
-    dplyr::mutate(type = .data$route) %>%
+    dplyr::mutate(type = "route") %>%
     dplyr::select(.data$r, .data$type)
   ratings <- dplyr::bind_rows(page_ratings, route_ratings) %>%
     dplyr::mutate(type = as.factor(.data$type))
