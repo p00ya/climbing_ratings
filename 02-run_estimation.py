@@ -31,7 +31,7 @@ style_page
 
 pages.csv
 ---------
-A page identifies a climber at an interval in time.  Pages must be sorted by
+A page identifies a climber at an interval in time.  Pages must be sorted
 lexicographically by climber and timestamp.
 
 climber
