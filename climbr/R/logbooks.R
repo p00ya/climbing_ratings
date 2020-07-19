@@ -66,7 +66,7 @@
       timestamp = .data$Ascent.Date %>%
         as.POSIXct(format = "%FT%H:%M:%SZ", optional = TRUE, tz = "UTC") %>%
         as.integer(),
-      style = 0L,
+      style = 1L,
       pitches = purrr::map_int(.data$Comment, .GetPitchCount)
     ) %>%
     tidyr::drop_na(-.data$pitches)

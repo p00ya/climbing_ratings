@@ -70,7 +70,7 @@ describe(".ParseLogbook", {
       tick = "onsight",
       grade = 18L,
       timestamp = 1563667200L,
-      style = 0L,
+      style = 1L,
       pitches = NA_integer_,
       stringsAsFactors = FALSE
     )
@@ -118,7 +118,7 @@ describe(".ParseLogbook", {
       tick = c("redpoint", "redpoint"),
       grade = c(18L, 18L),
       timestamp = c(1563667200L, 1563667200L),
-      style = c(0L, 0L),
+      style = c(1L, 1L),
       pitches = c(NA, 2L),
       stringsAsFactors = FALSE
     )
@@ -143,7 +143,7 @@ describe(".ParseLogbook", {
       tick = c("onsight", "onsight"),
       grade = c(19L, 18L),
       timestamp = c(1563667200L, 1563667200L),
-      style = c(0L, 0L),
+      style = c(1L, 1L),
       pitches = c(NA_integer_, NA_integer_),
       stringsAsFactors = FALSE
     )
