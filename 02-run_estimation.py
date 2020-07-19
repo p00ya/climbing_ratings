@@ -258,7 +258,7 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--wiener-variance",
-        metavar="w",
+        metavar="w2",
         type=float,
         # Assume a 1 point variance over 1 year, with time units of 1s.
         default=1.0 / 86400.0 / 364.0,
@@ -273,21 +273,21 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--climber-prior-variance",
-        metavar="sigma",
+        metavar="sigma2",
         type=float,
         default=1.0,
         help="variance of climbers' natural ratings prior",
     )
     parser.add_argument(
         "--route-prior-variance",
-        metavar="sigma",
+        metavar="sigma2",
         type=float,
         default=1.0,
         help="variance of routes' natural ratings prior",
     )
     parser.add_argument(
         "--style-prior-variance",
-        metavar="sigma",
+        metavar="sigma2",
         type=float,
         # Should be less than the climber prior variance so that the majority
         # of variation between climbers is captured in their base rating.
@@ -296,7 +296,7 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--style-wiener-variance",
-        metavar="w",
+        metavar="w2",
         type=float,
         # Should be less than climber Wiener variance so that the majority
         # of variation in a climber's strength over time is captured in the
