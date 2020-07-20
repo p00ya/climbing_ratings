@@ -223,12 +223,12 @@ TransformGrade <- function(grade, scale = 0, ref = grade[[1]]) {
 WriteNormalizedTables <- function(dfs, dir) {
   utils::write.csv(
     dfs$ascents %>%
-      dplyr::mutate(
+      dplyr::transmute(
         route = as.integer(.data$route) - 1,
+        .data$clean,
         page = .data$page - 1,
         style_page = .data$style_page - 1
-      ) %>%
-      dplyr::select(-.data$climber),
+      ),
     file.path(dir, "ascents.csv"),
     row.names = FALSE
   )
