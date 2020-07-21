@@ -7,9 +7,9 @@ Should be called as:
     run_estimation.py DATA_DIR
 
 DATA_DIR should be a directory containing the files 'ascents.csv', 'routes.csv',
-'pages.csv'.  The two files 'route_ratings.csv' and 'page_ratings.csv' will be
-written to the output directory (which defaults to DATA_DIR).  Each of the
-files are described below.
+'pages.csv', and 'style_pages.csv'.  The three files 'route_ratings.csv',
+'page_ratings.csv' and 'style_page_ratings.csv' will be written to the output
+directory (which defaults to DATA_DIR).  Each of the files are described below.
 
 The first line of each of the CSV files is assumed to be a header.
 
