@@ -5,7 +5,7 @@ Authors@R:
     person(given = "Dean",
            family = "Scarff",
            role = c("aut", "cre"),
-           email = "dos@scarff.id.au",
+           email = paste0("dos", "\x40", "scarff.id.au"),
            comment = c(ORCID = "0000-0002-6681-7190"))
 Description: Support functions for fitting climbing ascent data to a Whole-History Rating model.  These functions wrangle data in formats exposed by theCrag.com, preparing it for analysis with the Python climbing_ratings package.  They also provide analysis of the fitted model (plotting charts etc.).
 License: Apache License 2.0

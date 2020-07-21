@@ -58,7 +58,7 @@ if __name__ == "__main__":
     setup(
         name="climbing_ratings",
         author="Dean Scarff",
-        author_email="dos@scarff.id.au",
+        author_email=("dos" + chr(64) + "scarff.id.au"),
         description="Estimate climber and route ratings from ascents data",
         long_description=long_description,
         version="4.0.0",
