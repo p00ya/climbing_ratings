@@ -69,6 +69,7 @@ os: linux
 dist: bionic
 env:
   TZ: UTC
+  CFLAGS: -march=native -mtune=native
 cache:
   packages: true
   pip: true

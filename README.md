@@ -37,9 +37,10 @@ Python 3.6+ with pip is required; Python 3.8 is recommended.  The additional dep
 python3 -m pip install Cython numpy pytest
 ```
 
-The package can be built using:
+The package can be built for the local system using:
 
 ```
+export CFLAGS="-march=native -mtune=native"
 python3 setup.py build
 python3 setup.py build_ext --inplace
 ```
