@@ -1,6 +1,6 @@
 Package: climbr
 Title: Data Preparation and Analysis for Climbing Ratings
-Version: 3.0.0
+Version: 4.0.0
 Authors@R:
     person(given = "Dean",
            family = "Scarff",
