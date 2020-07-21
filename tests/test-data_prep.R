@@ -49,4 +49,7 @@ describe("data_prep_json", {
   it("routes.csv matches golden", {
     ExpectCsvsEqual("routes.csv", src_dir, data_dir)
   })
+  it("dfs.rds matches golden", {
+    ExpectRdsContentsEqual("dfs.rds", src_dir, data_dir)
+  })
 })

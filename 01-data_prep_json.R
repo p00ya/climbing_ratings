@@ -41,4 +41,4 @@ dfs$routes <- dplyr::mutate(
   rating = TransformGrade(grade, 0.02, ref = 259)
 )
 WriteNormalizedTables(dfs, data_dir)
-saveRDS(dfs, file.path(data_dir, "dfs.rds"))
+SaveNormalizedTablesAsRDS(dfs, data_dir)

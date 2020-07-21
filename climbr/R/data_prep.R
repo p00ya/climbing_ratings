@@ -256,3 +256,16 @@ WriteNormalizedTables <- function(dfs, dir) {
     row.names = FALSE
   )
 }
+
+#' Writes normalized tables in full to an RDS file.
+#'
+#' Writes "dfs" to the file "dfs.rds", adding a "version" character vector
+#' containing the current version of the "climbr" package.
+#'
+#' @param dfs a list of data frames, with the tags "ascents", "routes" and
+#' "pages"; like what NormalizeTables returns.
+#' @param dir the directory to write the RDS file to.
+SaveNormalizedTablesAsRDS <- function(dfs, dir) {
+  dfs$version <- utils::packageVersion("climbr")
+  saveRDS(dfs, file.path(dir, "dfs.rds"))
+}
