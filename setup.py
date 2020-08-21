@@ -21,7 +21,12 @@ import numpy
 
 # setuptools.Extension kwargs for building Cython extensions.
 cython_ext = {
-    "extra_compile_args": ["-Ofast", "-ffast-math", "-fno-math-errno"],
+    "extra_compile_args": [
+        "-Ofast",
+        "-ffast-math",
+        "-fno-math-errno",
+        "-Wno-deprecated-declarations",
+    ],
     "include_dirs": [numpy.get_include()],
 }
 
