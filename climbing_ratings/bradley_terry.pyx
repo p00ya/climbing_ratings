@@ -21,7 +21,8 @@ from libc.math cimport fabs
 # Workaround for "expl" being missing from Cython's libc.math.
 # See: https://github.com/cython/cython/issues/3570
 cdef extern from "<math.h>" nogil:
-    long double expl(long double x)
+    long double coshl(long double)
+    long double expl(long double)
     long double fabsl(long double)
 
 
@@ -93,7 +94,7 @@ def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
 
 def get_bt_derivatives(
     list slices,
-    double[::1] wins,
+    double[::1] win,
     double[::1] player,
     double[::1] aux,
     double[::1] adversary,
@@ -107,8 +108,9 @@ def get_bt_derivatives(
     ----------
     slices : list of pairs
         (start, end) indices representing slices of the ascents for each player.
-    wins : contiguous ndarray
-        Number of wins for each player.
+    win : contiguous ndarray
+        1.0 if the ascent was a "win" for the player, -1.0 otherwise, for each
+        ascent.
     player : contiguous ndarray
         Natural rating of the "player" for each ascent.
     aux : contiguous ndarray
@@ -125,7 +127,7 @@ def get_bt_derivatives(
     """
     cdef long double[::1] d1_terms, d2_terms
     d1_terms, d2_terms = _cget_bt_summation_terms(
-        player, aux, adversary
+        win, player, aux, adversary
     )
 
     cdef Py_ssize_t num_slices = len(slices)
@@ -143,64 +145,41 @@ def get_bt_derivatives(
             d2[i] = 0.0
             continue
 
-        # WHR Appendix A.1:
-        # d ln P / d r = |W_i| - sum( C_ij gamma_i / (C_ij gamma_i + D_ij) )
-        #
-        # We move gamma_i into the sum for numerical stability: terms will be
-        # closer to unity.
-        d1[i] = wins[i] - _csum(d1_terms, start, end)
-        # WHR Appendix A.1:
-        # d^2 ln P / dr ^2 = -sum( C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2 )
-        d2[i] = -_csum(d2_terms, start, end)
+        # Instead of using WHR Appendix A.1's factorization (with its A, B, C,
+        # D and gamma terms), we sum the actual derivatives for each ascent,
+        # which is more numerically stable.
+        d1[i] = _csum(d1_terms, start, end)
+        d2[i] = _csum(d2_terms, start, end)
 
     return (d1.base, d2.base)
 
 
 cdef tuple _cget_bt_summation_terms(
-    double[::1] player, double[::1] aux, double[::1] adversary
+    double[::1] win, double[::1] player, double[::1] aux, double[::1] adversary
 ):
-    """Get the Bradley-Terry summation terms for each player.
+    """Get the Bradley-Terry derivative terms for each ascent.
 
     A player is an abstraction for an entity with a rating; it will correspond
     to a page or a route.
 
     Parameters
     ----------
+    win : contiguous ndarray
+        1.0 if the ascent was a "win" for the player, -1.0 otherwise, for each
+        ascent.
     player : contiguous ndarray of longdouble
         Natural rating of the "player" for each ascent.
     aux : contiguous ndarray of longdouble
-        Auxiliary term of the player's rating for each ascent.
+        Auxiliary term of the player's natural rating for each ascent.
     adversary : contiguous ndarray of longdouble
         Natural rating of the adversary for each ascent.
 
     Returns
     -------
     (d1_terms : MemoryView, d2_terms : MemoryView)
-        d1_terms contains the
-            aux_gamma gamma / (aux_gamma gamma + adversary_gamma)
-        terms for each player.
-
-        d2_terms contains the
-            aux_gamma gamma adversary_gamma /
-            (aux_gamma gamma + adversary_gamma)^2
-        terms for each player.
+        d1_terms contains the "d ln P / dr" terms for each ascent.
+        d2_terms contains the "d^2 ln P / dr^2" terms for each ascent.
     """
-    # WHR Appendix A.1 Terms of the Bradley-Terry model:
-    #
-    # P(G_j) = (A_ij gamma_i + B_ij) / (C_ij gamma_i + D_ij)
-    #
-    # WHR 2.2 Bradley-Terry Model:
-    #
-    # P(player i beats player k) =
-    #    aux_i gamma_i / (aux_i gamma_i + gamma_k)
-    #
-    # So for an ascent on a climb with rating gamma_k:
-    #
-    # P(win) = (aux_i gamma_i + 0) / (aux_i gamma_i + gamma_k)
-    #    so A = aux_i, B = 0, C = aux_i, D = gamma_k
-    #
-    # P(loss) = (0 gamma_i + gamma_k) / (aux_i gamma_i + gamma_k)
-    #    so A = 0, B = gamma_k, C = aux_i, D = gamma_k
     cdef Py_ssize_t n = player.shape[0]
 
     # Use extended precision to compensate for the loss of precision due to
@@ -208,30 +187,44 @@ cdef tuple _cget_bt_summation_terms(
     cdef long double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
     cdef long double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
 
-    cdef long double t, u, phi, gamma, adversary_gamma
+    cdef long double t
     for i in range(n):
-        gamma = expl(<long double> player[i])
-        gamma *= expl(<long double> aux[i])
-        adversary_gamma = expl(<long double> adversary[i])
-        t = gamma + adversary_gamma
+        # From WHR 2.2 Bradley-Terry Model:
+        #
+        # P(player i beats player k)
+        #   = gamma_i / (gamma_i + gamma_k)
+        #   = 1 / (exp(r_k - r_i) + 1)
+        #
+        # We extend WHR by adding auxillary terms to the player's natural
+        # rating:
+        # P(player beats adversary)
+        #   = 1 / (exp(adversary - (aux + player)) + 1)
+        #
+        # Then instead of using WHR Appendix A.1's factorization (with its A,
+        # B, C, D and gamma terms), we evaluate the derivatives for each ascent.
+        # Hopefully these forms promote numerical stability by netting out
+        # the ratings difference before exponentiation.
+        #
+        # d ln P / dr =
+        #   win:   1 / (exp(winner - loser) + 1)
+        #   loss: -1 / (exp(winner - loser) + 1)
+        # d^2 ln P / dr^2 = -1 / (2 (cosh(winner - loser) + 1))
 
-        # C_ij gamma_i / (C_ij gamma_i + D_ij)
-        u = gamma / t
-        d1_terms[i] = u
+        t = <long double> aux[i] + player[i] - adversary[i]
+        # t = winner - loser
+        t *= win[i]
 
-        # C_ij gamma_i D_ij / (C_ij gamma_i + D_ij)^2
-        u *= adversary_gamma / t
-
-        d2_terms[i] = u
+        d1_terms[i] = win[i] / (expl(t) + 1.0)
+        d2_terms[i] = -0.5 / (coshl(t) + 1.0)
 
     return (d1_terms, d2_terms)
 
 
 def _get_bt_summation_terms(
-    double[::1] player, double[::1] aux, double[::1] adversary
+    double[::1] win, double[::1] player, double[::1] aux, double[::1] adversary
 ):
     """Wraps _cget_bt_summation_terms() for testing"""
-    return _cget_bt_summation_terms(player, aux, adversary)
+    return _cget_bt_summation_terms(win, player, aux, adversary)
 
 
 cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):

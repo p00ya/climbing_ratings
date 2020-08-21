@@ -298,7 +298,7 @@ class WholeHistoryRating:
         route_ratings = self.route_ratings[ascents.adversary]
 
         return get_bt_derivatives(
-            ascents.slices, ascents.wins, page_ratings, aux_ratings, route_ratings,
+            ascents.slices, ascents.win, page_ratings, aux_ratings, route_ratings,
         )
 
     def __update_page_ratings(self, pages, aux_pages, should_update_variance):
@@ -366,7 +366,7 @@ class WholeHistoryRating:
         # Bradley-Terry terms.
         d1, d2 = get_bt_derivatives(
             self._route_ascents.slices,
-            self._route_ascents.wins,
+            self._route_ascents.win,
             route_ratings,
             np.zeros_like(route_ratings),
             page_ratings,
@@ -418,39 +418,29 @@ class WholeHistoryRating:
         """
         # WHR 2.2: Bradley-Terry Model
         #   P(player i beats player j) = exp(r_i) / (exp(r_i) + exp(r_j))
+        #                              = 1 / (exp(r_j - r_i) + 1)
 
-        # While we could use ascents.wins to make evaluation of the numerator
-        # O(pages + routes), to avoid numeric overflow it's better to iterate
-        # over ascents (which is unavoidable for the denominator anyway).
         pages = self._bases
 
         ascent_page_ratings = pages.ascent_ratings()
         ascent_page_ratings += self._styles.ascent_ratings()
         ascent_route_ratings = self._route_ratings[pages.ascents.adversary]
 
-        # log(P) = sum over ascents[ log( exp(r_i) / (exp(r_i) + exp(r_j)) ) ]
-        #        = sum[ r_winner - log( exp(r_i) + exp(r_j) ) ]
+        # log(P) = sum over ascents[ log( 1 / (1 + exp(loser - winner)) ) ]
+        #        = - sum ( log( exp(loser - winner) + 1 ) )
 
-        # Collect the rating of each winner for the numerator.
-        clean = pages.ascents.clean
-        x = clean * ascent_page_ratings
-        x += (1.0 - clean) * ascent_route_ratings
+        x = ascent_route_ratings
+        x -= ascent_page_ratings
+        x *= pages.ascents.win
+        np.exp(x, x)
+        x += 1.0
+        np.log(x, x)
 
-        # Sum the exponential terms for the denominator, reusing the ratings
-        # arrays.
-        np.exp(ascent_page_ratings, ascent_page_ratings)
-        np.exp(ascent_route_ratings, ascent_route_ratings)
-        denominator = ascent_page_ratings
-        denominator += ascent_route_ratings
-
-        np.log(denominator, denominator)
-
-        x -= denominator
-        return np.sum(x)
+        return -np.sum(x)
 
 
 class _SlicedAscents(
-    collections.namedtuple("_SlicedAscents", ["wins", "slices", "adversary", "clean"])
+    collections.namedtuple("_SlicedAscents", ["slices", "adversary", "win"])
 ):
     """Stores ascents organized into contiguous slices.
 
@@ -460,15 +450,14 @@ class _SlicedAscents(
 
     Attributes
     ----------
-    wins : ndarray
-        Count of wins for each player.
     slices : list of pairs
         (start, end) pairs defining the slice in the player-ordered ascents,
         for each player.
     adversary : ndarray of intp
         The index of the adversary for each player-ordered ascent.
-    clean : ndarray or None
-        Each element is 1 if the ascent was clean, 0 otherwise for each ascent.
+    win : ndarray
+        Each element is 1 if the ascent was a win for the player, -1 otherwise,
+        for each ascent.
     """
 
 
@@ -532,10 +521,10 @@ class _PageModel:
     def __make_page_ascents(ascents, ascents_page, num_pages):
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
-        wins = np.array(_sum_slices(ascents.clean, ascents_page_slices))
-        return _SlicedAscents(
-            wins, ascents_page_slices, np.array(ascents.route), np.array(ascents.clean)
-        )
+        # Transform {0, 1} clean values to {-1, 1} win values.
+        win = ascents.clean - 0.5
+        np.sign(win, win)
+        return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
 
     @staticmethod
     def __make_processes(var, wiener_var, pages, page_slices):
@@ -621,8 +610,8 @@ def _make_route_ascents(ascents, num_routes):
     Parameters
     ----------
     ascents : _SlicedAscents
-        Page-slicing of the ascents.  The adversary filed should correspond to
-        the route ID, and the clean field should not be None.
+        Page-slicing of the ascents.  The adversary field should correspond to
+        the route ID.
     num_routes : integer
         Number of routes.  Route indices must be in the interval
         [0, num_routes).  Routes may have zero ascents.
@@ -634,9 +623,9 @@ def _make_route_ascents(ascents, num_routes):
         length num_routes.  The "clean" attribute is unpopulated.
     """
     num_ascents = len(ascents.adversary)
-    route_wins = []
     rascents_route_slices = []
     rascents_page = [0] * num_ascents
+    rascents_win = [0] * num_ascents
 
     permutation = [(route, a) for a, route in enumerate(ascents.adversary)]
     permutation.sort()
@@ -647,40 +636,28 @@ def _make_route_ascents(ascents, num_routes):
 
     start = end = 0
     i = 0
-    wins = 0.0
 
     for j, (route, a) in enumerate(permutation):
         if 0 <= a:
             ascent_to_rascent[a] = j
+            rascents_win[j] = -ascents.win[a]
 
         if i < route:
             rascents_route_slices.append((start, end))
-            route_wins.append(wins)
-
             # Routes with no ascents:
             rascents_route_slices.extend([(end, end)] * (route - i - 1))
-            route_wins.extend([0.0] * (route - i - 1))
 
             i = route
             start = j
-            wins = 0.0
 
         end = j + 1
-        wins += 1.0 - ascents.clean[a]
 
     for page, (start, end) in enumerate(ascents.slices):
         for a in range(start, end):
             rascents_page[ascent_to_rascent[a]] = page
 
     return _SlicedAscents(
-        np.array(route_wins),
         rascents_route_slices,
         np.array(rascents_page, dtype=np.intp),
-        None,
+        np.array(rascents_win),
     )
-
-
-def _sum_slices(values, slices):
-    """Sum the values in each slice."""
-    sum = np.sum  # save repeated lookup overhead
-    return [sum(values[start:end]) for start, end in slices]

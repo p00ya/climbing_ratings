@@ -49,21 +49,23 @@ class TestBradleyTerryFunctions(unittest.TestCase):
 
     def test_get_bt_summation_terms(self):
         """Test _get_bt_summation_terms()"""
+        win = np.array([1.0, 1.0])
         player = np.log([1.0, 2.0])
         aux = np.log([1.0, 1.0])
         adversary = np.log([1.0, 2.0])
-        d1, d2 = _get_bt_summation_terms(player, aux, adversary)
+        d1, d2 = _get_bt_summation_terms(win, player, aux, adversary)
         self.assert_close([0.5, 0.5], d1, "d1")
-        self.assert_close([0.25, 0.25], d2, "d2")
+        self.assert_close([-0.25, -0.25], d2, "d2")
 
     def test_get_bt_summation_terms_auxiliary(self):
         """Test _get_bt_summation_terms() with non-zero aux rating"""
+        win = np.array([1.0])
         player = np.log([2.0])
         aux = np.log([0.5])
         adversary = np.log([1.0])
-        d1, d2 = _get_bt_summation_terms(player, aux, adversary)
+        d1, d2 = _get_bt_summation_terms(win, player, aux, adversary)
         self.assert_close([0.5], d1, "d1")
-        self.assert_close([0.25], d2, "d2")
+        self.assert_close([-0.25], d2, "d2")
 
     def test_sum(self):
         """Test sum()"""
@@ -87,65 +89,65 @@ class TestBradleyTerryFunctions(unittest.TestCase):
     def test_get_bt_derivatives_single_win(self):
         """Test get_bt_derivatives() with a single win"""
         slices = [(0, 1)]
-        wins = np.array([1.0])
+        win = np.array([1.0])
         player = np.log([1.0])
         aux = np.log([1.0])
         adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
     def test_get_bt_derivatives_single_loss(self):
         """Test get_bt_derivatives() with a single loss"""
         slices = [(0, 1)]
-        wins = np.array([0.0])
+        win = np.array([-1.0])
         player = np.log([1.0])
         aux = np.log([1.0])
         adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([-0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
     def test_get_bt_derivatives_four_losses(self):
         """Test get_bt_derivatives() with four losses"""
         slices = [(0, 4)]
-        wins = np.array([0.0])
+        win = np.array([-1.0, -1.0, -1.0, -1.0])
         player = np.log([4.0, 4.0, 4.0, 4.0])
         aux = np.zeros([4])
         adversary = np.log([1.0, 1.0, 1.0, 1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([-3.2], d1, "d1")
         self.assert_close([-0.64], d2, "d2")
 
     def test_get_bt_derivatives_auxiliary(self):
         """Test get_bt_derivatives() with non-zero aux rating"""
         slices = [(0, 1)]
-        wins = np.array([1.0])
+        win = np.array([1.0])
         player = np.log([2.0])
         aux = np.log([0.5])
         adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
     def test_get_bt_derivatives_no_ascents(self):
         """Test get_bt_derivatives() with no ascents"""
         slices = [(0, 0)]
-        wins = np.array([])
+        win = np.array([])
         player = np.log([])
         aux = np.log([])
         adversary = np.log([])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([0.0], d1, "d1")
         self.assert_close([0.0], d2, "d2")
 
     def test_get_bt_derivatives(self):
         """Test get_bt_derivatives() with multiple slices"""
         slices = [(0, 1), (1, 4)]
-        wins = np.array([1.0, 2.0])
+        win = np.array([1.0, 1.0, 1.0, -1.0])
         player = np.log([6.0, 4.0, 4.0, 4.0])
         aux = np.zeros([4])
         adversary = np.log([6.0, 4.0, 12.0, 12.0])
-        d1, d2 = get_bt_derivatives(slices, wins, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
         self.assert_close([0.5, 1.0], d1, "d1")
         self.assert_close([-0.25, -0.625], d2, "d2")
