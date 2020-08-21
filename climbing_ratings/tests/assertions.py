@@ -17,6 +17,10 @@
 import numpy as np
 
 
+# Show the calling frames when assertions fail, instead of the helper function.
+__unittest = True
+
+
 def assert_close(test_case, expected, actual, name):
     """Raise an exception if expected does not equal actual.
 
