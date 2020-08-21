@@ -22,6 +22,7 @@ from libc.math cimport fabs
 # See: https://github.com/cython/cython/issues/3570
 cdef extern from "<math.h>" nogil:
     long double expl(long double x)
+    long double fabsl(long double)
 
 
 cnp.import_array()
@@ -244,7 +245,7 @@ cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t en
     cdef long double t
     for i in range(start, end):
         t = s + x[i]
-        if fabs(s) >= fabs(x[i]):
+        if fabsl(s) >= fabsl(x[i]):
             c += (s - t) + x[i]
         else:
             c += (x[i] - t) + s
