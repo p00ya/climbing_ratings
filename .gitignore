@@ -12,3 +12,4 @@
 /*.egg
 /data
 /climbr/man
+/tests/testdata/**/*.rds
