@@ -298,7 +298,11 @@ class WholeHistoryRating:
         route_ratings = self.route_ratings[ascents.adversary]
 
         return get_bt_derivatives(
-            ascents.slices, ascents.win, page_ratings, aux_ratings, route_ratings,
+            ascents.slices,
+            ascents.win,
+            page_ratings,
+            aux_ratings,
+            route_ratings,
         )
 
     def __update_page_ratings(self, pages, aux_pages, should_update_variance):
