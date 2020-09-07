@@ -195,7 +195,7 @@ cdef tuple _cget_bt_summation_terms(
         #   = gamma_i / (gamma_i + gamma_k)
         #   = 1 / (exp(r_k - r_i) + 1)
         #
-        # We extend WHR by adding auxillary terms to the player's natural
+        # We extend WHR by adding auxiliary terms to the player's natural
         # rating:
         # P(player beats adversary)
         #   = 1 / (exp(adversary - (aux + player)) + 1)
