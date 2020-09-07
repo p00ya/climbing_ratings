@@ -33,6 +33,29 @@ _python_job_tmpl: &python_job_tmpl
     - python3 setup.py build_ext --inplace
     - python3 -X dev -m pytest
 
+_r_job_tmpl: &r_job_tmpl
+  use_devtools: true
+  # These things are big and slow.
+  pandoc: false
+  latex: false
+  cache:
+    directories:
+      - $HOME/.cache/R/R.cache
+    packages: true
+  r_packages:
+    - styler
+  before_install:
+    # Use Travis's default installation logic, which assumes the working
+    # directory is an R package.
+    - cd climbr
+  before_script:
+    # Change back to the top-level directory before running tests.
+    - cd "$TRAVIS_BUILD_DIR"
+  script:
+    - Rscript --vanilla -e 'quit(status = any(styler::style_dir()$changed))'
+    - Rscript --vanilla -e 'devtools::check("climbr")'
+    - Rscript --vanilla -e 'testthat::test_dir("tests")'
+
 jobs:
   include:
     - python: "3.8"
@@ -42,28 +65,11 @@ jobs:
     - python: "3.6"
       <<: *python_job_tmpl
     - language: r
-      r: "3.6.2"
-      use_devtools: true
-      # These things are big and slow.
-      pandoc: false
-      latex: false
-      cache:
-        directories:
-          - $HOME/.cache/R/R.cache
-        packages: true
-      r_packages:
-        - styler
-      before_install:
-        # Use Travis's default installation logic, which assumes the working
-        # directory is an R package.
-        - cd climbr
-      before_script:
-        # Change back to the top-level directory before running tests.
-        - cd "$TRAVIS_BUILD_DIR"
-      script:
-        - Rscript --vanilla -e 'quit(status = any(styler::style_dir()$changed))'
-        - Rscript --vanilla -e 'devtools::check("climbr")'
-        - Rscript --vanilla -e 'testthat::test_dir("tests")'
+      r: "4.0"
+      <<: *r_job_tmpl
+    - language: r
+      r: "3.6"
+      <<: *r_job_tmpl
 language: python
 os: linux
 dist: bionic
