@@ -1,0 +1,84 @@
+# GitHub Actions tests for the climbr R package.
+
+# Copyright Contributors to the Climbing Ratings project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: climbr
+on:
+  push:
+    paths:
+      - '**.R'
+      - 'climbr/**'
+      - 'tests/**'
+      - '.github/workflows/test-climbr.yml'
+      - '!climbing_ratings/**'
+      - '!**.py'
+  schedule:
+    # Weekly on Fridays at 03:33.
+    - cron: '33 3 * * 5'
+
+# See also:
+# https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        r: [ 'oldrel', 'release' ]
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RSPM: 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest'
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      TZ: UTC
+    steps:
+    - uses: actions/checkout@v2
+    - uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: ${{ matrix.r }}
+    - name: Query dependencies
+      run: |
+        install.packages(c("remotes"))
+        saveRDS(remotes::dev_package_deps("climbr", dependencies = TRUE), ".github/depends.Rds")
+        writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+      shell: Rscript {0}
+    - name: Configure R package cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.R_LIBS_USER }}
+        key: R-${{ hashFiles('.github/R-version') }}-${{ hashFiles('.github/depends.Rds') }}
+        restore-keys: |
+          R-${{ hashFiles('.github/R-version') }}-
+    - name: Install system dependencies
+      run: |
+        while read -r cmd
+        do
+          eval sudo $cmd
+        done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04", "climbr"))')
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install libcurl4-openssl-dev
+    - name: Install R dependencies
+      run: |
+        remotes::install_deps("climbr", dependencies = TRUE)
+        remotes::install_cran(c("devtools", "styler", "testthat"))
+      shell: Rscript {0}
+    - name: Lint
+      run: |
+        remotes::install_cran("styler")
+        quit(status = any(styler::style_dir()$changed))
+      shell: Rscript --vanilla {0}
+    - name: Build and test
+      run: |
+        devtools::check("climbr")
+        testthat::test_dir("tests")
+      shell: Rscript --vanilla {0}

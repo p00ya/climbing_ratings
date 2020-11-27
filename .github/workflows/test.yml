@@ -1,0 +1,61 @@
+# GitHub Actions tests for the climbing_ratings Python package.
+
+# Copyright Contributors to the Climbing Ratings project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: climbing_ratings
+on:
+  push:
+    paths:
+      - '**'
+      - '!.github/workflows/test-climbr.yml'
+      - '!climbr/**'
+      - '!**.R'
+  schedule:
+    # Weekly on Fridays at 03:28.
+    - cron: '28 3 * * 5'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Configure pip cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ matrix.python-version }}-${{ hashFiles('setup.py') }}
+        restore-keys: |
+          pip-${{ matrix.python-version }}-
+          pip-
+    - name: Install dependencies
+      run: |
+        pip3 install Cython numpy pytest black
+        python3 setup.py develop
+        pip3 freeze --all
+    - name: Lint
+      run: |
+        python3 -m black --check climbing_ratings setup.py tests/*.py
+    - name: Build and test
+      run: |
+        python3 setup.py build_ext --inplace
+        python3 -X dev -m pytest
