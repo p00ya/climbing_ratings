@@ -6,6 +6,8 @@ This system uses a quantitative, evidence-based approach to grading climbs, sinc
 
 A climber's guide to how the system works can be found on the [Vertical Life magazine](https://www.verticallifemag.com.au/2020/08/making-the-grade/) website.
 
+Grades based on this system have been intergated into [theCrag.com](https://thecrag.com).  They can be found next to the "grAId" in the "Grade Citation" section of the route information.
+
 Results of analyzing a database of Australian ascents with the Climbing Ratings software are discussed in the paper:
 
 > Dean Scarff, "Estimation of Climbing Route Difficulty using Whole-History Rating", [arXiv:2001.05388](https://arxiv.org/abs/2001.05388) [stat.AP], 2020.
