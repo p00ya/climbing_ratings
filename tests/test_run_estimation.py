@@ -84,6 +84,19 @@ class TestRunEstimation(unittest.TestCase):
         self.assert_matches_golden("route_ratings.csv")
         self.assert_matches_golden("style_page_ratings.csv")
 
+    def test_run_estimation_v3(self):
+        """Test run_estimation backwards-compatibility with v3 data"""
+        v3_goldens = os.path.join("tests", "testdata", "v3.0")
+        cmd = [
+            sys.executable,
+            "02-run_estimation.py",
+            "-n",
+            "--max-iterations",
+            "1",
+            v3_goldens,
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,7 +11,11 @@ DATA_DIR should be a directory containing the files 'ascents.csv', 'routes.csv',
 'page_ratings.csv' and 'style_page_ratings.csv' will be written to the output
 directory (which defaults to DATA_DIR).  Each of the files are described below.
 
-The first line of each of the CSV files is assumed to be a header.
+The first line of each of the CSV files is assumed to be a header.  The columns
+can be in any order, and additional columns are permitted.
+
+Some columns are optional, in which case the entire column may be omitted.  If
+the column is present in the input, every row must have a value.
 
 ascents.csv
 -----------
@@ -27,7 +31,7 @@ style_page
     0-based style-page ID.  A style-page identifies a climber ascending in a
     particular style, at an interval in time.  Acts as an index into the
     style-pages table.  -1 indicates no style page (an ascent in the base
-    style).
+    style).  Column is optional (values default to -1).
 
 pages.csv
 ---------
@@ -47,6 +51,9 @@ A style-page identifies a climber ascending in a particular style, at an
 interval in time.  Pages must be sorted lexicographically by climber
 and timestamp.
 
+This file may be omitted.  If it does not exist, no style-pages are defined, and
+all ascents must use the base style.
+
 climber_style
     0-based climber/style ID.  This ID should be unique for each combination
     of climber and style, and IDs for the same climber should be contiguous.
@@ -57,12 +64,14 @@ timestamp
 routes.csv
 ----------
 route
-    Arbitrary route tag.  Not used.
+    Arbitrary route tag.  Copied to the output route_ratings.csv, but otherwise
+    not used.
 rating
     Initial natural rating for each route.  The ratings should be reals, with
     the interpretation under the Bradley-Terry model that for grades A and B,
     if a climber can cleanly ascend grade A with even probability, then the
     probability of cleanly ascending grade B = exp(B) / (exp(A) + exp(B)).
+    Column is optional (values default to 0).
 
 route_ratings.csv
 -----------------
@@ -134,76 +143,150 @@ from climbing_ratings.whole_history_rating import (
 )
 
 
+class TableReader:
+    """Reads a table from a CSV file.
+
+    The reader is robust to additional columns, missing columns, and changes in
+    column order.
+    """
+
+    __slots__ = ("_colspecs",)
+
+    def __init__(self, colspecs):
+        """Configures a reader that expects the given columns.
+
+        Parameters
+        ----------
+        colspecs : list
+            Output column specifications.  Each member is a tuple of
+            (name, type, default).  Name is a string.  The type can be called
+            like a function with a string argument (like int or float).  The
+            default should be a value of type, used if the input table does not
+            contain the corresponding column.  If default is None, then the
+            read method will throw an error if the column is missing in the
+            input.
+        """
+        self._colspecs = colspecs
+        for i, (name, type_, default) in enumerate(colspecs):
+            assert isinstance(name, str)
+            assert isinstance(type_, type)
+            assert default is None or isinstance(default, type_)
+
+    def read(self, filename):
+        """Read the table from the given CSV file.
+
+        Parameters
+        ----------
+        filename : string
+            The file name of the input CSV file.
+
+        Returns
+        -------
+        tuple of lists
+            Returns a tuple with the same number of members as the column
+            specifications the reader was initialized with.  Each of the
+            inner lists will have the same length, corresponding to the number
+            of rows in the CSV (not including the header).
+        """
+        output = tuple([[] for _ in self._colspecs])
+
+        with open(filename, newline="") as fp:
+            reader = iter(csv.reader(fp))
+
+            header = next(reader)
+            input_index = self.__get_input_index(filename, header)
+
+            for line in reader:
+                # Append a value for this row to each of the output columns.
+                for i, (_, type_, value) in enumerate(self._colspecs):
+                    if input_index[i] >= 0:
+                        value = type_(line[input_index[i]])
+
+                    output[i].append(value)
+
+        return output
+
+    def __get_input_index(self, filename, header):
+        """Returns a mapping from output columns to input columns.
+
+        Parameters
+        ----------
+        filename : str
+            The input CSV file, for error messages.
+        header : list of str
+            Names of each of the columns in the input table.
+
+        Returns
+        -------
+        list of int
+            For the column with index i in the output table, the return value[i]
+            is the index of the column with the same name in the input table.
+            If the input table does not contain the given column, value[i] will
+            be -1.
+        """
+        # d[name] is the index of column "name" in the input table.
+        d = dict([(name, i) for i, name in enumerate(header)])
+        index = []
+        for (name, _, default) in self._colspecs:
+            if name in d:
+                index.append(d[name])
+            else:
+                if default is None:
+                    raise ValueError(f'{filename}: missing required column "{name}"')
+                index.append(-1)
+
+        return index
+
+
 def read_ascents(dirname):
     """Read the ascents table."""
-    filename = os.path.join(dirname, "ascents.csv")
-    routes = []
-    cleans = []
-    pages = []
-    style_pages = []
-    with open(filename, newline="") as fp:
-        reader = iter(csv.reader(fp))
-
-        assert next(reader) == ["route", "clean", "page", "style_page"]
-        for line in reader:
-            route, clean, page, style_page = line
-            routes.append(int(route))
-            cleans.append(float(clean))
-            pages.append(int(page))
-            style_pages.append(int(style_page))
-
-    return (routes, cleans, pages, style_pages)
+    reader = TableReader(
+        [
+            ("route", int, None),
+            ("clean", float, None),
+            ("page", int, None),
+            ("style_page", int, -1),
+        ]
+    )
+    return reader.read(os.path.join(dirname, "ascents.csv"))
 
 
 def read_routes(dirname):
     """Read the routes table."""
-    filename = os.path.join(dirname, "routes.csv")
-    names = []
-    ratings = []
-    with open(filename, newline="") as fp:
-        reader = iter(csv.reader(fp))
-
-        assert next(reader) == ["route", "rating"]
-        for line in reader:
-            name, rating = line
-            names.append(name)
-            ratings.append(float(rating))
-
-    return names, ratings
+    reader = TableReader(
+        [
+            ("route", str, ""),
+            ("rating", float, 0.0),
+        ]
+    )
+    return reader.read(os.path.join(dirname, "routes.csv"))
 
 
 def read_pages(dirname):
     """Read the pages table."""
-    filename = os.path.join(dirname, "pages.csv")
-    climbers = []
-    timestamps = []
-    with open(filename, newline="") as fp:
-        reader = iter(csv.reader(fp))
-
-        assert next(reader) == ["climber", "timestamp"]
-        for line in reader:
-            climber, timestamp = line
-            climbers.append(int(climber))
-            timestamps.append(float(timestamp))
-
-    return (climbers, timestamps)
+    reader = TableReader(
+        [
+            ("climber", int, None),
+            ("timestamp", float, None),
+        ]
+    )
+    return reader.read(os.path.join(dirname, "pages.csv"))
 
 
 def read_style_pages(dirname):
     """Read the style-pages table."""
     filename = os.path.join(dirname, "style_pages.csv")
-    climber_styles = []
-    timestamps = []
-    with open(filename, newline="") as fp:
-        reader = iter(csv.reader(fp))
+    if not os.path.exists(filename):
+        # Tolerate a missing style-pages table.
+        return ([], [])
 
-        assert next(reader) == ["climber_style", "timestamp"]
-        for line in reader:
-            climber_style, timestamp = line
-            climber_styles.append(int(climber_style))
-            timestamps.append(float(timestamp))
-
-    return (climber_styles, timestamps)
+    reader = TableReader(
+        [
+            ("climber_style", int, None),
+            ("timestamp", float, None),
+        ]
+    )
+    return reader.read(os.path.join(dirname, "style_pages.csv"))
 
 
 def write_route_ratings(dirname, routes_name, route_ratings, route_var):
