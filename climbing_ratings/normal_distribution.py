@@ -49,7 +49,7 @@ class NormalDistribution:
         (d1 : ndarray, d2 : ndarray)
             The first and second derivatives of the log-PDF, evaluated at x.
         """
-        y = x - self._mu
-        y /= -self._sigma_sq
+        y = self._mu - x
+        y /= self._sigma_sq
 
         return (y, -1.0 / self._sigma_sq)
