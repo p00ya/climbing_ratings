@@ -423,9 +423,7 @@ def main(argv):
                 break
             last_log_lik = log_lik
 
-    whr.update_ratings(True)
-
-    print(whr.get_log_likelihood())
+    whr.update_covariance()
 
     if not args.dry_run:
         output = args.output

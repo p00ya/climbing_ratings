@@ -108,17 +108,26 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
 
     def test_update_route_ratings(self):
         """Test WholeHistoryRating.update_route_ratings is stable"""
-        self.whr.update_route_ratings(True)
+        self.whr.update_route_ratings()
         # Ratings should not change: both ascents had a 50% probability assuming
         # the initial ratings.
         self.assert_close([0.0, 0.0, 0.0], self.whr.route_ratings, "route_ratings")
+
+        self.whr.update_covariance()
         self.assert_close(
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
         )
 
     def test_update_ratings(self):
         """Test WholeHistoryRating.update_ratings"""
-        self.whr.update_ratings(True)
+        self.whr.update_ratings()
+        self.assert_close([0.0, 0.0], self.whr.page.ratings, "page.ratings")
+        self.assert_close([0.0, 0.0, 0.0], self.whr.route_ratings, "route_ratings")
+
+    def test_update_covariance(self):
+        """Test WholeHistoryRating.update_covariance"""
+        self.whr.update_covariance()
+
         self.assert_close([0.4], self.whr.page.var, "page.var")
         self.assert_close(
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
@@ -155,9 +164,10 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
 
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings is stable"""
-        self.whr.update_base_ratings(True)
+        self.whr.update_base_ratings()
         page = self.whr.page
         self.assert_close([0.0, 0.0], page.ratings, "page.ratings")
+        self.whr.update_base_ratings(True)
         self.assert_close([0.5, 0.625], page.var, "page.var")
 
     def test_get_log_likelihood(self):
@@ -191,10 +201,12 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_base_ratings(True)
+            self.whr.update_base_ratings()
 
         page = self.whr.page
         self.assert_close([1.29253960], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings(True)
         self.assert_close([0.49650051], page.var, "page.var")
 
 
@@ -223,10 +235,12 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings"""
         for _ in range(4):
-            self.whr.update_base_ratings(True)
+            self.whr.update_base_ratings()
 
         page = self.whr.page
         self.assert_close([1.54631420], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings(True)
         self.assert_close([0.47001792], page.var, "page.var")
 
 
@@ -255,10 +269,12 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_base_ratings(True)
+            self.whr.update_base_ratings()
 
         page = self.whr.page
         self.assert_close([1.2394699, 1.5808267], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings(True)
         self.assert_close([0.5216223, 1.0962046], page.var, "page.var")
 
 
@@ -287,10 +303,12 @@ class TestWholeHistoryRatingStyles(unittest.TestCase):
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_base_ratings(True)
+            self.whr.update_base_ratings()
 
         page = self.whr.page
         self.assert_close([1.29253960], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings(True)
         self.assert_close([0.49650051], page.var, "page.var")
 
 
@@ -320,8 +338,10 @@ class TestWholeHistoryRatingMultiplePagesAndStyles(unittest.TestCase):
     def test_update_base_ratings(self):
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
-            self.whr.update_base_ratings(True)
+            self.whr.update_base_ratings()
 
         page = self.whr.page
         self.assert_close([0.87971224], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings(True)
         self.assert_close([0.61661873], page.var, "page.var")

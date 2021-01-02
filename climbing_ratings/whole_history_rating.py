@@ -305,7 +305,7 @@ class WholeHistoryRating:
             route_ratings,
         )
 
-    def __update_page_ratings(self, pages, aux_pages, should_update_variance):
+    def __update_page_ratings(self, pages, aux_pages, only_variance):
         """Update the ratings of all pages.
 
         Parameters
@@ -314,9 +314,9 @@ class WholeHistoryRating:
             Pages of the player to update.
         aux_pages : _PageModel
             Auxilliary pages for the player.
-        should_update_variance : boolean
-            If true, updates the page variance and covariance.
-            This has no effect on rating estimation.
+        only_variance : boolean
+            If true, only updates the page variance and covariance.
+            The ratings estimates are left unchanged.
         """
         bt_d1, bt_d2 = self.__get_page_bt_derivatives(pages, aux_pages)
 
@@ -325,13 +325,8 @@ class WholeHistoryRating:
             if start == end:
                 continue
             climber = pages.processes[i]
-            delta = climber.get_ratings_adjustment(
-                ratings[start:end], bt_d1[start:end], bt_d2[start:end]
-            )
-            # r2 = r1 - delta
-            ratings[start:end] -= delta
 
-            if should_update_variance:
+            if only_variance:
                 climber.get_covariance(
                     ratings[start:end],
                     bt_d1[start:end],
@@ -339,24 +334,43 @@ class WholeHistoryRating:
                     pages.var[start:end],
                     pages.cov[start : end - 1],
                 )
+            else:
+                delta = climber.get_ratings_adjustment(
+                    ratings[start:end], bt_d1[start:end], bt_d2[start:end]
+                )
+                # r2 = r1 - delta
+                ratings[start:end] -= delta
 
-    def update_base_ratings(self, should_update_variance=False):
-        """Update the ratings of all (base) pages."""
-        self.__update_page_ratings(self._bases, self._styles, should_update_variance)
+    def update_base_ratings(self, only_variance=False):
+        """Update the ratings of all (base) pages.
 
-    def update_style_ratings(self, should_update_variance=False):
-        """Update the ratings of all style pages."""
-        self.__update_page_ratings(self._styles, self._bases, should_update_variance)
-        pass
+        Parameters
+        ----------
+        only_variance : boolean
+            If true, only updates the base variance and covariance.
+            The ratings estimates are left unchanged.
+        """
+        self.__update_page_ratings(self._bases, self._styles, only_variance)
 
-    def update_route_ratings(self, should_update_variance=False):
+    def update_style_ratings(self, only_variance=False):
+        """Update the ratings of all style pages.
+
+        Parameters
+        ----------
+        only_variance : boolean
+            If true, only updates the style variance and covariance.
+            The ratings estimates are left unchanged.
+        """
+        self.__update_page_ratings(self._styles, self._bases, only_variance)
+
+    def update_route_ratings(self, only_variance=False):
         """Update the ratings of all routes.
 
         Parameters
         ----------
-        should_update_variance : boolean
-            If true, updates the "route_var" attribute.  This has no effect on
-            rating estimation.
+        only_variance : boolean
+            If true, only updates the "route_var" attribute.
+            The ratings estimates are left unchanged.
         """
 
         route_ratings = expand_to_slices(
@@ -381,29 +395,29 @@ class WholeHistoryRating:
         d1 += prior_d1
         d2 += prior_d2
 
-        delta = d1  # output parameter
-        np.divide(d1, d2, delta)
-
-        # r2 = r1 - delta
-        self._route_ratings -= delta
-
-        if should_update_variance:
+        if only_variance:
             np.reciprocal(d2, self._route_var)
             np.negative(self._route_var, self._route_var)
+        else:
+            delta = d1  # output parameter
+            np.divide(d1, d2, delta)
 
-    def update_ratings(self, should_update_variance=False):
-        """Update ratings for all routes and pages.
+            # r2 = r1 - delta
+            self._route_ratings -= delta
 
-        Parameters
-        ----------
-        should_update_variance : boolean
-            If true, updates page and route variances.
-        """
+    def update_ratings(self):
+        """Update ratings for all routes and pages."""
         # Update pages first because we have better priors/initial values for
         # the routes.
-        self.update_base_ratings(should_update_variance)
-        self.update_route_ratings(should_update_variance)
-        self.update_style_ratings(should_update_variance)
+        self.update_base_ratings()
+        self.update_route_ratings()
+        self.update_style_ratings()
+
+    def update_covariance(self):
+        """Update covariance estimates for all routes and pages."""
+        self.update_base_ratings(True)
+        self.update_route_ratings(True)
+        self.update_style_ratings(True)
 
     def get_log_likelihood(self):
         """Calculate the marginal log-likelihood.
