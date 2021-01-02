@@ -205,11 +205,12 @@ def _invert_lu(lu, ul, d_arr, l_arr):
         The tri-diagonal LU decomposition for the square matrix M
     ul : TriDiagonalLU
         The tri-diagonal UL decomposition for the square matrix M.
-    d : array_like
-        The output array for the diagonal of the negative inverse of M.
-    l : array_like
+    d_arr : array_like
+        The output array for the diagonal of the negative inverse of M.  Its
+        length must be the same as the order of M.
+    l_arr : array_like
         The output array for the lower sub-diagonal of the negative inverse
-        of M.
+        of M.  Its length must be one less than the order of M.
     """
     # WHR Appendix B.2: Computing Diagonal and Sub-diagonal Terms of H^-1
     d = d_arr[:-1]
@@ -222,13 +223,13 @@ def _invert_lu(lu, ul, d_arr, l_arr):
     # b[i] b'[i]
     b = np.multiply(lu.b, ul.b, l_arr)
 
-    # 1 / (b[i] b'[i] - d[i] d'[i+1])
+    # b[i] b'[i] - d[i] d'[i+1]
     np.subtract(b, d, d)
-    np.reciprocal(d_arr, d_arr)
-    d_arr[-1] *= -1.0
 
     # diagonal[i] = d'[i+1] / (b[i] b'[i] - d[i] d'[i+1])
-    np.multiply(d, d_ul, d)
+    np.divide(d_ul, d, d)
+    # base case; diagonal[n] = -1 / d[n]
+    d_arr[-1] = -1.0 / d_arr[-1]
 
     # subdiagonal[i] = -a[i] diagonal[i+1]
     np.multiply(lu.a, d_arr[1:], b)
