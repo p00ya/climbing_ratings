@@ -131,6 +131,7 @@ cov
 # limitations under the License.
 
 import argparse
+import copy
 import csv
 import numpy as np
 import os
@@ -417,6 +418,9 @@ def main(argv):
     np.seterr(all="ignore")
     last_log_lik = float("-inf")
 
+    max_log_lik = float("-inf")
+    best_model = whr
+
     if args.progress:
         print("iteration,log_lik")
 
@@ -426,6 +430,12 @@ def main(argv):
 
             if args.progress:
                 print(f"{i},{log_lik}")
+
+            if log_lik > max_log_lik:
+                max_log_lik = log_lik
+                best_model = copy.copy(whr)
+            elif log_lik - max_log_lik > 1.0:
+                print(f"warning: divergent model (iteration {i})", file=sys.stderr)
 
             if 0.0 < abs(log_lik - last_log_lik) < 1.0:
                 # Detect early convergence.
@@ -441,16 +451,18 @@ def main(argv):
                 file=sys.stderr,
             )
 
-    whr.update_covariance()
+    best_model.update_covariance()
 
     if not args.dry_run:
         output = args.output
         if output is None:
             output = data
 
-        write_route_ratings(output, routes_name, whr.route_ratings, whr.route_var)
-        write_page_ratings(output, pages.climber, whr.page)
-        write_style_page_ratings(output, pages.climber, whr.style_page)
+        write_route_ratings(
+            output, routes_name, best_model.route_ratings, best_model.route_var
+        )
+        write_page_ratings(output, pages.climber, best_model.page)
+        write_style_page_ratings(output, pages.climber, best_model.style_page)
 
 
 if __name__ == "__main__":

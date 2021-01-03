@@ -16,6 +16,7 @@
 
 
 import collections
+import copy
 import itertools
 import numpy as np
 from .bradley_terry import (
@@ -242,15 +243,42 @@ class WholeHistoryRating:
             self._route_ratings, hparams.route_prior_variance
         )
 
+    def __copy__(self):
+        """Copies a snapshot of the current model estimates.
+
+        The estimates (base/style/route ratings and variance) are deep-copied,
+        effectively creating a snapshot of the current estimates that can be
+        updated independently.  References to the other (immutable) fields are
+        copied as is.
+        """
+        whr = self.__class__.__new__(self.__class__)
+        whr._bases = copy.copy(self._bases)
+        whr._styles = copy.copy(self._styles)
+        whr._route_ratings = self._route_ratings.copy()
+        whr._route_var = self._route_var.copy()
+        whr._route_ascents = self._route_ascents
+        whr._route_priors = NormalDistribution(
+            self._route_ratings, self._route_priors.sigma_sq
+        )
+        return whr
+
     @property
     def page(self):
-        """Return the estimated ratings of the (base) pages as a PageEstimates."""
+        """The estimated ratings of the (base) pages, as a PageRatingsTable.
+
+        The returned arrays are references to the internal state, so they will
+        reflect model updates.
+        """
         pages = self._bases
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
     def style_page(self):
-        """Return the estimated ratings of the (base) pages as a PageEstimates."""
+        """The estimated ratings of the style pages, as a PageRatingsTable.
+
+        The returned arrays are references to the internal state, so they will
+        reflect model updates.
+        """
         pages = self._styles
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
@@ -534,6 +562,21 @@ class _PageModel:
         self.processes = self.__make_processes(
             prior_var, wiener_var, pages, self.slices
         )
+
+    def __copy__(self):
+        """Returns a copy of this table.
+
+        The ratings, var and cov arrays will be deep-copied, while the other
+        fields are shallow-copied.
+        """
+        pages = self.__class__.__new__(self.__class__)
+        pages.ratings = self.ratings.copy()
+        pages.var = self.var.copy()
+        pages.cov = self.cov.copy()
+        pages.ascents = self.ascents
+        pages.slices = self.slices
+        pages.processes = self.processes
+        return pages
 
     @staticmethod
     def __make_page_ascents(ascents, ascents_page, num_pages):

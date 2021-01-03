@@ -32,6 +32,11 @@ class NormalDistribution:
         self._mu = mu
         self._sigma_sq = sigma_sq
 
+    @property
+    def sigma_sq(self):
+        """The variance parameter."""
+        return self._sigma_sq
+
     def get_derivatives(self, x):
         """Return the first and second derivative of the log-likelihood.
 
