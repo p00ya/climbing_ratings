@@ -133,6 +133,7 @@ cov
 import argparse
 import copy
 import csv
+import math
 import numpy as np
 import os
 import sys
@@ -320,6 +321,26 @@ def write_style_page_ratings(dirname, pages_climber, page):
     )
 
 
+def guess_iterations(num_entities):
+    """Guesses the number of iterations required for convergence.
+
+    This is just a heuristic; the actual number depends heavily on the data
+    and hyperparameters.
+
+    Parameters
+    ----------
+    num_entities : int
+        The number of ratings that need to be estimated.
+
+    Returns
+    -------
+    int
+        An estimate of the number of iterations of Newton's method required for
+        the WHR estimates to converge.
+    """
+    return max(64, 2 * int(math.sqrt(1 + num_entities)))
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="""
@@ -340,8 +361,8 @@ def parse_args(argv):
         "--max-iterations",
         metavar="N",
         type=int,
-        default=64,
-        help="maximum number of Newton-Raphson iterations",
+        default=None,
+        help="maximum number of Newton-Raphson iterations (default scales with input)",
     )
     parser.add_argument(
         "--wiener-variance",
@@ -404,6 +425,13 @@ def main(argv):
     style_pages = PagesTable(*read_style_pages(data))
     routes_name, routes_rating = read_routes(data)
 
+    if args.max_iterations is None:
+        max_iterations = guess_iterations(
+            len(routes_rating) + pages.climber.size + style_pages.climber.size
+        )
+    else:
+        max_iterations = args.max_iterations
+
     hparams = Hyperparameters(
         args.climber_prior_mean,
         args.climber_prior_variance,
@@ -424,7 +452,7 @@ def main(argv):
     if args.progress:
         print("iteration,log_lik")
 
-    for i in range(args.max_iterations + 1):
+    for i in range(max_iterations + 1):
         if i % 8 == 0 or i == args.max_iterations:
             log_lik = whr.get_log_likelihood()
 
@@ -443,11 +471,11 @@ def main(argv):
 
             last_log_lik = log_lik
 
-        if i < args.max_iterations:
+        if i < max_iterations:
             whr.update_ratings()
         else:
             print(
-                f"warning: reached iteration limit {args.max_iterations}",
+                f"warning: reached iteration limit {max_iterations}",
                 file=sys.stderr,
             )
 
