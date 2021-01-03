@@ -333,6 +333,9 @@ def parse_args(argv):
         "--dry-run", "-n", action="store_true", help="do not write output files"
     )
     parser.add_argument(
+        "--progress", action="store_true", help="print log-likelihood periodically"
+    )
+    parser.add_argument(
         "--max-iterations",
         metavar="N",
         type=int,
@@ -413,15 +416,30 @@ def main(argv):
 
     np.seterr(all="ignore")
     last_log_lik = float("-inf")
-    for i in range(args.max_iterations):
-        whr.update_ratings()
-        if i % 8 == 0:
+
+    if args.progress:
+        print("iteration,log_lik")
+
+    for i in range(args.max_iterations + 1):
+        if i % 8 == 0 or i == args.max_iterations:
             log_lik = whr.get_log_likelihood()
-            print(log_lik)
+
+            if args.progress:
+                print(f"{i},{log_lik}")
+
             if 0.0 < abs(log_lik - last_log_lik) < 1.0:
                 # Detect early convergence.
                 break
+
             last_log_lik = log_lik
+
+        if i < args.max_iterations:
+            whr.update_ratings()
+        else:
+            print(
+                f"warning: reached iteration limit {args.max_iterations}",
+                file=sys.stderr,
+            )
 
     whr.update_covariance()
 
