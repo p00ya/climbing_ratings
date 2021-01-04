@@ -382,14 +382,14 @@ def parse_args(argv):
         "--climber-prior-variance",
         metavar="sigma2",
         type=float,
-        default=1.0,
+        default=4.0,
         help="variance of climbers' natural ratings prior",
     )
     parser.add_argument(
         "--route-prior-variance",
         metavar="sigma2",
         type=float,
-        default=1.0,
+        default=4.0,
         help="variance of routes' natural ratings prior",
     )
     parser.add_argument(
