@@ -26,8 +26,8 @@ import tempfile
 import unittest
 
 
-class TestRunEstimation(unittest.TestCase):
-    """Goldens test for 02-run_estimation.py"""
+class TestClimbingRatings(unittest.TestCase):
+    """Goldens test for climbing_ratings' main script"""
 
     def setUp(self):
         with contextlib.ExitStack() as stack:
@@ -75,25 +75,38 @@ class TestRunEstimation(unittest.TestCase):
             fp.close()
             fp_actual.close()
 
-    def test_run_estimation(self):
-        """Test run_estimation"""
-        cmd = [sys.executable, "02-run_estimation.py", self._tmpdir.name]
+    def test_main(self):
+        """Test climbing_ratings"""
+        cmd = [sys.executable, "-m", "climbing_ratings", self._tmpdir.name]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
 
         self.assert_matches_golden("page_ratings.csv")
         self.assert_matches_golden("route_ratings.csv")
         self.assert_matches_golden("style_page_ratings.csv")
 
-    def test_run_estimation_v3(self):
-        """Test run_estimation backwards-compatibility with v3 data"""
+    def test_main_v3(self):
+        """Test climbing_ratings backwards-compatibility with v3 data"""
         v3_goldens = os.path.join("tests", "testdata", "v3.0")
+        cmd = [
+            sys.executable,
+            "-m",
+            "climbing_ratings",
+            "-n",
+            "--max-iterations",
+            "1",
+            v3_goldens,
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+
+    def test_run_estimation(self):
+        """Test legacy 02-run_estimation.py stub"""
         cmd = [
             sys.executable,
             "02-run_estimation.py",
             "-n",
             "--max-iterations",
             "1",
-            v3_goldens,
+            self._tmpdir.name,
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
 
