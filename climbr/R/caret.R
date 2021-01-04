@@ -24,15 +24,16 @@
 #' @param sigma2_s climber-style variance.
 #' @param max_iterations integer maximum number of WHR iterations.
 #' @param data_dir directory to read and write CSV files.
-#' @param script_path path to the Python estimation script.
+#' @param script arguments to the Python interpreter to run the Python
+#' estimation script.
 #' @return exit status of the estimation script.
 .RunEstimationScript <- function(w2_c, w2_s, sigma2_c, sigma2_r, sigma2_s,
                                  max_iterations, data_dir,
-                                 script_path = "02-run_estimation.py") {
+                                 script = c("-m", "climbing_ratings")) {
   system2(
     "python3",
     c(
-      script_path,
+      script,
       "--wiener-variance", w2_c,
       "--style-wiener-variance", w2_s,
       "--climber-prior-variance", sigma2_c,

@@ -53,15 +53,17 @@ python3 -X dev -W error -m pytest climbing_ratings
 
 ### Estimation script
 
-The Python script `02-run_estimation.py` reads in a set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
+The `climbing_ratings` module can be run as an estimation script.  It reads in a set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
 
 ```
-python3 02-run_estimation.py data
+python3 -m climbing_ratings data
 ```
+
+For legacy reasons, the `02-run_estimation.py` script provides a stub as an alternate way to call the estimation script.
 
 It will typically run in less than 5 seconds per 100,000 ascents (measured on an Intel Core i5-8210Y).
 
-Tests can be run using:
+Integration tests can be run using:
 
 ```
 python3 -X dev -m pytest tests
