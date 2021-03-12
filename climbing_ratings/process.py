@@ -42,12 +42,12 @@ class Process:
 
     # Private attributes
     # -------------------
-    # _initial_prior : NormalDistribution
+    # _initial_prior
     #     The prior distribution for the first page of the climber.
-    # _one_on_sigma_sq : array of float
+    # _one_on_sigma_sq
     #     The Wiener variance between each page and the next page.  The length
     #     is 1 fewer than the number of pages.
-    # _wiener_d2 : array of float
+    # _wiener_d2
     #     The second derivative terms (diagonal of the Hessian matrix) from the
     #     Wiener prior, for each page.
     __slots__ = ("_initial_prior", "_one_on_sigma_sq", "_wiener_d2")
@@ -111,7 +111,6 @@ class Process:
 
         Returns
         -------
-        (gradient : ndarray, hessian : TriDiagonal)
             The gradient and hessian of the conditional log-likelihood.
         """
 
@@ -140,16 +139,16 @@ class Process:
 
         Parameters
         ----------
-        ratings : ndarray
+        ratings
             Last estimate of natural ratings for each of this climber's pages.
-        bt_d1 : ndarray
+        bt_d1
             Bradley-Terry derivatives for each of this climber's pages.
-        bt_d2 : ndarray
+        bt_d2
             Bradley-Terry second-derivatives for each of this climber's pages.
 
         Returns
         -------
-        ratings : ndarray
+        ratings
             Deltas to subtract from the current ratings.
         """
         gradient, hessian = self.__get_derivatives(ratings, bt_d1, bt_d2)
@@ -163,27 +162,27 @@ class Process:
         bt_d2: ndarray,
         var: ndarray,
         cov: ndarray,
-    ):
+    ) -> None:
         """Return the covariance matrix for the ratings.
 
         Parameters
         ----------
-        ratings : ndarray
+        ratings
             The natural rating for each of the climber's pages.
-        bt_d1 : ndarray
+        bt_d1
             First derivative from the Bradley-Terry model.
-        bt_d2 : ndarray
+        bt_d2
             Second derivative from the Bradley-Terry model.
-        var : ndarray
+        var
             The output array for the variance for each of the natural ratings.
-        cov : ndarray
+        cov
             The output array for the covariance between the natural ratings of
             each page the next page.
         """
         _, hessian = self.__get_derivatives(ratings, bt_d1, bt_d2)
         lu = lu_decompose(hessian)
         ul = ul_decompose(hessian)
-        return _invert_lu(lu, ul, var, cov)
+        _invert_lu(lu, ul, var, cov)
 
 
 def _invert_lu_dot_g(lu: TriDiagonalLU, g: ndarray) -> ndarray:
@@ -195,13 +194,13 @@ def _invert_lu_dot_g(lu: TriDiagonalLU, g: ndarray) -> ndarray:
 
     Parameters
     ----------
-    lu : TriDiagonalLU
-        The tri-diagonal LU decomposition for a square matrix of shape (N, N)
-    g : contiguous ndarray with length N
+    lu
+        The tri-diagonal LU decomposition for a square matrix of shape (N, N).
+    g
+        Contiguous array with length N.
 
     Returns
     -------
-    ndarray
         An array with length X, satisfying LU X = G.
     """
     d, b, a = lu

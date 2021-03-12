@@ -62,3 +62,4 @@ jobs:
     - name: mypy
       run: |
         python3 -m mypy -p climbing_ratings
+        python3 -m mypy --strict --allow-any-generics -p climbing_ratings --exclude climbing_ratings/tests

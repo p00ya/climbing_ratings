@@ -27,7 +27,7 @@ from .normal_distribution import NormalDistribution
 from .process import Process
 from numpy import ndarray
 from numpy.typing import ArrayLike
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple, Union, cast
 
 
 class Hyperparameters(NamedTuple):
@@ -93,7 +93,7 @@ class AscentsTable:
         ascents must be in page order.
     page : ndarray of intp
         The 0-based ID of the page for each ascent.
-    style_page : ndarray of intp, or None
+    style_page : ndarray of intp
         The 0-based ID of the style-page for each ascent.
     """
 
@@ -104,7 +104,7 @@ class AscentsTable:
         route: ArrayLike,
         clean: ArrayLike,
         page: ArrayLike,
-        style_page: Optional[ndarray],
+        style_page: ArrayLike,
     ):
         """Initializes an AscentsTable.
 
@@ -127,7 +127,7 @@ class AscentsTable:
 
     def __len__(self) -> int:
         """Return the number of ascents in the table."""
-        return self.route.shape[0]
+        return cast(int, self.route.shape[0])
 
 
 class PagesTable:
@@ -163,7 +163,7 @@ class PagesTable:
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
-        return self.climber.shape[0]
+        return cast(int, self.climber.shape[0])
 
 
 class PageRatingsTable(NamedTuple):
@@ -222,7 +222,7 @@ class WholeHistoryRating:
         ascents: AscentsTable,
         pages: PagesTable,
         style_pages: PagesTable,
-        routes_rating: List[float],
+        routes_rating: Union[ndarray, List[float]],
     ):
         """Initialize a WHR model.
 
@@ -255,7 +255,7 @@ class WholeHistoryRating:
             hparams.style_prior_variance,
             hparams.style_wiener_variance,
         )
-        self._route_ratings = np.array(routes_rating)
+        self._route_ratings: ndarray = np.array(routes_rating)
         self._route_var = np.empty_like(self._route_ratings)
         self._route_ascents = _make_route_ascents(
             self._bases.ascents, len(routes_rating)
@@ -264,7 +264,7 @@ class WholeHistoryRating:
             self._route_ratings, hparams.route_prior_variance
         )
 
-    def __copy__(self):
+    def __copy__(self) -> "WholeHistoryRating":
         """Copies a snapshot of the current model estimates.
 
         The estimates (base/style/route ratings and variance) are deep-copied,
@@ -272,14 +272,14 @@ class WholeHistoryRating:
         updated independently.  References to the other (immutable) fields are
         copied as is.
         """
-        whr = self.__class__.__new__(self.__class__)
+        whr: WholeHistoryRating = self.__class__.__new__(self.__class__)
         whr._bases = copy.copy(self._bases)
         whr._styles = copy.copy(self._styles)
         whr._route_ratings = self._route_ratings.copy()
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
         whr._route_priors = NormalDistribution(
-            self._route_ratings, self._route_priors.sigma_sq
+            self._route_ratings, cast(ndarray, self._route_priors.sigma_sq)
         )
         return whr
 
@@ -331,9 +331,8 @@ class WholeHistoryRating:
 
         Returns
         -------
-        (d1 : ndarray, d2 : ndarray)
-            A pair of ndarrays of the first and second derivative of the
-            Bradley-Terry log-likelihood the player wins, with respect to
+            A pair of ndarrays (d1, d2) of the first and second derivative of
+            the Bradley-Terry log-likelihood the player wins, with respect to
             the player's natural rating.
         """
         ascents = pages.ascents
@@ -394,12 +393,12 @@ class WholeHistoryRating:
                 # r2 = r1 - delta
                 ratings[start:end] -= delta
 
-    def update_base_ratings(self, only_variance=False) -> None:
+    def update_base_ratings(self, only_variance: bool = False) -> None:
         """Update the ratings of all (base) pages.
 
         Parameters
         ----------
-        only_variance : boolean
+        only_variance
             If true, only updates the base variance and covariance.
             The ratings estimates are left unchanged.
         """
@@ -410,7 +409,7 @@ class WholeHistoryRating:
 
         Parameters
         ----------
-        only_variance : boolean
+        only_variance
             If true, only updates the style variance and covariance.
             The ratings estimates are left unchanged.
         """
@@ -421,7 +420,7 @@ class WholeHistoryRating:
 
         Parameters
         ----------
-        only_variance : boolean
+        only_variance
             If true, only updates the "route_var" attribute.
             The ratings estimates are left unchanged.
         """
@@ -507,7 +506,7 @@ class WholeHistoryRating:
         x += 1.0
         np.log(x, x)
 
-        return -np.sum(x)
+        return cast(float, -np.sum(x))
 
 
 class _SlicedAscents(NamedTuple):
@@ -598,13 +597,13 @@ class _PageModel:
             prior_var, wiener_var, pages, self.slices
         )
 
-    def __copy__(self):
+    def __copy__(self) -> "_PageModel":
         """Returns a copy of this table.
 
         The ratings, var and cov arrays will be deep-copied, while the other
         fields are shallow-copied.
         """
-        pages = self.__class__.__new__(self.__class__)
+        pages: _PageModel = self.__class__.__new__(self.__class__)
         pages.ratings = self.ratings.copy()
         pages.var = self.var.copy()
         pages.cov = self.cov.copy()
@@ -614,7 +613,11 @@ class _PageModel:
         return pages
 
     @staticmethod
-    def __make_page_ascents(ascents, ascents_page, num_pages) -> _SlicedAscents:
+    def __make_page_ascents(
+        ascents: AscentsTable,
+        ascents_page: ndarray,
+        num_pages: int,
+    ) -> _SlicedAscents:
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
         # Transform {0, 1} clean values to {-1, 1} win values.
@@ -623,7 +626,12 @@ class _PageModel:
         return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
 
     @staticmethod
-    def __make_processes(var, wiener_var, pages, page_slices) -> List[Process]:
+    def __make_processes(
+        var: float,
+        wiener_var: float,
+        pages: PagesTable,
+        page_slices: List[Tuple[int, int]],
+    ) -> List[Process]:
         """Make processes for each slice of pages."""
         pages_gap = _get_pages_gap(pages.timestamp)
         prior = NormalDistribution(0.0, var)

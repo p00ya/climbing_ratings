@@ -139,9 +139,11 @@ import sys
 from climbing_ratings.whole_history_rating import (
     AscentsTable,
     Hyperparameters,
+    PageRatingsTable,
     PagesTable,
     WholeHistoryRating,
 )
+from numpy import ndarray
 from typing import Any, Callable, List, Tuple, cast
 
 
@@ -159,7 +161,7 @@ class TableReader:
 
         Parameters
         ----------
-        colspecs : list
+        colspecs
             Output column specifications.  Each member is a tuple of
             (name, type, default).  Name is a string.  The type can be called
             like a function with a string argument (like int or float).  The
@@ -295,7 +297,9 @@ def read_style_pages(dirname: str) -> _PagesTable:
     return cast(_PagesTable, reader.read(os.path.join(dirname, "style_pages.csv")))
 
 
-def write_route_ratings(dirname, routes_name, route_ratings, route_var):
+def write_route_ratings(
+    dirname: str, routes_name: List[str], route_ratings: ndarray, route_var: ndarray
+) -> None:
     filename = os.path.join(dirname, "route_ratings.csv")
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
@@ -304,7 +308,13 @@ def write_route_ratings(dirname, routes_name, route_ratings, route_var):
             writer.writerow([route, rating, var])
 
 
-def _write_page_ratings(filename, climber_field, dirname, pages_climber, page):
+def _write_page_ratings(
+    filename: str,
+    climber_field: str,
+    dirname: str,
+    pages_climber: ndarray,
+    page: PageRatingsTable,
+) -> None:
     filename = os.path.join(dirname, filename)
     with open(filename, "w", newline="") as fp:
         writer = csv.writer(fp, lineterminator="\n", delimiter=",")
@@ -315,17 +325,21 @@ def _write_page_ratings(filename, climber_field, dirname, pages_climber, page):
             writer.writerow([climber, rating, var, cov])
 
 
-def write_page_ratings(dirname, pages_climber, page):
+def write_page_ratings(
+    dirname: str, pages_climber: ndarray, page: PageRatingsTable
+) -> None:
     _write_page_ratings("page_ratings.csv", "climber", dirname, pages_climber, page)
 
 
-def write_style_page_ratings(dirname, pages_climber, page):
+def write_style_page_ratings(
+    dirname: str, pages_climber: ndarray, page: PageRatingsTable
+) -> None:
     _write_page_ratings(
         "style_page_ratings.csv", "climber_style", dirname, pages_climber, page
     )
 
 
-def guess_iterations(num_entities):
+def guess_iterations(num_entities: int) -> int:
     """Guesses the number of iterations required for convergence.
 
     This is just a heuristic; the actual number depends heavily on the data
@@ -333,7 +347,7 @@ def guess_iterations(num_entities):
 
     Parameters
     ----------
-    num_entities : int
+    num_entities
         The number of ratings that need to be estimated.
 
     Returns
@@ -345,7 +359,7 @@ def guess_iterations(num_entities):
     return max(64, 2 * int(math.sqrt(1 + num_entities)))
 
 
-def parse_args(argv):
+def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="""
         Reads a pre-processed table of ascents and iteratively runs a WHR model.
@@ -419,7 +433,7 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
+def main(argv: List[str]) -> None:
     """Read tables and perform estimation."""
     args = parse_args(argv[1:])
     data = args.data_dir
