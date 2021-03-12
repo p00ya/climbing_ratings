@@ -25,18 +25,18 @@ from ..__main__ import TableReader, guess_iterations
 class TestTableReader(unittest.TestCase):
     """Tests for the TableReader class"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         with contextlib.ExitStack() as stack:
             self._tmpdir = tempfile.TemporaryDirectory()
             stack.enter_context(self._tmpdir)
             self.addCleanup(stack.pop_all().close)
 
-    def _get_file(self):
+    def _get_file(self) -> str:
         """Returns a temporary file with the given name"""
         name = inspect.stack()[0][3]
         return os.path.join(self._tmpdir.name, f"{name}.csv")
 
-    def test_read_all(self):
+    def test_read_all(self) -> None:
         """Test TableReader.read() with expected columns in order"""
         with open(self._get_file(), "w") as f:
             f.write("a,b,c\n1,2.0,foo\n")
@@ -54,7 +54,7 @@ class TestTableReader(unittest.TestCase):
         self.assertEqual(data[1], [2.0])
         self.assertEqual(data[2], ["foo"])
 
-    def test_read_reorder(self):
+    def test_read_reorder(self) -> None:
         """Test TableReader.read() with expected columns out-of-order"""
         with open(self._get_file(), "w") as f:
             f.write("c,b,a\nfoo,2.0,1\n")
@@ -72,7 +72,7 @@ class TestTableReader(unittest.TestCase):
         self.assertEqual(data[1], [2.0])
         self.assertEqual(data[2], ["foo"])
 
-    def test_read_default(self):
+    def test_read_default(self) -> None:
         """Test TableReader.read() with expected columns out-of-order"""
         with open(self._get_file(), "w") as f:
             f.write("a,b\n1,2.0\n")
@@ -90,7 +90,7 @@ class TestTableReader(unittest.TestCase):
         self.assertEqual(data[1], [2.0])
         self.assertEqual(data[2], ["foo"])
 
-    def test_read_no_default(self):
+    def test_read_no_default(self) -> None:
         """Test TableReader.read() with expected columns out-of-order"""
         with open(self._get_file(), "w") as f:
             f.write("a,b\n1,2.0\n")
@@ -109,7 +109,7 @@ class TestTableReader(unittest.TestCase):
 class TestMainFunctions(unittest.TestCase):
     """Tests for functions in the __main__ module"""
 
-    def test_guess_iterations(self):
+    def test_guess_iterations(self) -> None:
         """Test guess_iterations()"""
         self.assertEqual(guess_iterations(1), 64)
         self.assertEqual(guess_iterations(1024), 64)

@@ -15,26 +15,32 @@
 # limitations under the License.
 
 import numpy as np
+import unittest
+from numpy import ndarray
+from numpy.typing import ArrayLike
+from typing import Callable
 
 
 # Show the calling frames when assertions fail, instead of the helper function.
 __unittest = True
 
 
-def assert_close(test_case, expected, actual, name):
+def assert_close(
+    test_case: unittest.TestCase, expected: ArrayLike, actual: ndarray, name: str
+) -> None:
     """Raise an exception if expected does not equal actual.
 
     Equality is checked "approximately".
 
     Parameters
     ----------
-    test_case : unittest.TestCase
+    test_case
         The test case to raise an assertion on.
-    expected : list or ndarray
+    expected
         The expected value.
-    actual : ndarray
+    actual
         The actual value.
-    name : string
+    name
         The name of the value for use in the failure message.
     """
     expected = np.array(expected)
@@ -42,3 +48,27 @@ def assert_close(test_case, expected, actual, name):
         return
     msg = "expected {} = {}, got {}".format(name, expected, actual)
     raise test_case.failureException(msg)
+
+
+def assert_close_get(
+    test_case: unittest.TestCase, owner: type
+) -> Callable[[ArrayLike, ndarray, str], None]:
+    """Returns assert_close bound to a particular test case.
+
+    Parameters
+    ----------
+    test_case
+        The instance to bind to.
+    owner
+        The owner class.
+
+    Returns
+    -------
+        A callable for assert_close that is bound to the given test case.
+    """
+    # This is a workaround for the mypy error
+    # 'Callable... has no attribute "__get__"'', because mypy can't distinguish
+    # between functions (which are guaranteed to have a __get__ method, see
+    # https://docs.python.org/3.8/howto/descriptor.html#functions-and-methods)
+    # and other callables (like C functions).
+    return assert_close.__get__(test_case, owner)  # type: ignore

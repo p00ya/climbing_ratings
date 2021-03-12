@@ -26,7 +26,7 @@ from ..whole_history_rating import (
     _extract_slices,
     _make_route_ascents,
 )
-from .assertions import assert_close
+from .assertions import assert_close_get
 
 
 # Hyperparameters defaults.
@@ -36,7 +36,7 @@ _hparams = Hyperparameters(0.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 class TestWholeHistoryRatingFunctions(unittest.TestCase):
     """Tests for functions in the whole_history_rating module"""
 
-    def test_extract_slices(self):
+    def test_extract_slices(self) -> None:
         """Test _extract_slices()"""
         self.assertSequenceEqual([(0, 1)], _extract_slices([0], 1))
         self.assertSequenceEqual([(0, 2)], _extract_slices([0, 0], 1))
@@ -46,10 +46,12 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         self.assertSequenceEqual([(1, 2)], _extract_slices([-1, 0, -1], 1))
         self.assertSequenceEqual([(1, 2), (2, 2)], _extract_slices([-1, 0, -1], 2))
 
-    def test_make_route_ascents(self):
+    def test_make_route_ascents(self) -> None:
         """Test _make_route_ascents()"""
         page_ascents = _SlicedAscents(
-            slices=[(0, 5)], adversary=[0, 1, 0, 1, 0], win=[-1, -1, 1, -1, -1]
+            slices=[(0, 5)],
+            adversary=np.asarray([0, 1, 0, 1, 0]),
+            win=np.asarray([-1, -1, 1, -1, -1]),
         )
 
         ascents = _make_route_ascents(page_ascents, 2)
@@ -57,10 +59,12 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
         self.assertSequenceEqual([1, -1, 1, 1, 1], ascents.win.tolist())
 
-    def test_make_route_ascents_sparse(self):
+    def test_make_route_ascents_sparse(self) -> None:
         """Test _make_route_ascents() for routes without ascents"""
         page_ascents = _SlicedAscents(
-            slices=[(0, 5)], adversary=[1, 2, 1, 2, 1], win=[-1, -1, 1, -1, -1]
+            slices=[(0, 5)],
+            adversary=np.asarray([1, 2, 1, 2, 1]),
+            win=np.asarray([-1, -1, 1, -1, -1]),
         )
 
         ascents = _make_route_ascents(page_ascents, 4)
@@ -76,9 +80,9 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
     non-clean ascent.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=[1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
@@ -92,21 +96,21 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test WholeHistoryRating initialization"""
         route_ratings = self.whr.route_ratings
         self.assert_close([0.0, 0.0, 0.0], route_ratings, "route_ratings")
         page = self.whr.page
         self.assert_close([0.0], page.ratings, "page.ratings")
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings"""
         self.whr.update_base_ratings(True)
         page = self.whr.page
         self.assert_close([0.0, 0.0], page.ratings, "page.ratings")
         self.assert_close([0.4], page.var, "page.var")
 
-    def test_update_route_ratings(self):
+    def test_update_route_ratings(self) -> None:
         """Test WholeHistoryRating.update_route_ratings is stable"""
         self.whr.update_route_ratings()
         # Ratings should not change: both ascents had a 50% probability assuming
@@ -118,13 +122,13 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
         )
 
-    def test_update_ratings(self):
+    def test_update_ratings(self) -> None:
         """Test WholeHistoryRating.update_ratings"""
         self.whr.update_ratings()
         self.assert_close([0.0, 0.0], self.whr.page.ratings, "page.ratings")
         self.assert_close([0.0, 0.0, 0.0], self.whr.route_ratings, "route_ratings")
 
-    def test_update_covariance(self):
+    def test_update_covariance(self) -> None:
         """Test WholeHistoryRating.update_covariance"""
         self.whr.update_covariance()
 
@@ -133,10 +137,10 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
             [2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0], self.whr.route_var, "route_var"
         )
 
-    def test_get_log_likelihood(self):
+    def test_get_log_likelihood(self) -> None:
         """Test WholeHistoryRating.get_log_likelihood"""
         log_lik = self.whr.get_log_likelihood()
-        self.assert_close(6.0 * math.log(0.5), log_lik, "log_lik")
+        self.assert_close(6.0 * math.log(0.5), np.asarray(log_lik), "log_lik")
 
 
 class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
@@ -146,9 +150,9 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
     non-clean ascent.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=[1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
@@ -162,7 +166,7 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings is stable"""
         self.whr.update_base_ratings()
         page = self.whr.page
@@ -170,10 +174,10 @@ class TestWholeHistoryRatingStableMultipage(unittest.TestCase):
         self.whr.update_base_ratings(True)
         self.assert_close([0.5, 0.625], page.var, "page.var")
 
-    def test_get_log_likelihood(self):
+    def test_get_log_likelihood(self) -> None:
         """Test WholeHistoryRating.get_log_likelihood"""
         log_lik = self.whr.get_log_likelihood()
-        self.assert_close(6.0 * math.log(0.5), log_lik, "log_lik")
+        self.assert_close(6.0 * math.log(0.5), np.asarray(log_lik), "log_lik")
 
 
 class TestWholeHistoryRatingUpdates(unittest.TestCase):
@@ -182,9 +186,9 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
     1 climber, 1 page, 3 routes at grade "1", with all clean ascents.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
@@ -198,7 +202,7 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
             self.whr.update_base_ratings()
@@ -216,9 +220,9 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
     1 climber, 1 page, 3 routes with grades 1, 2 and 2, with all clean ascents.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
@@ -232,7 +236,7 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings"""
         for _ in range(4):
             self.whr.update_base_ratings()
@@ -250,9 +254,9 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
     1 climber, 2 pages, 3 routes at grade "1", with all clean ascents.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
@@ -266,7 +270,7 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
             self.whr.update_base_ratings()
@@ -284,9 +288,9 @@ class TestWholeHistoryRatingStyles(unittest.TestCase):
     1 climber, 1 page, 1 page-style.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 0, 1, 1, 2, 2],
             clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
@@ -300,7 +304,7 @@ class TestWholeHistoryRatingStyles(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
             self.whr.update_base_ratings()
@@ -319,9 +323,9 @@ class TestWholeHistoryRatingMultiplePagesAndStyles(unittest.TestCase):
     not contiguous.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         ascents = AscentsTable(
             route=[0, 1, 2, 0, 1, 2],
             clean=np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
@@ -335,7 +339,7 @@ class TestWholeHistoryRatingMultiplePagesAndStyles(unittest.TestCase):
             _hparams, ascents, pages, style_pages, routes_grade
         )
 
-    def test_update_base_ratings(self):
+    def test_update_base_ratings(self) -> None:
         """Test WholeHistoryRating.update_base_ratings converges"""
         for _ in range(4):
             self.whr.update_base_ratings()

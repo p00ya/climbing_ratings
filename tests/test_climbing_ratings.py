@@ -29,7 +29,7 @@ import unittest
 class TestClimbingRatings(unittest.TestCase):
     """Goldens test for climbing_ratings' main script"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         with contextlib.ExitStack() as stack:
             self._tmpdir = tempfile.TemporaryDirectory()
             stack.enter_context(self._tmpdir)
@@ -39,11 +39,11 @@ class TestClimbingRatings(unittest.TestCase):
         shutil.copy(self.get_golden("style_pages.csv"), self._tmpdir.name)
         shutil.copy(self.get_golden("routes.csv"), self._tmpdir.name)
 
-    def get_golden(self, filename):
+    def get_golden(self, filename: str) -> str:
         """Get the path to the golden copy of the given file."""
         return os.path.join("tests", "testdata", filename)
 
-    def assert_matches_golden(self, filename):
+    def assert_matches_golden(self, filename: str) -> None:
         """Raise an exception if the golden and generated CSVs do not match.
 
         Assumes the first row and first column can be compared as strings,
@@ -75,7 +75,7 @@ class TestClimbingRatings(unittest.TestCase):
             fp.close()
             fp_actual.close()
 
-    def test_main(self):
+    def test_main(self) -> None:
         """Test climbing_ratings"""
         cmd = [sys.executable, "-m", "climbing_ratings", self._tmpdir.name]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
@@ -84,7 +84,7 @@ class TestClimbingRatings(unittest.TestCase):
         self.assert_matches_golden("route_ratings.csv")
         self.assert_matches_golden("style_page_ratings.csv")
 
-    def test_main_v3(self):
+    def test_main_v3(self) -> None:
         """Test climbing_ratings backwards-compatibility with v3 data"""
         v3_goldens = os.path.join("tests", "testdata", "v3.0")
         cmd = [
@@ -98,7 +98,7 @@ class TestClimbingRatings(unittest.TestCase):
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
 
-    def test_run_estimation(self):
+    def test_run_estimation(self) -> None:
         """Test legacy 02-run_estimation.py stub"""
         cmd = [
             sys.executable,

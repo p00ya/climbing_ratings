@@ -19,17 +19,17 @@ import numpy as np
 from .. import process
 from ..normal_distribution import NormalDistribution
 from ..process_helpers import TriDiagonalLU
-from .assertions import assert_close
+from .assertions import assert_close_get
 
 
 class TestProcessFunctions(unittest.TestCase):
     """Tests for functions in the climber module"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
 
-    def test_invert_lu_dot_g(self):
+    def test_invert_lu_dot_g(self) -> None:
         """Test that for X = invert_lu_dot_g(LU, G), LU X = G"""
         g = np.array([10.0, 5.0, 32.0])
         d = np.array([1.0, 3.0, 10.0])
@@ -46,7 +46,7 @@ class TestProcessFunctions(unittest.TestCase):
         lux = np.dot(lu_matrix, x)
         self.assert_close(g, lux, "LU X")
 
-    def test_invert_lu(self):
+    def test_invert_lu(self) -> None:
         """Test invert_lu(LU, U'L') M = -I"""
         m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
         lu = TriDiagonalLU(
@@ -71,19 +71,19 @@ class TestProcessFunctions(unittest.TestCase):
 class TestProcess(unittest.TestCase):
     """Tests for the Process class"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
         self.initial_prior = NormalDistribution(0.0, 1.0)
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test Process initializes one_on_sigma_sq and wiener_d2"""
         gaps = np.array([1.0, 2.0])
         p = process.Process(10.0, self.initial_prior, gaps)
         self.assert_close([0.1, 0.05], p._one_on_sigma_sq, "one_on_sigma_sq")
         self.assert_close([-0.1, -0.15, -0.05], p._wiener_d2, "wiener_d2")
 
-    def test_get_ratings_adjustment(self):
+    def test_get_ratings_adjustment(self) -> None:
         """Test Process.get_ratings_adjustment"""
         gaps = np.array([1.0])
         ratings = np.log([6.0, 4.0])
@@ -93,7 +93,7 @@ class TestProcess(unittest.TestCase):
         delta = p.get_ratings_adjustment(ratings, bt_d1, bt_d2)
         self.assert_close([0.50918582, -0.55155649], delta, "delta")
 
-    def test_get_covariance(self):
+    def test_get_covariance(self) -> None:
         """Test Process.get_covariance"""
         gaps = np.array([1.0])
         ratings = np.log([6.0, 4.0])

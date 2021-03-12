@@ -17,17 +17,17 @@
 import numpy as np
 import unittest
 from ..normal_distribution import NormalDistribution
-from .assertions import assert_close
+from .assertions import assert_close_get
 
 
 class TestNormalDistribution(unittest.TestCase):
     """Tests for the NormalDistribution class"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
 
-    def test_get_derivatives_var_1(self):
+    def test_get_derivatives_var_1(self) -> None:
         """Test NormalDistribution(mu, 1).get_derivatives()"""
         mu = np.array([0.0, 1.0, 2.0])
         x = np.array([0.0, 0.0, 0.0])
@@ -36,7 +36,7 @@ class TestNormalDistribution(unittest.TestCase):
         self.assert_close([0.0, 1.0, 2.0], d1, "d1")
         self.assert_close([-1.0, -1.0, -1.0], d2, "d2")
 
-    def test_get_derivatives_var_2(self):
+    def test_get_derivatives_var_2(self) -> None:
         """Test NormalDistribution(0, 2).get_derivatives()"""
         x = np.array([0.0, 1.0, 2.0])
         dist = NormalDistribution(0.0, 2.0)

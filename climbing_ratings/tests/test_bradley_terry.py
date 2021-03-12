@@ -23,31 +23,31 @@ from ..bradley_terry import (
     _get_bt_summation_terms,
     _sum,
 )
-from .assertions import assert_close
+from .assertions import assert_close_get
 
 
 class TestBradleyTerryFunctions(unittest.TestCase):
     """Tests for functions in the bradley_terry module"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         np.seterr(all="raise")
-        self.assert_close = assert_close.__get__(self, self.__class__)
+        self.assert_close = assert_close_get(self, self.__class__)
 
-    def test_expand_to_slices(self):
+    def test_expand_to_slices(self) -> None:
         """Test expand_to_slices()"""
         slices = [(0, 2), (2, 5)]
         values = np.array([1.0, 10.0])
         expanded = expand_to_slices(values, slices, 5)
         self.assertSequenceEqual([1.0, 1.0, 10.0, 10.0, 10.0], expanded.tolist())
 
-    def test_expand_to_slices_sparse(self):
+    def test_expand_to_slices_sparse(self) -> None:
         """Test expand_to_slices_sparse()"""
         slices = [(1, 2), (3, 4)]
         values = np.array([1.0, 10.0])
         expanded = expand_to_slices_sparse(values, slices, 5)
         self.assertSequenceEqual([0.0, 1.0, 0.0, 10.0, 0.0], expanded.tolist())
 
-    def test_get_bt_summation_terms(self):
+    def test_get_bt_summation_terms(self) -> None:
         """Test _get_bt_summation_terms()"""
         win = np.array([1.0, 1.0])
         player = np.log([1.0, 2.0])
@@ -57,7 +57,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([0.5, 0.5], d1, "d1")
         self.assert_close([-0.25, -0.25], d2, "d2")
 
-    def test_get_bt_summation_terms_auxiliary(self):
+    def test_get_bt_summation_terms_auxiliary(self) -> None:
         """Test _get_bt_summation_terms() with non-zero aux rating"""
         win = np.array([1.0])
         player = np.log([2.0])
@@ -67,7 +67,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
-    def test_sum(self):
+    def test_sum(self) -> None:
         """Test sum()"""
         x = np.array([1.0, 2.0, 4.0, 8.0], dtype="longdouble")
         self.assertEqual(15.0, _sum(x, 0, 4))
@@ -75,7 +75,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assertEqual(6.0, _sum(x, 1, 3))
         self.assertEqual(7.0, _sum(x, 0, 3))
 
-    def test_sum_error(self):
+    def test_sum_error(self) -> None:
         """Test sum() error compensation with extended precision"""
         # These values should detect uncompensated error for both double
         # and extended precision floats.
@@ -86,7 +86,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         x = np.array([1e100, 1.0, -1e100, 1.0], dtype="longdouble")
         self.assertEqual(2.0, _sum(x, 0, 4))
 
-    def test_get_bt_derivatives_single_win(self):
+    def test_get_bt_derivatives_single_win(self) -> None:
         """Test get_bt_derivatives() with a single win"""
         slices = [(0, 1)]
         win = np.array([1.0])
@@ -97,7 +97,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
-    def test_get_bt_derivatives_single_loss(self):
+    def test_get_bt_derivatives_single_loss(self) -> None:
         """Test get_bt_derivatives() with a single loss"""
         slices = [(0, 1)]
         win = np.array([-1.0])
@@ -108,7 +108,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([-0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
-    def test_get_bt_derivatives_four_losses(self):
+    def test_get_bt_derivatives_four_losses(self) -> None:
         """Test get_bt_derivatives() with four losses"""
         slices = [(0, 4)]
         win = np.array([-1.0, -1.0, -1.0, -1.0])
@@ -119,7 +119,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([-3.2], d1, "d1")
         self.assert_close([-0.64], d2, "d2")
 
-    def test_get_bt_derivatives_auxiliary(self):
+    def test_get_bt_derivatives_auxiliary(self) -> None:
         """Test get_bt_derivatives() with non-zero aux rating"""
         slices = [(0, 1)]
         win = np.array([1.0])
@@ -130,7 +130,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
-    def test_get_bt_derivatives_no_ascents(self):
+    def test_get_bt_derivatives_no_ascents(self) -> None:
         """Test get_bt_derivatives() with no ascents"""
         slices = [(0, 0)]
         win = np.array([])
@@ -141,7 +141,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         self.assert_close([0.0], d1, "d1")
         self.assert_close([0.0], d2, "d2")
 
-    def test_get_bt_derivatives(self):
+    def test_get_bt_derivatives(self) -> None:
         """Test get_bt_derivatives() with multiple slices"""
         slices = [(0, 1), (1, 4)]
         win = np.array([1.0, 1.0, 1.0, -1.0])
