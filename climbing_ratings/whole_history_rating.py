@@ -15,7 +15,6 @@
 # limitations under the License.
 
 
-import collections
 import copy
 import itertools
 import numpy as np
@@ -26,21 +25,12 @@ from .bradley_terry import (
 )
 from .normal_distribution import NormalDistribution
 from .process import Process
+from numpy import ndarray
+from numpy.typing import ArrayLike
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 
-class Hyperparameters(
-    collections.namedtuple(
-        "Hyperparameters",
-        [
-            "climber_prior_mean",
-            "climber_prior_variance",
-            "climber_wiener_variance",
-            "route_prior_variance",
-            "style_prior_variance",
-            "style_wiener_variance",
-        ],
-    )
-):
+class Hyperparameters(NamedTuple):
     """Hyperparameters for the climbing ratings model.
 
     Encapsulates values that are common to all climber or route priors.
@@ -59,18 +49,34 @@ class Hyperparameters(
 
     Attributes
     ----------
-    climber_prior_mean : float
+    climber_prior_mean
         Mean of the prior distribution for the initial natural rating of each
         climber.
-    climber_prior_variance : float
+    climber_prior_variance
         Variance of the prior distribution for the initial natural rating of
         each climber.
-    climber_wiener_variance : float
+    climber_wiener_variance
         Variance of the prior process for all climbers ratings over time.
-    route_prior_variance : float
+    route_prior_mean
+        Mean of the prior distribution for the initial natural rating of each
+        route.
+    route_prior_variance
         Variance of the prior distribution for the natural rating of each
         route.
+    style_prior_mean
+        Variance of the prior distribution for the effect of each style on the
+        climber's rating.
+    style_prior_variance
+        Variance of the prior process for the effect of each style on the
+        climber's rating over time.
     """
+
+    climber_prior_mean: float
+    climber_prior_variance: float
+    climber_wiener_variance: float
+    route_prior_variance: float
+    style_prior_variance: float
+    style_wiener_variance: float
 
 
 class AscentsTable:
@@ -93,19 +99,25 @@ class AscentsTable:
 
     __slots__ = ("route", "clean", "page", "style_page")
 
-    def __init__(self, route, clean, page, style_page):
+    def __init__(
+        self,
+        route: ArrayLike,
+        clean: ArrayLike,
+        page: ArrayLike,
+        style_page: Optional[ndarray],
+    ):
         """Initializes an AscentsTable.
 
         Parameters
         ----------
-        route : array_like of int
+        route
             The 0-based ID of the route for each ascent.
-        clean : array_like of float
+        clean
             1 for a clean ascent, 0 otherwise, for each ascent.  The implied
             ascents must be in page order.
-        page : array_like of int
+        page
             The 0-based ID of the page for each ascent.
-        style_page : array_like of int
+        style_page
             The 0-based ID of the style-page for each ascent.
         """
         self.route = np.array(route, np.intp)
@@ -113,7 +125,7 @@ class AscentsTable:
         self.page = np.array(page, np.intp)
         self.style_page = np.array(style_page, np.intp)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of ascents in the table."""
         return self.route.shape[0]
 
@@ -130,33 +142,31 @@ class PagesTable:
     ----------
     climber : ndarray of intp
         The 0-based ID of the climber (or climber_style) for each page.
-    timestamp : ndarray
+    timestamp
         The time of the ascents for each page.
     """
 
     __slots__ = ("climber", "timestamp")
 
-    def __init__(self, climber, timestamp):
+    def __init__(self, climber: ArrayLike, timestamp: ArrayLike):
         """Initialize a PagesTable.
 
         Parameters
         ----------
-        climber : array_like of int
+        climber
             The 0-based ID of the climber (or climber_style) for each page.
-        timestamp : array_like of float
+        timestamp
             The time of the ascents for each page.
         """
-        self.climber = np.array(climber, np.intp)
-        self.timestamp = np.array(timestamp)
+        self.climber = np.asarray(climber, np.intp)
+        self.timestamp = np.asarray(timestamp, np.float_)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of pages in the table."""
         return self.climber.shape[0]
 
 
-class PageRatingsTable(
-    collections.namedtuple("PageRatingsTable", ["ratings", "var", "cov"])
-):
+class PageRatingsTable(NamedTuple):
     """Encapsulates the model for a particular page-slicing.
 
     This model generalizes over both base pages and style-pages.  The rows
@@ -164,15 +174,19 @@ class PageRatingsTable(
 
     Attributes
     ----------
-    ratings : ndarray
+    ratings
         Current estimate of the natural rating of each page.
-    var : ndarray
+    var
         Estimate of the variance of the natural rating of each page.
-    cov : ndarray
+    cov
         Estimate of the covariance between the natural rating of each page and
         the next page.  The covariance for the last page of each climber (or
         climber_style) is not meaningful.
     """
+
+    ratings: ndarray
+    var: ndarray
+    cov: ndarray
 
 
 class WholeHistoryRating:
@@ -202,20 +216,27 @@ class WholeHistoryRating:
         "_route_priors",
     )
 
-    def __init__(self, hparams, ascents, pages, style_pages, routes_rating):
+    def __init__(
+        self,
+        hparams: Hyperparameters,
+        ascents: AscentsTable,
+        pages: PagesTable,
+        style_pages: PagesTable,
+        routes_rating: List[float],
+    ):
         """Initialize a WHR model.
 
         Parameters
         ----------
-        hparams: Hyperparameters
+        hparams
             Parameter values for use in priors across climbers and routes.
-        ascents : AscentsTable
+        ascents
             Input ascents table.
-        pages : PagesTable
+        pages
             Input pages table.
-        style_pages : PagesTable
+        style_pages
             Input style-pages table.
-        routes_rating : list
+        routes_rating
             Initial natural ratings for each route.
         """
         self._bases = _PageModel(
@@ -263,8 +284,8 @@ class WholeHistoryRating:
         return whr
 
     @property
-    def page(self):
-        """The estimated ratings of the (base) pages, as a PageRatingsTable.
+    def page(self) -> PageRatingsTable:
+        """The estimated ratings of the (base) pages.
 
         The returned arrays are references to the internal state, so they will
         reflect model updates.
@@ -273,8 +294,8 @@ class WholeHistoryRating:
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
-    def style_page(self):
-        """The estimated ratings of the style pages, as a PageRatingsTable.
+    def style_page(self) -> PageRatingsTable:
+        """The estimated ratings of the style pages.
 
         The returned arrays are references to the internal state, so they will
         reflect model updates.
@@ -283,16 +304,18 @@ class WholeHistoryRating:
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
-    def route_ratings(self):
-        """The natural rating of each route, as an ndarray."""
+    def route_ratings(self) -> ndarray:
+        """The natural rating of each route."""
         return self._route_ratings
 
     @property
-    def route_var(self):
-        """The variance of each route's natural rating, as an ndarray."""
+    def route_var(self) -> ndarray:
+        """The variance of each route's natural rating."""
         return self._route_var
 
-    def __get_page_bt_derivatives(self, pages, aux_pages):
+    def __get_page_bt_derivatives(
+        self, pages: "_PageModel", aux_pages: "_PageModel"
+    ) -> Tuple[ndarray, ndarray]:
         """Gets the Bradley-Terry terms for page/style-page ratings.
 
         Gets the first and second derivative of the Bradley-Terry model with
@@ -301,9 +324,9 @@ class WholeHistoryRating:
 
         Parameters
         ----------
-        pages : _PageModel
+        pages
             A slicing of ascents for the player's ratings.
-        aux_pages : _PageModel
+        aux_pages
             A slicing of ascents for the auxilliary ratings.
 
         Returns
@@ -333,16 +356,18 @@ class WholeHistoryRating:
             route_ratings,
         )
 
-    def __update_page_ratings(self, pages, aux_pages, only_variance):
+    def __update_page_ratings(
+        self, pages: "_PageModel", aux_pages: "_PageModel", only_variance: bool
+    ) -> None:
         """Update the ratings of all pages.
 
         Parameters
         ----------
-        pages : _PageModel
+        pages
             Pages of the player to update.
-        aux_pages : _PageModel
+        aux_pages
             Auxilliary pages for the player.
-        only_variance : boolean
+        only_variance
             If true, only updates the page variance and covariance.
             The ratings estimates are left unchanged.
         """
@@ -369,7 +394,7 @@ class WholeHistoryRating:
                 # r2 = r1 - delta
                 ratings[start:end] -= delta
 
-    def update_base_ratings(self, only_variance=False):
+    def update_base_ratings(self, only_variance=False) -> None:
         """Update the ratings of all (base) pages.
 
         Parameters
@@ -380,7 +405,7 @@ class WholeHistoryRating:
         """
         self.__update_page_ratings(self._bases, self._styles, only_variance)
 
-    def update_style_ratings(self, only_variance=False):
+    def update_style_ratings(self, only_variance: bool = False) -> None:
         """Update the ratings of all style pages.
 
         Parameters
@@ -391,7 +416,7 @@ class WholeHistoryRating:
         """
         self.__update_page_ratings(self._styles, self._bases, only_variance)
 
-    def update_route_ratings(self, only_variance=False):
+    def update_route_ratings(self, only_variance: bool = False) -> None:
         """Update the ratings of all routes.
 
         Parameters
@@ -433,7 +458,7 @@ class WholeHistoryRating:
             # r2 = r1 - delta
             self._route_ratings -= delta
 
-    def update_ratings(self):
+    def update_ratings(self) -> None:
         """Update ratings for all routes and pages."""
         # Update pages first because we have better priors/initial values for
         # the routes.
@@ -441,13 +466,13 @@ class WholeHistoryRating:
         self.update_route_ratings()
         self.update_style_ratings()
 
-    def update_covariance(self):
+    def update_covariance(self) -> None:
         """Update covariance estimates for all routes and pages."""
         self.update_base_ratings(True)
         self.update_route_ratings(True)
         self.update_style_ratings(True)
 
-    def get_log_likelihood(self):
+    def get_log_likelihood(self) -> float:
         """Calculate the marginal log-likelihood.
 
         Evaluates the marginal log-likelihood from the Bradley-Terry model at
@@ -485,9 +510,7 @@ class WholeHistoryRating:
         return -np.sum(x)
 
 
-class _SlicedAscents(
-    collections.namedtuple("_SlicedAscents", ["slices", "adversary", "win"])
-):
+class _SlicedAscents(NamedTuple):
     """Stores ascents organized into contiguous slices.
 
     Ascents are organized into player-order, where the player is a route or
@@ -496,15 +519,19 @@ class _SlicedAscents(
 
     Attributes
     ----------
-    slices : list of pairs
+    slices
         (start, end) pairs defining the slice in the player-ordered ascents,
         for each player.
-    adversary : ndarray of intp
+    adversary
         The index of the adversary for each player-ordered ascent.
-    win : ndarray
+    win
         Each element is 1 if the ascent was a win for the player, -1 otherwise,
         for each ascent.
     """
+
+    slices: List[Tuple[int, int]]
+    adversary: ndarray
+    win: ndarray
 
 
 class _PageModel:
@@ -532,24 +559,32 @@ class _PageModel:
 
     __slots__ = ("ratings", "var", "cov", "ascents", "slices", "processes")
 
-    def __init__(self, ascents, pages, ascents_page, prior_mean, prior_var, wiener_var):
+    def __init__(
+        self,
+        ascents: AscentsTable,
+        pages: PagesTable,
+        ascents_page: ndarray,
+        prior_mean: float,
+        prior_var: float,
+        wiener_var: float,
+    ):
         """Initialize a _PageModel.
 
         Parameters
         ----------
-        ascents : AscentsTable
+        ascents
             All ascents.
-        pages : PagesTable
+        pages
             Slicing of the ascents (may be sparse).
-        ascents_page : ndarray
+        ascents_page
             Page ID for each ascent (e.g. ascents.pages or ascents.style_pages).
-        prior_mean : float
+        prior_mean
             Mean of the prior distribution for the initial natural rating of
             each process.
-        prior_var : float
+        prior_var
             Variance of the prior distribution for the initial natural rating of
             each process.
-        wiener_var : float
+        wiener_var
             Variance of the prior process for natural ratings over time.
         """
         num_pages = len(pages)
@@ -579,7 +614,7 @@ class _PageModel:
         return pages
 
     @staticmethod
-    def __make_page_ascents(ascents, ascents_page, num_pages):
+    def __make_page_ascents(ascents, ascents_page, num_pages) -> _SlicedAscents:
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
         # Transform {0, 1} clean values to {-1, 1} win values.
@@ -588,7 +623,7 @@ class _PageModel:
         return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
 
     @staticmethod
-    def __make_processes(var, wiener_var, pages, page_slices):
+    def __make_processes(var, wiener_var, pages, page_slices) -> List[Process]:
         """Make processes for each slice of pages."""
         pages_gap = _get_pages_gap(pages.timestamp)
         prior = NormalDistribution(0.0, var)
@@ -597,23 +632,22 @@ class _PageModel:
             for (start, end) in page_slices
         ]
 
-    def ascent_ratings(self):
+    def ascent_ratings(self) -> ndarray:
         """Page ratings for each ascent."""
         num_ascents = len(self.ascents.adversary)
         return expand_to_slices_sparse(self.ratings, self.ascents.slices, num_ascents)
 
 
-def _get_pages_gap(pages_timestamp):
+def _get_pages_gap(pages_timestamp: ndarray) -> ndarray:
     """Calculate the time difference from each page to the following page.
 
     Parameters
     ----------
-    pages_timestamp : array_like of float
+    pages_timestamp
         The time of the ascents for each page.
 
     Returns
     -------
-    ndarray
         Time interval from each page to the next page.  The gap for the last
         page of each climber is undefined.
     """
@@ -622,26 +656,28 @@ def _get_pages_gap(pages_timestamp):
     return pages_gap
 
 
-def _extract_slices(values, num_slices):
+_Slice = Tuple[int, int]
+
+
+def _extract_slices(values: Union[List[int], ndarray], num_slices: int) -> List[_Slice]:
     """Extract slices of contiguous IDs.
 
     Parameters
     ----------
-    values : list of int
+    values
         Values are IDs such that 0 <= value < num_slices, or as a special case,
         -1.  -1 may appear anywhere; all occurences of any other value must be
         contiguous within the list.
-    num_slices : int
+    num_slices
         The length of the list to return.
 
     Returns
     -------
-    list of (start, end) tuples
         Returns a list x such that x[i] is a tuple (start, end) where start is
         the earliest index of the least value >= i, and end is the latest index
         of the greatest value <= i.
     """
-    slices = [None] * num_slices
+    slices: List[_Slice] = [None] * num_slices  # type: ignore
     start = end = 0
     prev = -1
     for j, value in enumerate(itertools.chain(values, [num_slices])):
@@ -665,21 +701,20 @@ def _extract_slices(values, num_slices):
     return slices
 
 
-def _make_route_ascents(ascents, num_routes):
+def _make_route_ascents(ascents: _SlicedAscents, num_routes: int) -> _SlicedAscents:
     """Create a permutation of ascents in route-order.
 
     Parameters
     ----------
-    ascents : _SlicedAscents
+    ascents
         Page-slicing of the ascents.  The adversary field should correspond to
         the route ID.
-    num_routes : integer
+    num_routes
         Number of routes.  Route indices must be in the interval
         [0, num_routes).  Routes may have zero ascents.
 
     Returns
     -------
-    Ascents
         Ascents ordered by (and sliced by) route.  The "slices" list will have
         length num_routes.  The "clean" attribute is unpopulated.
     """
@@ -693,7 +728,7 @@ def _make_route_ascents(ascents, num_routes):
     ascent_to_rascent = [0] * num_ascents
 
     # Add an additional ascent so the loop adds all routes.
-    permutation = itertools.chain(permutation, [(num_routes, -1)])
+    permutation = itertools.chain(permutation, [(num_routes, -1)])  # type: ignore
 
     start = end = 0
     i = 0

@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import numpy as np
+import numpy.typing as npt
+from .normal_distribution import NormalDistribution
 from .process_helpers import (
     add_wiener_gradient,
     lu_decompose,
@@ -22,7 +24,10 @@ from .process_helpers import (
     solve_x,
     solve_y,
     TriDiagonal,
+    TriDiagonalLU,
 )
+from numpy import ndarray
+from typing import Sequence, Tuple
 
 
 class Process:
@@ -47,16 +52,21 @@ class Process:
     #     Wiener prior, for each page.
     __slots__ = ("_initial_prior", "_one_on_sigma_sq", "_wiener_d2")
 
-    def __init__(self, wiener_variance, initial_prior, gaps):
+    def __init__(
+        self,
+        wiener_variance: float,
+        initial_prior: NormalDistribution,
+        gaps: ndarray,
+    ):
         """Initialize a Process.
 
         Parameters
         ----------
-        wiener_variance : float
+        wiener_variance
             The variance of the Wiener process per unit time.
-        initial_prior : NormalDistribution
+        initial_prior
             Prior distribution for the first page of the climber.
-        gaps : ndarray
+        gaps
             gaps[i] is the time interval between the page i and page i + 1.
             The length of gaps should be 1 fewer than the number of pages.
         """
@@ -73,7 +83,9 @@ class Process:
         hd[:-1] -= s
         self._wiener_d2 = hd
 
-    def __get_derivatives(self, ratings, bt_d1, bt_d2):
+    def __get_derivatives(
+        self, ratings: ndarray, bt_d1: ndarray, bt_d2: ndarray
+    ) -> Tuple[ndarray, TriDiagonal]:
         """Return the Hessian and gradient at the given ratings point.
 
         Evaluates the Hessian matrix and gradient vector for the conditional
@@ -90,11 +102,11 @@ class Process:
 
         Parameters
         ----------
-        ratings : ndarray
+        ratings
             The natural rating for each of the climber's pages.
-        bt_d1 : ndarray
+        bt_d1
             First derivative from the Bradley-Terry model.
-        bt_d2 : ndarray
+        bt_d2
             Second derivative from the Bradley-Terry model.
 
         Returns
@@ -121,7 +133,9 @@ class Process:
         hessian = TriDiagonal(hd, one_on_sigma_sq, one_on_sigma_sq)
         return (gradient, hessian)
 
-    def get_ratings_adjustment(self, ratings, bt_d1, bt_d2):
+    def get_ratings_adjustment(
+        self, ratings: ndarray, bt_d1: ndarray, bt_d2: ndarray
+    ) -> ndarray:
         """Apply Newton's method to revise ratings estimates.
 
         Parameters
@@ -142,7 +156,14 @@ class Process:
         lu = lu_decompose(hessian)
         return _invert_lu_dot_g(lu, gradient)
 
-    def get_covariance(self, ratings, bt_d1, bt_d2, var, cov):
+    def get_covariance(
+        self,
+        ratings: ndarray,
+        bt_d1: ndarray,
+        bt_d2: ndarray,
+        var: ndarray,
+        cov: ndarray,
+    ):
         """Return the covariance matrix for the ratings.
 
         Parameters
@@ -153,9 +174,9 @@ class Process:
             First derivative from the Bradley-Terry model.
         bt_d2 : ndarray
             Second derivative from the Bradley-Terry model.
-        var : array_like
+        var : ndarray
             The output array for the variance for each of the natural ratings.
-        cov : array_like
+        cov : ndarray
             The output array for the covariance between the natural ratings of
             each page the next page.
         """
@@ -165,7 +186,7 @@ class Process:
         return _invert_lu(lu, ul, var, cov)
 
 
-def _invert_lu_dot_g(lu, g):
+def _invert_lu_dot_g(lu: TriDiagonalLU, g: ndarray) -> ndarray:
     """Compute M^-1 G.
 
     Where M = LU, and LU X = G, this is equivalent to solving X.
@@ -177,6 +198,11 @@ def _invert_lu_dot_g(lu, g):
     lu : TriDiagonalLU
         The tri-diagonal LU decomposition for a square matrix of shape (N, N)
     g : contiguous ndarray with length N
+
+    Returns
+    -------
+    ndarray
+        An array with length X, satisfying LU X = G.
     """
     d, b, a = lu
 
@@ -193,7 +219,9 @@ def _invert_lu_dot_g(lu, g):
     return x
 
 
-def _invert_lu(lu, ul, d_arr, l_arr):
+def _invert_lu(
+    lu: TriDiagonalLU, ul: TriDiagonalLU, d_arr: ndarray, l_arr: ndarray
+) -> None:
     """Compute -M^-1.
 
     For the square matrix M = LU = U'L', solve the diagonal and lower
@@ -201,14 +229,14 @@ def _invert_lu(lu, ul, d_arr, l_arr):
 
     Parameters
     ----------
-    lu : TriDiagonalLU
+    lu
         The tri-diagonal LU decomposition for the square matrix M
-    ul : TriDiagonalLU
+    ul
         The tri-diagonal UL decomposition for the square matrix M.
-    d_arr : array_like
+    d_arr
         The output array for the diagonal of the negative inverse of M.  Its
         length must be the same as the order of M.
-    l_arr : array_like
+    l_arr
         The output array for the lower sub-diagonal of the negative inverse
         of M.  Its length must be one less than the order of M.
     """

@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.8]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -49,7 +49,7 @@ jobs:
           pip-
     - name: Install dependencies
       run: |
-        pip3 install Cython numpy pytest black
+        pip3 install Cython numpy pytest black mypy
         python3 setup.py develop
         pip3 freeze --all
     - name: Lint
@@ -59,3 +59,6 @@ jobs:
       run: |
         python3 setup.py build_ext --inplace
         python3 -X dev -m pytest
+    - name: mypy
+      run: |
+        python3 -m mypy -p climbing_ratings

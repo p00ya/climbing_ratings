@@ -2,7 +2,7 @@
 
 Climbing Ratings is software that estimates ratings for the sport of rock climbing.  The ratings can be used to predict route difficulty and climber performance on a particular route.
 
-Climbing Ratings is Copyright 2019, 2020 the Contributors to the Climbing Ratings project.
+Climbing Ratings is Copyright 2019-2021 the Contributors to the Climbing Ratings project.
 
 The algorithms are based on the "WHR" paper:
 
@@ -31,7 +31,7 @@ Results of analyzing a database of Australian ascents with an earlier version of
 
 The estimation algorithms are implemented in Python and Cython, in the `climbing_ratings` package.  Some effort has been taken to optimize parts of the code for speed, namely by leveraging numpy for vectorized operations and using Cython to reduce Python overheads and allow C compilers to generate vectorized CPU instructions.
 
-Python 3.6+ with pip is required; Python 3.8 is recommended.  The additional dependencies can be installed with:
+Python 3.7+ with pip is required; Python 3.8 is recommended.  The additional dependencies can be installed with:
 
 ```
 python3 -m pip install Cython numpy pytest
@@ -49,6 +49,12 @@ Unit tests can be run using:
 
 ```
 python3 -X dev -W error -m pytest climbing_ratings
+```
+
+Type checking can be run with `mypy`:
+
+```
+python3 -m mypy -p climbing_ratings
 ```
 
 ### Estimation script

@@ -142,6 +142,7 @@ from climbing_ratings.whole_history_rating import (
     PagesTable,
     WholeHistoryRating,
 )
+from typing import Any, Callable, List, Tuple, cast
 
 
 class TableReader:
@@ -153,7 +154,7 @@ class TableReader:
 
     __slots__ = ("_colspecs",)
 
-    def __init__(self, colspecs):
+    def __init__(self, colspecs: List[Tuple[str, Callable, Any]]):
         """Configures a reader that expects the given columns.
 
         Parameters
@@ -173,12 +174,12 @@ class TableReader:
             assert isinstance(type_, type)
             assert default is None or isinstance(default, type_)
 
-    def read(self, filename):
+    def read(self, filename: str) -> Tuple:
         """Read the table from the given CSV file.
 
         Parameters
         ----------
-        filename : string
+        filename
             The file name of the input CSV file.
 
         Returns
@@ -189,7 +190,7 @@ class TableReader:
             inner lists will have the same length, corresponding to the number
             of rows in the CSV (not including the header).
         """
-        output = tuple([[] for _ in self._colspecs])
+        output: Tuple = tuple([[] for _ in self._colspecs])
 
         with open(filename, newline="") as fp:
             reader = iter(csv.reader(fp))
@@ -207,19 +208,18 @@ class TableReader:
 
         return output
 
-    def __get_input_index(self, filename, header):
+    def __get_input_index(self, filename: str, header: List[str]) -> List[int]:
         """Returns a mapping from output columns to input columns.
 
         Parameters
         ----------
-        filename : str
+        filename
             The input CSV file, for error messages.
-        header : list of str
+        header
             Names of each of the columns in the input table.
 
         Returns
         -------
-        list of int
             For the column with index i in the output table, the return value[i]
             is the index of the column with the same name in the input table.
             If the input table does not contain the given column, value[i] will
@@ -239,7 +239,12 @@ class TableReader:
         return index
 
 
-def read_ascents(dirname):
+_AscentsTable = Tuple[List[int], List[float], List[int], List[int]]
+_RoutesTable = Tuple[List[str], List[float]]
+_PagesTable = Tuple[List[int], List[float]]
+
+
+def read_ascents(dirname: str) -> _AscentsTable:
     """Read the ascents table."""
     reader = TableReader(
         [
@@ -249,10 +254,10 @@ def read_ascents(dirname):
             ("style_page", int, -1),
         ]
     )
-    return reader.read(os.path.join(dirname, "ascents.csv"))
+    return cast(_AscentsTable, reader.read(os.path.join(dirname, "ascents.csv")))
 
 
-def read_routes(dirname):
+def read_routes(dirname: str) -> _RoutesTable:
     """Read the routes table."""
     reader = TableReader(
         [
@@ -260,10 +265,10 @@ def read_routes(dirname):
             ("rating", float, 0.0),
         ]
     )
-    return reader.read(os.path.join(dirname, "routes.csv"))
+    return cast(_RoutesTable, reader.read(os.path.join(dirname, "routes.csv")))
 
 
-def read_pages(dirname):
+def read_pages(dirname: str) -> _PagesTable:
     """Read the pages table."""
     reader = TableReader(
         [
@@ -271,10 +276,10 @@ def read_pages(dirname):
             ("timestamp", float, None),
         ]
     )
-    return reader.read(os.path.join(dirname, "pages.csv"))
+    return cast(_PagesTable, reader.read(os.path.join(dirname, "pages.csv")))
 
 
-def read_style_pages(dirname):
+def read_style_pages(dirname: str) -> _PagesTable:
     """Read the style-pages table."""
     filename = os.path.join(dirname, "style_pages.csv")
     if not os.path.exists(filename):
@@ -287,7 +292,7 @@ def read_style_pages(dirname):
             ("timestamp", float, None),
         ]
     )
-    return reader.read(os.path.join(dirname, "style_pages.csv"))
+    return cast(_PagesTable, reader.read(os.path.join(dirname, "style_pages.csv")))
 
 
 def write_route_ratings(dirname, routes_name, route_ratings, route_var):
