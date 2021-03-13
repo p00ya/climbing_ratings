@@ -61,5 +61,5 @@ jobs:
         python3 -X dev -m pytest
     - name: mypy
       run: |
-        python3 -m mypy --strict --allow-any-generics -p climbing_ratings
+        python3 -m mypy --strict -p climbing_ratings
         python3 -m mypy --strict tests/test_climbing_ratings.py

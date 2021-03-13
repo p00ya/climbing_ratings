@@ -156,7 +156,7 @@ class TableReader:
 
     __slots__ = ("_colspecs",)
 
-    def __init__(self, colspecs: List[Tuple[str, Callable, Any]]):
+    def __init__(self, colspecs: List[Tuple[str, type, Any]]):
         """Configures a reader that expects the given columns.
 
         Parameters
@@ -176,7 +176,7 @@ class TableReader:
             assert isinstance(type_, type)
             assert default is None or isinstance(default, type_)
 
-    def read(self, filename: str) -> Tuple:
+    def read(self, filename: str) -> Tuple[List[Any], ...]:
         """Read the table from the given CSV file.
 
         Parameters
@@ -186,13 +186,12 @@ class TableReader:
 
         Returns
         -------
-        tuple of lists
             Returns a tuple with the same number of members as the column
             specifications the reader was initialized with.  Each of the
             inner lists will have the same length, corresponding to the number
             of rows in the CSV (not including the header).
         """
-        output: Tuple = tuple([[] for _ in self._colspecs])
+        output: Tuple[List[Any], ...] = tuple([[] for _ in self._colspecs])
 
         with open(filename, newline="") as fp:
             reader = iter(csv.reader(fp))
