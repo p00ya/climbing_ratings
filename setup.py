@@ -27,6 +27,7 @@ cython_ext = {
         "-fno-math-errno",
         "-Wno-deprecated-declarations",
     ],
+    "define_macros": [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
     "include_dirs": [numpy.get_include()],
 }
 
@@ -37,6 +38,7 @@ bradley_terry = Extension(
     # ordering.
     extra_compile_args=cython_ext["extra_compile_args"]
     + ["-fno-associative-math", "-fno-reciprocal-math"],
+    define_macros=cython_ext["define_macros"],
     include_dirs=cython_ext["include_dirs"],
 )
 
