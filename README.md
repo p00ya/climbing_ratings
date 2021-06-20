@@ -93,7 +93,7 @@ A collection of R scripts are used for data preparation and results analysis.  T
 install.packages(c("devtools", "tidyverse", "jsonlite", "caret"))
 ```
 
-`01-data_prep.R` creates appropriate input CSV files for `02-run_estimation.py`.
+`01-data_prep.R` creates appropriate input CSV files for the `climbing_ratings` Python script.
 
 `03-post_estimation.R` merges the estimation results with the data frames created by `01-data_prep.R`, and produces some plots that can be used to analyze the model fit.
 
@@ -106,11 +106,11 @@ data_dir <- "data"
 devtools::load_all("climbr")
 library(climbr)
 source("01-data_prep.R")
-system2("./02-run_estimation.py", data_dir)
+system2("python3", c("-m", "climbing_ratings", data_dir))
 source("03-post_estimation.R")
 ```
 
-The `raw_ascents.csv` file can be regenerated from a directory containing CSV logbook exports from theCrag.  Having sourced `00-data_prep_functions.R`, and with the logbooks in the directory "logbooks":
+The `raw_ascents.csv` file can be regenerated from a directory containing CSV logbook exports from theCrag.  After attaching the `climbr` package, read the logbooks from the directory "logbooks":
 
 ```
 write.csv(
