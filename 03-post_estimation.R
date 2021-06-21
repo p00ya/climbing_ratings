@@ -25,7 +25,7 @@ library(grid)
 dfs <- MergeWithRatings(dfs, ReadRatings(data_dir))
 
 total_accuracy <-
-  NROW(filter(
+  NROW(dplyr::filter(
     dfs$ascents,
     (predicted > 0.5 & clean == 1) | (predicted < 0.5 & clean == 0)
   )) /
@@ -52,7 +52,7 @@ prediction_density_plot <- ggplot(dfs$ascents, aes(predicted)) +
 # Plots the residuals vs the conventional grade of routes.  Ideally the fit
 # follows the y=0 line.
 residuals_grade_plot <- ggplot(
-  dfs$ascents %>% inner_join(dfs$routes, by = "route"),
+  dfs$ascents %>% dplyr::inner_join(dfs$routes, by = "route"),
   aes(grade, clean - predicted)
 ) +
   geom_smooth()
@@ -60,7 +60,7 @@ residuals_grade_plot <- ggplot(
 # Plots the residuals vs the estimated natural route rating.  Ideally the fit
 # follows the y=0 line.
 residuals_route_rating_plot <- ggplot(
-  dfs$ascents %>% inner_join(dfs$routes, by = "route"),
+  dfs$ascents %>% dplyr::inner_join(dfs$routes, by = "route"),
   aes(r, clean - predicted)
 ) +
   geom_smooth()
