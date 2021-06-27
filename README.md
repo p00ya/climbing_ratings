@@ -33,13 +33,13 @@ The estimation algorithms are implemented in Python and Cython, in the `climbing
 
 Python 3.7+ with pip is required; Python 3.8 is recommended.  The additional dependencies can be installed with:
 
-```
+```sh
 python3 -m pip install Cython numpy pytest
 ```
 
 The package can be built for the local system using:
 
-```
+```sh
 export CFLAGS="-march=native -mtune=native"
 python3 setup.py build
 python3 setup.py build_ext --inplace
@@ -47,13 +47,13 @@ python3 setup.py build_ext --inplace
 
 Unit tests can be run using:
 
-```
+```sh
 python3 -X dev -W error -m pytest climbing_ratings
 ```
 
 Type checking can be run with `mypy`:
 
-```
+```sh
 python3 -m mypy -p climbing_ratings
 ```
 
@@ -61,7 +61,7 @@ python3 -m mypy -p climbing_ratings
 
 The `climbing_ratings` module can be run as an estimation script.  It reads in a set of CSV files and writes out the estimated ratings for pages and routes as CSV files.  To read and write CSV files from the `data/` directory, it can be run like:
 
-```
+```sh
 python3 -m climbing_ratings data
 ```
 
@@ -71,7 +71,7 @@ It will typically run in less than 5 seconds per 100,000 ascents (measured on an
 
 Integration tests can be run using:
 
-```
+```sh
 python3 -X dev -m pytest tests
 ```
 
@@ -81,7 +81,7 @@ The `climbr` sub-directory contains an R package with utility functions for data
 
 Tests can be run using:
 
-```
+```sh
 Rscript --vanilla -e 'devtools::check("climbr")'
 ```
 
@@ -89,7 +89,7 @@ Rscript --vanilla -e 'devtools::check("climbr")'
 
 A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  Most of the logic is in the `climbr` package, which can be used in-place (without installation) using the "devtools" package.  The scripts also use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  The packages can be installed from R:
 
-```
+```R
 install.packages(c("devtools", "tidyverse", "jsonlite", "caret"))
 ```
 
@@ -101,7 +101,7 @@ The `cross_validation.R` script performs repeated k-fold cross-validation on the
 
 With the file `data/raw_ascents.csv` already present, the entire pipeline can be run from R:
 
-```
+```R
 data_dir <- "data"
 devtools::load_all("climbr")
 library(climbr)
@@ -112,7 +112,7 @@ source("03-post_estimation.R")
 
 The `raw_ascents.csv` file can be regenerated from a directory containing CSV logbook exports from theCrag.  After attaching the `climbr` package, read the logbooks from the directory "logbooks":
 
-```
+```R
 write.csv(
   ReadLogbooks("logbooks"),
   "data/raw_ascents.csv",
@@ -123,20 +123,20 @@ write.csv(
 
 Instead of reading the ascents data from logbook exports, it can instead be read from the JSON responses returned by theCrag's API.  With files like `data/ascents-01.json` present, replace `source("01-data_prep.R")` in the pipeline above with:
 
-```
+```R
 source("01-data_prep_json.R")
 ```
 
 Note that processing the JSON can be quite slow (on the order of 1 hour for 1 million ascents!), so as a convenience, the results of the data preparation script can be read from a file:
 
-```
+```R
 data_dir <- "data"
 dfs <- readRDS(file.path(data_dir, "dfs.rds"))
 ```
 
 Tests can be run using:
 
-```
+```sh
 TZ=UTC Rscript --vanilla -e 'testthat::test_dir("tests")'
 ```
 
