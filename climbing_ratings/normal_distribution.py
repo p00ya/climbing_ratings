@@ -16,12 +16,14 @@
 
 
 import numpy as np
-from numpy import ndarray
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from typing import Sequence, Tuple, Union
 
 
-_FloatLike = Union[float, ndarray]
+_Array = NDArray[np.float_]
+
+
+_FloatLike = Union[float, _Array]
 
 
 class NormalDistribution:
@@ -46,7 +48,7 @@ class NormalDistribution:
         """The variance parameter."""
         return self._sigma_sq
 
-    def get_derivatives(self, x: ndarray) -> Tuple[ndarray, ndarray]:
+    def get_derivatives(self, x: _Array) -> Tuple[_Array, _Array]:
         """Return the first and second derivative of the log-likelihood.
 
         This method is vectorized: it will pair the distribution parameters
@@ -62,7 +64,7 @@ class NormalDistribution:
         -------
             The first and second derivatives of the log-PDF, evaluated at x.
         """
-        y = self._mu - x
+        y: _Array = self._mu - x
         y /= self._sigma_sq
 
         return (y, -1.0 / self._sigma_sq)

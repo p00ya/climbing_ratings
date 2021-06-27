@@ -16,35 +16,37 @@
 
 import numpy as np
 from ctypes import c_longdouble
+from numpy.typing import NDArray
 from typing import List, Tuple
 
+_Array = NDArray[np.float_]
 _Slice = Tuple[int, int]
 
 def expand_to_slices(
-    values: np.ndarray,
+    values: _Array,
     slices: List[_Slice],
     n: int,
-) -> np.ndarray: ...
+) -> _Array: ...
 def expand_to_slices_sparse(
-    values: np.ndarray,
+    values: _Array,
     slices: List[_Slice],
     n: int,
-) -> np.ndarray: ...
+) -> _Array: ...
 def get_bt_derivatives(
     slices: List[_Slice],
-    win: np.ndarray,
-    player: np.ndarray,
-    aux: np.ndarray,
-    adversary: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]: ...
+    win: _Array,
+    player: _Array,
+    aux: _Array,
+    adversary: _Array,
+) -> Tuple[_Array, _Array]: ...
 def _get_bt_summation_terms(
-    win: np.ndarray,
-    player: np.ndarray,
-    aux: np.ndarray,
-    adversary: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]: ...
+    win: _Array,
+    player: _Array,
+    aux: _Array,
+    adversary: _Array,
+) -> Tuple[_Array, _Array]: ...
 def _sum(
-    x: np.ndarray,
+    x: NDArray[np.longdouble],
     start: int,
     end: int,
 ) -> c_longdouble: ...

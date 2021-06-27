@@ -143,8 +143,11 @@ from climbing_ratings.whole_history_rating import (
     PagesTable,
     WholeHistoryRating,
 )
-from numpy import ndarray
+from numpy.typing import NDArray
 from typing import Any, Callable, List, Tuple, cast
+
+
+_Array = NDArray[np.float_]
 
 
 class TableReader:
@@ -297,7 +300,7 @@ def read_style_pages(dirname: str) -> _PagesTable:
 
 
 def write_route_ratings(
-    dirname: str, routes_name: List[str], route_ratings: ndarray, route_var: ndarray
+    dirname: str, routes_name: List[str], route_ratings: _Array, route_var: _Array
 ) -> None:
     filename = os.path.join(dirname, "route_ratings.csv")
     with open(filename, "w", newline="") as fp:
@@ -311,7 +314,7 @@ def _write_page_ratings(
     filename: str,
     climber_field: str,
     dirname: str,
-    pages_climber: ndarray,
+    pages_climber: _Array,
     page: PageRatingsTable,
 ) -> None:
     filename = os.path.join(dirname, filename)
@@ -325,13 +328,13 @@ def _write_page_ratings(
 
 
 def write_page_ratings(
-    dirname: str, pages_climber: ndarray, page: PageRatingsTable
+    dirname: str, pages_climber: _Array, page: PageRatingsTable
 ) -> None:
     _write_page_ratings("page_ratings.csv", "climber", dirname, pages_climber, page)
 
 
 def write_style_page_ratings(
-    dirname: str, pages_climber: ndarray, page: PageRatingsTable
+    dirname: str, pages_climber: _Array, page: PageRatingsTable
 ) -> None:
     _write_page_ratings(
         "style_page_ratings.csv", "climber_style", dirname, pages_climber, page

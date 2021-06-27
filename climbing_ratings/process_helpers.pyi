@@ -15,25 +15,28 @@
 # limitations under the License.
 
 import numpy as np
+from numpy.typing import NDArray
 from typing import NamedTuple
 
+_Array = NDArray[np.float_]
+
 class TriDiagonal(NamedTuple):
-    d: np.ndarray
-    u: np.ndarray
-    l: np.ndarray
+    d: _Array
+    u: _Array
+    l: _Array
 
 class TriDiagonalLU(NamedTuple):
-    d: np.ndarray
-    b: np.ndarray
-    a: np.ndarray
+    d: _Array
+    b: _Array
+    a: _Array
 
 def add_wiener_gradient(
-    one_on_sigma_sq: np.ndarray,
-    ratings: np.ndarray,
-    gradient: np.ndarray,
+    one_on_sigma_sq: _Array,
+    ratings: _Array,
+    gradient: _Array,
 ) -> None: ...
 def lu_decompose(tri_diagonal: TriDiagonal) -> TriDiagonalLU: ...
 def ul_decompose(tri_diagonal: TriDiagonal) -> TriDiagonalLU: ...
-def solve_ul_d(c: np.ndarray, hd: np.ndarray) -> None: ...
-def solve_y(g: np.ndarray, a: np.ndarray) -> None: ...
-def solve_x(b: np.ndarray, d: np.ndarray, y: np.ndarray) -> None: ...
+def solve_ul_d(c: _Array, hd: _Array) -> None: ...
+def solve_y(g: _Array, a: _Array) -> None: ...
+def solve_x(b: _Array, d: _Array, y: _Array) -> None: ...

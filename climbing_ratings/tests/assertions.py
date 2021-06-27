@@ -16,9 +16,8 @@
 
 import numpy as np
 import unittest
-from numpy import ndarray
-from numpy.typing import ArrayLike
-from typing import Callable
+from numpy.typing import ArrayLike, NDArray
+from typing import Any, Callable
 
 
 # Show the calling frames when assertions fail, instead of the helper function.
@@ -26,7 +25,10 @@ __unittest = True
 
 
 def assert_close(
-    test_case: unittest.TestCase, expected: ArrayLike, actual: ndarray, name: str
+    test_case: unittest.TestCase,
+    expected: ArrayLike,
+    actual: NDArray[np.float_],
+    name: str,
 ) -> None:
     """Raise an exception if expected does not equal actual.
 
@@ -52,7 +54,7 @@ def assert_close(
 
 def assert_close_get(
     test_case: unittest.TestCase, owner: type
-) -> Callable[[ArrayLike, ndarray, str], None]:
+) -> Callable[[ArrayLike, NDArray[np.float_], str], None]:
     """Returns assert_close bound to a particular test case.
 
     Parameters

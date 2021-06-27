@@ -25,9 +25,11 @@ from .bradley_terry import (
 )
 from .normal_distribution import NormalDistribution
 from .process import Process
-from numpy import ndarray
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from typing import List, NamedTuple, Optional, Tuple, Union, cast
+
+
+_Array = NDArray[np.float_]
 
 
 class Hyperparameters(NamedTuple):
@@ -88,7 +90,7 @@ class AscentsTable:
     ----------
     route : ndarray of intp
         The 0-based ID of the route for each ascent.
-    clean : ndarray
+    clean : _Array
         1 for a clean ascent, 0 otherwise, for each ascent.  The implied
         ascents must be in page order.
     page : ndarray of intp
@@ -121,7 +123,7 @@ class AscentsTable:
             The 0-based ID of the style-page for each ascent.
         """
         self.route = np.array(route, np.intp)
-        self.clean = np.array(clean, np.float_)
+        self.clean = np.array(clean, float)
         self.page = np.array(page, np.intp)
         self.style_page = np.array(style_page, np.intp)
 
@@ -159,7 +161,7 @@ class PagesTable:
             The time of the ascents for each page.
         """
         self.climber = np.asarray(climber, np.intp)
-        self.timestamp = np.asarray(timestamp, np.float_)
+        self.timestamp = np.asarray(timestamp, float)
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
@@ -184,9 +186,9 @@ class PageRatingsTable(NamedTuple):
         climber_style) is not meaningful.
     """
 
-    ratings: ndarray
-    var: ndarray
-    cov: ndarray
+    ratings: _Array
+    var: _Array
+    cov: _Array
 
 
 class WholeHistoryRating:
@@ -222,7 +224,7 @@ class WholeHistoryRating:
         ascents: AscentsTable,
         pages: PagesTable,
         style_pages: PagesTable,
-        routes_rating: Union[ndarray, List[float]],
+        routes_rating: Union[_Array, List[float]],
     ):
         """Initialize a WHR model.
 
@@ -255,7 +257,7 @@ class WholeHistoryRating:
             hparams.style_prior_variance,
             hparams.style_wiener_variance,
         )
-        self._route_ratings: ndarray = np.array(routes_rating)
+        self._route_ratings: _Array = np.array(routes_rating)
         self._route_var = np.empty_like(self._route_ratings)
         self._route_ascents = _make_route_ascents(
             self._bases.ascents, len(routes_rating)
@@ -279,7 +281,7 @@ class WholeHistoryRating:
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
         whr._route_priors = NormalDistribution(
-            self._route_ratings, cast(ndarray, self._route_priors.sigma_sq)
+            self._route_ratings, cast(_Array, self._route_priors.sigma_sq)
         )
         return whr
 
@@ -304,18 +306,18 @@ class WholeHistoryRating:
         return PageRatingsTable(pages.ratings, pages.var, pages.cov)
 
     @property
-    def route_ratings(self) -> ndarray:
+    def route_ratings(self) -> _Array:
         """The natural rating of each route."""
         return self._route_ratings
 
     @property
-    def route_var(self) -> ndarray:
+    def route_var(self) -> _Array:
         """The variance of each route's natural rating."""
         return self._route_var
 
     def __get_page_bt_derivatives(
         self, pages: "_PageModel", aux_pages: "_PageModel"
-    ) -> Tuple[ndarray, ndarray]:
+    ) -> Tuple[_Array, _Array]:
         """Gets the Bradley-Terry terms for page/style-page ratings.
 
         Gets the first and second derivative of the Bradley-Terry model with
@@ -331,7 +333,7 @@ class WholeHistoryRating:
 
         Returns
         -------
-            A pair of ndarrays (d1, d2) of the first and second derivative of
+            A pair of _Arrays (d1, d2) of the first and second derivative of
             the Bradley-Terry log-likelihood the player wins, with respect to
             the player's natural rating.
         """
@@ -529,8 +531,8 @@ class _SlicedAscents(NamedTuple):
     """
 
     slices: List[Tuple[int, int]]
-    adversary: ndarray
-    win: ndarray
+    adversary: _Array
+    win: _Array
 
 
 class _PageModel:
@@ -540,11 +542,11 @@ class _PageModel:
 
     Attributes
     ----------
-    ratings : ndarray
+    ratings : _Array
         Current estimate of the natural rating of each page.
-    var : ndarray
+    var : _Array
         Estimate of the variance of the natural rating of each page.
-    cov : ndarray
+    cov : _Array
         Estimate of the covariance between the natural rating of each page and
         the next page.  The covariance for the last page of each climber is
         not meaningful.
@@ -562,7 +564,7 @@ class _PageModel:
         self,
         ascents: AscentsTable,
         pages: PagesTable,
-        ascents_page: ndarray,
+        ascents_page: _Array,
         prior_mean: float,
         prior_var: float,
         wiener_var: float,
@@ -615,13 +617,13 @@ class _PageModel:
     @staticmethod
     def __make_page_ascents(
         ascents: AscentsTable,
-        ascents_page: ndarray,
+        ascents_page: _Array,
         num_pages: int,
     ) -> _SlicedAscents:
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
         # Transform {0, 1} clean values to {-1, 1} win values.
-        win = ascents.clean - 0.5
+        win: _Array = ascents.clean - 0.5
         np.sign(win, win)
         return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
 
@@ -640,13 +642,13 @@ class _PageModel:
             for (start, end) in page_slices
         ]
 
-    def ascent_ratings(self) -> ndarray:
+    def ascent_ratings(self) -> _Array:
         """Page ratings for each ascent."""
         num_ascents = len(self.ascents.adversary)
         return expand_to_slices_sparse(self.ratings, self.ascents.slices, num_ascents)
 
 
-def _get_pages_gap(pages_timestamp: ndarray) -> ndarray:
+def _get_pages_gap(pages_timestamp: _Array) -> _Array:
     """Calculate the time difference from each page to the following page.
 
     Parameters
@@ -667,7 +669,7 @@ def _get_pages_gap(pages_timestamp: ndarray) -> ndarray:
 _Slice = Tuple[int, int]
 
 
-def _extract_slices(values: Union[List[int], ndarray], num_slices: int) -> List[_Slice]:
+def _extract_slices(values: Union[List[int], _Array], num_slices: int) -> List[_Slice]:
     """Extract slices of contiguous IDs.
 
     Parameters

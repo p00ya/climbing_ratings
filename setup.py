@@ -80,8 +80,8 @@ if __name__ == "__main__":
         package_data={"climbing_ratings": ["*.pyi", "*.pyx"]},
         platforms=["POSIX"],
         python_requires=">=3.7",
-        install_requires=["numpy>=1.20"],
-        setup_requires=["Cython", "numpy"],
+        install_requires=["numpy>=1.21"],
+        setup_requires=["Cython", "numpy>=1.21"],
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(

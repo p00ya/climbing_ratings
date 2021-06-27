@@ -26,8 +26,11 @@ from .process_helpers import (
     TriDiagonal,
     TriDiagonalLU,
 )
-from numpy import ndarray
+from numpy.typing import NDArray
 from typing import Sequence, Tuple
+
+
+_Array = NDArray[np.float_]
 
 
 class Process:
@@ -56,7 +59,7 @@ class Process:
         self,
         wiener_variance: float,
         initial_prior: NormalDistribution,
-        gaps: ndarray,
+        gaps: _Array,
     ):
         """Initialize a Process.
 
@@ -71,7 +74,7 @@ class Process:
             The length of gaps should be 1 fewer than the number of pages.
         """
         self._initial_prior = initial_prior
-        s = gaps * wiener_variance
+        s: _Array = gaps * wiener_variance
 
         np.reciprocal(s, s)
         self._one_on_sigma_sq = s
@@ -84,8 +87,8 @@ class Process:
         self._wiener_d2 = hd
 
     def __get_derivatives(
-        self, ratings: ndarray, bt_d1: ndarray, bt_d2: ndarray
-    ) -> Tuple[ndarray, TriDiagonal]:
+        self, ratings: _Array, bt_d1: _Array, bt_d2: _Array
+    ) -> Tuple[_Array, TriDiagonal]:
         """Return the Hessian and gradient at the given ratings point.
 
         Evaluates the Hessian matrix and gradient vector for the conditional
@@ -118,7 +121,7 @@ class Process:
         gradient = np.zeros_like(ratings)
         one_on_sigma_sq = self._one_on_sigma_sq
         add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
-        hd = np.copy(self._wiener_d2)
+        hd: _Array = np.copy(self._wiener_d2)  # type: ignore[no-untyped-call]
 
         # Bradley-Terry terms.
         gradient += bt_d1
@@ -133,8 +136,8 @@ class Process:
         return (gradient, hessian)
 
     def get_ratings_adjustment(
-        self, ratings: ndarray, bt_d1: ndarray, bt_d2: ndarray
-    ) -> ndarray:
+        self, ratings: _Array, bt_d1: _Array, bt_d2: _Array
+    ) -> _Array:
         """Apply Newton's method to revise ratings estimates.
 
         Parameters
@@ -157,11 +160,11 @@ class Process:
 
     def get_covariance(
         self,
-        ratings: ndarray,
-        bt_d1: ndarray,
-        bt_d2: ndarray,
-        var: ndarray,
-        cov: ndarray,
+        ratings: _Array,
+        bt_d1: _Array,
+        bt_d2: _Array,
+        var: _Array,
+        cov: _Array,
     ) -> None:
         """Return the covariance matrix for the ratings.
 
@@ -185,7 +188,7 @@ class Process:
         _invert_lu(lu, ul, var, cov)
 
 
-def _invert_lu_dot_g(lu: TriDiagonalLU, g: ndarray) -> ndarray:
+def _invert_lu_dot_g(lu: TriDiagonalLU, g: _Array) -> _Array:
     """Compute M^-1 G.
 
     Where M = LU, and LU X = G, this is equivalent to solving X.
@@ -219,7 +222,7 @@ def _invert_lu_dot_g(lu: TriDiagonalLU, g: ndarray) -> ndarray:
 
 
 def _invert_lu(
-    lu: TriDiagonalLU, ul: TriDiagonalLU, d_arr: ndarray, l_arr: ndarray
+    lu: TriDiagonalLU, ul: TriDiagonalLU, d_arr: _Array, l_arr: _Array
 ) -> None:
     """Compute -M^-1.
 
@@ -244,7 +247,7 @@ def _invert_lu(
     d_ul = ul.d[1:]
 
     # d[i] d'[i+1]
-    np.copyto(d_arr, lu.d)
+    np.copyto(d_arr, lu.d)  # type: ignore[no-untyped-call]
     np.multiply(d, d_ul, d)
 
     # b[i] b'[i]
