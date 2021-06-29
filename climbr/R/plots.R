@@ -19,7 +19,8 @@
 #'
 #' @param df_pages data frame of pages.
 #' @param friends a named vector where the names are the climber levels and
-#' the values are corresponding labels to apply in the plot.
+#' the values are corresponding labels to apply in the plot.  The order of the
+#' labels in the plot's legend will match the order in the friends vector.
 #' @param level the width of the intervals.
 #' @param wsq the Wiener variance per second (should be consistent with the
 #' estimation `--wiener-variance` flag, but potentially with different units).
@@ -29,7 +30,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
     dplyr::filter(.data$climber %in% names(friends)) %>%
     dplyr::mutate(
       date = as.POSIXct(.data$timestamp, origin = "1970-01-01"),
-      climber = dplyr::recode(.data$climber, !!!friends)
+      climber = dplyr::recode_factor(.data$climber, !!!friends)
     ) %>%
     dplyr::select(.data$date, .data$climber, .data$r, .data$var, .data$cov)
 
