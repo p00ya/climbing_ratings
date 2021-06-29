@@ -17,7 +17,7 @@ Suggests:
     precrec,
     testthat (>= 2.1.0)
 Imports:
-    dplyr (>= 0.7.0),
+    dplyr (>= 1.0.1),
     ggplot2 (>= 3.0.0),
     magrittr,
     purrr,
