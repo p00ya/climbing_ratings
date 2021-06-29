@@ -41,7 +41,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
     ggplot2::geom_point() +
     stat_wiener_smooth(
       ggplot2::aes(var = .data$var, cov = .data$cov, fill = .data$climber),
-      wsq = wsq, # consistent with
+      wsq = wsq,
       level = level,
       n = 1000L
     )
