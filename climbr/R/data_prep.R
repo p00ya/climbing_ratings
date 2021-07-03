@@ -224,10 +224,10 @@ WriteNormalizedTables <- function(dfs, dir) {
   utils::write.csv(
     dfs$ascents %>%
       dplyr::transmute(
-        route = as.integer(.data$route) - 1,
+        route = as.integer(.data$route) - 1L,
         .data$clean,
-        page = .data$page - 1,
-        style_page = .data$style_page - 1
+        page = .data$page - 1L,
+        style_page = .data$style_page - 1L
       ),
     file.path(dir, "ascents.csv"),
     row.names = FALSE
@@ -240,7 +240,7 @@ WriteNormalizedTables <- function(dfs, dir) {
   utils::write.csv(
     dfs$pages %>%
       dplyr::transmute(
-        climber = as.integer(.data$climber) - 1,
+        climber = as.integer(.data$climber) - 1L,
         .data$timestamp,
       ),
     file.path(dir, "pages.csv"),
@@ -249,7 +249,7 @@ WriteNormalizedTables <- function(dfs, dir) {
   utils::write.csv(
     dfs$style_pages %>%
       dplyr::transmute(
-        climber_style = as.integer(.data$climber_style) - 1,
+        climber_style = as.integer(.data$climber_style) - 1L,
         .data$timestamp
       ),
     file.path(dir, "style_pages.csv"),
