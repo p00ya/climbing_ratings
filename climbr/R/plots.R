@@ -30,17 +30,28 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
     dplyr::filter(.data$climber %in% names(friends)) %>%
     dplyr::mutate(
       date = as.POSIXct(.data$timestamp, origin = "1970-01-01"),
-      climber = dplyr::recode_factor(.data$climber, !!!friends)
+      climber = dplyr::recode_factor(.data$climber, !!!friends),
+      sigma = sqrt(.data$var) * qnorm((1 - level) / 2)
     ) %>%
-    dplyr::select(.data$date, .data$climber, .data$r, .data$var, .data$cov)
+    dplyr::select(
+      .data$date, .data$climber, .data$r, .data$var, .data$cov, .data$sigma
+    )
 
   ggplot2::ggplot(
     df_friends,
-    ggplot2::aes(.data$date, .data$r, color = .data$climber)
+    ggplot2::aes(
+      .data$date,
+      .data$r,
+      colour = .data$climber,
+      fill = .data$climber,
+    )
   ) +
-    ggplot2::geom_point() +
+    ggplot2::geom_linerange(
+      alpha = 0.5,
+      ggplot2::aes(ymin = .data$r - .data$sigma, ymax = .data$r + .data$sigma)
+    ) +
     stat_wiener_smooth(
-      ggplot2::aes(var = .data$var, cov = .data$cov, fill = .data$climber),
+      ggplot2::aes(var = .data$var, cov = .data$cov),
       wsq = wsq,
       level = level,
       n = 1000L
