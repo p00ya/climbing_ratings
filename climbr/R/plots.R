@@ -31,7 +31,7 @@ PlotProgression <- function(df_pages, friends, level = 0.5,
     dplyr::mutate(
       date = as.POSIXct(.data$timestamp, origin = "1970-01-01"),
       climber = dplyr::recode_factor(.data$climber, !!!friends),
-      sigma = sqrt(.data$var) * qnorm((1 - level) / 2)
+      sigma = sqrt(.data$var) * qnorm((1 - level) / 2, lower.tail = FALSE)
     ) %>%
     dplyr::select(
       .data$date, .data$climber, .data$r, .data$var, .data$cov, .data$sigma

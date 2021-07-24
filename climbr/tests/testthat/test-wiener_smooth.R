@@ -60,8 +60,8 @@ describe("predict.WienerSmooth", {
     expect_equal(p$fit$fit, c(10, 15, 20, 15, 10))
   })
   it("interpolates intervals", {
-    expect_equal(p$fit$lwr, c(12, 16.6, 22, 16.6, 12), tolerance = 1e-2)
-    expect_equal(p$fit$upr, c(8, 13.4, 18, 13.4, 8), tolerance = 1e-2)
+    expect_equal(p$fit$upr, c(12, 16.6, 22, 16.6, 12), tolerance = 1e-2)
+    expect_equal(p$fit$lwr, c(8, 13.4, 18, 13.4, 8), tolerance = 1e-2)
   })
 })
 
@@ -76,7 +76,7 @@ describe("stat_wiener_smooth", {
   it("computes x, y, ymin, ymax", {
     expect_equal(df_smooth$x, 2:6 / 2)
     expect_equal(df_smooth$y, c(10, 15, 20, 15, 10))
-    expect_equal(df_smooth$ymin, c(12, 16.6, 22, 16.6, 12), tolerance = 1e-2)
-    expect_equal(df_smooth$ymax, c(8, 13.4, 18, 13.4, 8), tolerance = 1e-2)
+    expect_equal(df_smooth$ymax, c(12, 16.6, 22, 16.6, 12), tolerance = 1e-2)
+    expect_equal(df_smooth$ymin, c(8, 13.4, 18, 13.4, 8), tolerance = 1e-2)
   })
 })

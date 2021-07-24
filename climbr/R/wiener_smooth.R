@@ -72,7 +72,7 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #' @return `list(fit = list(fit, lwr, upr), se.fit)`, like
 #' [stats::predict.lm()].
 predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
-  z <- qnorm((1 - level) / 2)
+  z <- qnorm((1 - level) / 2, lower.tail = FALSE)
   n <- nrow(object$df)
 
   # Find closest i1 and i2 such that t[i1] <= t < t[i2].
