@@ -22,14 +22,14 @@ describe("WienerSmooth", {
   it("applies formula", {
     df <- data.frame(t = 1:3, u = c(10, 20, 10), var = 4, cov = 0.5)
     mod <- WienerSmooth(u ~ 2 * t, df, wsq = 1)
-    expect_equal(mod$df$x, 2 * df$t)
-    expect_equal(mod$df$y, df$u)
+    expect_equal(mod$data$x, 2 * df$t)
+    expect_equal(mod$data$y, df$u)
   })
   it("defaults formula", {
     df <- data.frame(x = 1:3, y = c(10, 20, 10), var = 4, cov = 0.5)
     mod <- WienerSmooth(data = df, wsq = 1)
-    expect_equal(mod$df$x, df$x)
-    expect_equal(mod$df$y, df$y)
+    expect_equal(mod$data$x, df$x)
+    expect_equal(mod$data$y, df$y)
   })
 })
 
@@ -62,6 +62,19 @@ describe("predict.WienerSmooth", {
   it("interpolates intervals", {
     expect_equal(p$fit$upr, c(12, 16.6, 22, 16.6, 12), tolerance = 1e-2)
     expect_equal(p$fit$lwr, c(8, 13.4, 18, 13.4, 8), tolerance = 1e-2)
+  })
+})
+
+describe("predict.WienerSmooth", {
+  df <- data.frame(x = 1, y = 10, var = 4, cov = 0.5)
+  mod <- WienerSmooth(data = df, wsq = 5)
+  p <- predict.WienerSmooth(mod, data.frame(x = 0:2), level = 0.682)
+  it("extrapolates mean", {
+    expect_equal(p$fit$fit, c(10, 10, 10))
+  })
+  it("extrapolates intervals", {
+    expect_equal(p$fit$upr, c(13, 12, 13), tolerance = 1e-2)
+    expect_equal(p$fit$lwr, c(7, 8, 7), tolerance = 1e-2)
   })
 })
 

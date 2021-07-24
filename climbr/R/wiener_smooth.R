@@ -33,8 +33,8 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
     )
   }
   stopifnot(!is.unsorted(data$x, strictly = TRUE))
-  df <- data[, c("x", "y", "var", "cov")]
-  structure(list(df = df, wsq = wsq), class = "WienerSmooth")
+  data <- data[, c("x", "y", "var", "cov")]
+  structure(list(data = data, wsq = wsq), class = "WienerSmooth")
 }
 
 #' For each `a[i]` find the smallest j such that `a[i] < b[j]`, or
@@ -59,6 +59,70 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
   ii
 }
 
+#' Extrapolates statistics for a Wiener process from a single sample.
+#'
+#' @param data a data frame with the variables `x`, `y` and `var`, with a
+#' single row to extrapolate from.
+#' @param x a strictly increasing set of x-values.
+#' @param wsq the Wiener variance.
+#' @return `list(mu, sigmasq)` with the expected value and variance
+#' respectively, for each sample in newdata.
+.ExtrapolateWiener <- function(data, x, wsq) {
+  stopifnot(nrow(data) == 1L)
+
+  y <- rep(data$y, length(x))
+  sigmasq <- abs(x - data$x) * wsq + data$var
+
+  list(y = y, var = sigmasq)
+}
+
+#' Interpolates statistics for a Wiener process where the mean, variance and
+#' covariance are known only for a set of samples.
+#'
+#' @param data a data frame with the variables `x`, `y`, `var`, and `cov`;
+#' rows should be in increasing order of `x`.
+#' @param x a strictly increasing set of x-values.
+#' @param wsq the Wiener variance.
+#' @return `list(mu, sigmasq)` with the expected value and variance
+#' respectively, for each sample in newdata.
+.InterpolateWiener <- function(data, x, wsq) {
+  n <- nrow(data)
+
+  # Find closest i1 and i2 such that t[i1] <= t < t[i2].
+  t <- utils::head(x, -1L) # remove the last sample
+  i2 <- .AlignForInterpolation(t, data$x)
+  i1 <- i2 - 1L
+  t1 <- data$x[i1]
+  t2 <- data$x[i2]
+  v1 <- data$var[i1]
+  v2 <- data$var[i2]
+  y1 <- data$y[i1]
+  y2 <- data$y[i2]
+  cov <- data$cov[i1]
+
+  dt1 <- t - t1 # gap from previous sample
+  dt2 <- t2 - t # gap to next sample
+  dt <- t2 - t1 # total gap between samples
+
+  # Interpolate variance.
+  # See WHR Appendix C.
+  sigmasq <- (
+    dt1 * dt2 * wsq / dt +
+      (dt2^2 * v1 +
+        2 * dt2 * dt1 * cov +
+        dt1^2 * v2) /
+        dt^2
+  )
+  # Linear interpolation of mean.
+  y <- (y1 * dt2 + y2 * dt1) / dt
+
+  # Add back the last sample (doesn't require interpolation).
+  sigmasq <- c(sigmasq, data$var[n])
+  y <- c(y, data$y[n])
+
+  list(y = y, var = sigmasq)
+}
+
 #' Implements the [stats::predict()] generic function for WienerSmooth.
 #'
 #' Interpolates intervals for a Wiener process where the mean, variance and
@@ -72,43 +136,38 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #' @return `list(fit = list(fit, lwr, upr), se.fit)`, like
 #' [stats::predict.lm()].
 predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
+  stopifnot(nrow(newdata$x) > 1L)
+  stopifnot(nrow(object$data) >= 1L)
+
   z <- qnorm((1 - level) / 2, lower.tail = FALSE)
-  n <- nrow(object$df)
+  xlim <- range(object$data$x)
 
-  # Find closest i1 and i2 such that t[i1] <= t < t[i2].
-  t <- utils::head(newdata$x, -1L) # remove the last sample
-  i2 <- .AlignForInterpolation(t, object$df$x)
-  i1 <- i2 - 1L
-  t1 <- object$df$x[i1]
-  t2 <- object$df$x[i2]
-  v1 <- object$df$var[i1]
-  v2 <- object$df$var[i2]
-  y1 <- object$df$y[i1]
-  y2 <- object$df$y[i2]
-  cov <- object$df$cov[i1]
-
-  dt1 <- t - t1 # gap from previous sample
-  dt2 <- t2 - t # gap to next sample
-  dt <- t2 - t1 # total gap between samples
-
-  # Interpolate variance.
-  # See WHR Appendix C.
-  sigmasq <- (
-    dt1 * dt2 * object$wsq / dt +
-      (dt2^2 * v1 +
-        2 * dt2 * dt1 * cov +
-        dt1^2 * v2) /
-        dt^2
+  # Interpolate.
+  interpolated <- .InterpolateWiener(
+    object$data,
+    dplyr::filter(newdata, xlim[1L] <= .data$x & .data$x <= xlim[2L])$x,
+    object$wsq
   )
-  # Linear interpolation of mean.
-  mu <- (y1 * dt2 + y2 * dt1) / dt
 
-  # Add back the last sample (doesn't require interpolation).
-  sigma <- sqrt(c(sigmasq, object$df$var[n]))
-  mu <- c(mu, object$df$y[n])
+  # Extrapolate to the left of the data.
+  pre <- .ExtrapolateWiener(
+    object$data[1L, ],
+    dplyr::filter(newdata, .data$x < xlim[1L])$x,
+    object$wsq
+  )
+
+  # Extrapolate to the right of the data.
+  post <- .ExtrapolateWiener(
+    utils::tail(object$data, n = 1L),
+    dplyr::filter(newdata, .data$x > xlim[2L])$x,
+    object$wsq
+  )
+
+  y <- c(pre$y, interpolated$y, post$y)
+  sigma <- sqrt(c(pre$var, interpolated$var, post$var))
 
   q <- z * sigma
-  list(fit = list(fit = mu, lwr = mu - q, upr = mu + q), se.fit = sigma)
+  list(fit = list(fit = y, lwr = y - q, upr = y + q), se.fit = sigma)
 }
 
 #' Custom ggplot2 Stat for plotting interpolated confidence bands around
@@ -118,12 +177,12 @@ predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
   required_aes = c("x", "y", "cov", "var"),
   compute_group = function(data, scales,
                            formula = NULL, n = 80, level = 0.9, wsq = 1) {
-    # Include all data points, plus interpolated samples.
-    rng <- range(data$x, na.rm = TRUE)
-    interp <- seq(rng[1], rng[2], length.out = n)
-    xseq <- sort(unique(c(interp, data$x)))
-
     mod <- WienerSmooth(formula, data = data, wsq)
+
+    # Include original data points and uniformly-spaced samples.
+    xlim <- scales$x$dimension()
+    xseq <- sort(unique(c(seq(xlim[1L], xlim[2L], length.out = n), data$x)))
+
     pred <- predict(mod, newdata = data.frame(x = xseq), level = level)
     fit <- as.data.frame(pred$fit)
     names(fit) <- c("y", "ymin", "ymax")
