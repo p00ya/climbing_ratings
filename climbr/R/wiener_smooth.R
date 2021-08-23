@@ -43,6 +43,7 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #'
 #' @param a a numeric vector in increasing order.
 #' @param b a numeric vector in increasing order.
+#' @keywords internal
 .AlignForInterpolation <- function(a, b) {
   stopifnot(!is.unsorted(a, strictly = TRUE))
   stopifnot(!is.unsorted(b, strictly = TRUE))
@@ -67,6 +68,7 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #' @param wsq the Wiener variance.
 #' @return `list(mu, sigmasq)` with the expected value and variance
 #' respectively, for each sample in newdata.
+#' @keywords internal
 .ExtrapolateWiener <- function(data, x, wsq) {
   stopifnot(nrow(data) == 1L)
 
@@ -85,6 +87,7 @@ WienerSmooth <- function(formula = NULL, data, wsq, ...) {
 #' @param wsq the Wiener variance.
 #' @return `list(mu, sigmasq)` with the expected value and variance
 #' respectively, for each sample in newdata.
+#' @keywords internal
 .InterpolateWiener <- function(data, x, wsq) {
   n <- nrow(data)
 
@@ -173,6 +176,8 @@ predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
 #' Custom ggplot2 Stat for plotting interpolated confidence bands around
 #' Wiener processes with discrete samples.  It computes the same variables
 #' as `ggplot2::stat_smooth()`.
+#'
+#' @keywords internal
 .StatWienerSmooth <- ggplot2::ggproto("StatWienerSmooth", ggplot2::Stat,
   required_aes = c("x", "y", "cov", "var"),
   compute_group = function(data, scales,

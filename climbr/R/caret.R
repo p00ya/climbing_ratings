@@ -27,6 +27,7 @@
 #' @param script arguments to the Python interpreter to run the Python
 #' estimation script.
 #' @return exit status of the estimation script.
+#' @keywords internal
 .RunEstimationScript <- function(w2_c, w2_s, sigma2_c, sigma2_r, sigma2_s,
                                  max_iterations, data_dir,
                                  script = c("-m", "climbing_ratings")) {

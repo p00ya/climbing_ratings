@@ -22,6 +22,7 @@
 #' @return an integer representing the number of pitches with info logged, or
 #' NA_integer_ if no pitch info was logged.  Note this may not reflect the
 #' actual number of pitches on the route.
+#' @keywords internal
 .GetPitchCount <- function(comment) {
   # If there is pitch info for an ascent, theCrag stuffs it into the comment
   # field.  This isn't very reliable: if it's a multipitch route but the
@@ -54,6 +55,7 @@
 #' @param climber character username to populate the "climber" column in the
 #' returned data frame.
 #' @return a "raw ascents" data frame (see [ReadLogbooks()]).
+#' @keywords internal
 .ParseLogbook <- function(df, climber) {
   df %>%
     dplyr::arrange(.data$Log.Date) %>%

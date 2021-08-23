@@ -18,6 +18,7 @@
 #' Converts ascent labels to all lower-case codes with no spaces.
 #'
 #' @param ascent_type a label like "Hang dog"
+#' @keywords internal
 NormalizeAscentType <- function(ascent_type) {
   ascent_type %>%
     # tolower() is about 10x faster than stringr::str_to_lower().
@@ -30,13 +31,16 @@ NormalizeAscentType <- function(ascent_type) {
 #'
 #' @param x a list/vector of lists
 #' @param idx the element of the outer list
+#' @keywords internal
 .AsIntegerOrNA <- function(x, idx = 1) {
   ifelse(is.null(x), NA, as.integer(x[[idx]]))
 }
 
 #' Coerces `x[[idx]]` to a character, replacing NULL with NA.
+#'
 #' @param x a list/vector of lists
 #' @param idx the element of the outer list
+#' @keywords internal
 .AsCharacterOrNA <- function(x, idx = 1) {
   ifelse(is.null(x), NA, as.character(x[[idx]]))
 }
@@ -46,6 +50,7 @@ NormalizeAscentType <- function(ascent_type) {
 #'
 #' @param lst a list of lists
 #' @param idx the element of the outer list
+#' @keywords internal
 .FlattenInt <- function(lst, idx = 1) {
   purrr::map_int(lst, .AsIntegerOrNA, idx = idx)
 }
@@ -55,6 +60,7 @@ NormalizeAscentType <- function(ascent_type) {
 #'
 #' @param lst a list of lists
 #' @param idx the element of the outer list
+#' @keywords internal
 .FlattenChr <- function(lst, idx = 1) {
   purrr::map_chr(lst, .AsCharacterOrNA, idx = idx)
 }
