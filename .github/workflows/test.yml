@@ -22,9 +22,13 @@ on:
       - '!.github/workflows/test-climbr.yml'
       - '!climbr/**'
       - '!**.R'
+  pull_request:
+    branches:
+      - 'main'
   schedule:
     # Weekly on Fridays at 03:28.
     - cron: '28 3 * * 5'
+  workflow_dispatch:
 
 jobs:
   test:

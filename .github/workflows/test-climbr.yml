@@ -24,9 +24,13 @@ on:
       - '.github/workflows/test-climbr.yml'
       - '!climbing_ratings/**'
       - '!**.py'
+  pull_request:
+    branches:
+      - main
   schedule:
     # Weekly on Fridays at 03:33.
     - cron: '33 3 * * 5'
+  workflow_dispatch:
 
 # See also:
 # https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow
