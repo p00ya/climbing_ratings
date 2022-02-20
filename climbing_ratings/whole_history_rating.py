@@ -122,10 +122,10 @@ class AscentsTable:
         style_page
             The 0-based ID of the style-page for each ascent.
         """
-        self.route = np.array(route, np.intp)
-        self.clean = np.array(clean, float)
-        self.page = np.array(page, np.intp)
-        self.style_page = np.array(style_page, np.intp)
+        self.route: NDArray[np.intp] = np.array(route, np.intp)
+        self.clean: _Array = np.array(clean, float)
+        self.page: NDArray[np.intp] = np.array(page, np.intp)
+        self.style_page: NDArray[np.intp] = np.array(style_page, np.intp)
 
     def __len__(self) -> int:
         """Return the number of ascents in the table."""
@@ -160,8 +160,8 @@ class PagesTable:
         timestamp
             The time of the ascents for each page.
         """
-        self.climber = np.asarray(climber, np.intp)
-        self.timestamp = np.asarray(timestamp, float)
+        self.climber: NDArray[np.intp] = np.asarray(climber, np.intp)
+        self.timestamp: _Array = np.asarray(timestamp, float)
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
@@ -564,7 +564,7 @@ class _PageModel:
         self,
         ascents: AscentsTable,
         pages: PagesTable,
-        ascents_page: _Array,
+        ascents_page: NDArray[np.intp],
         prior_mean: float,
         prior_var: float,
         wiener_var: float,
@@ -617,7 +617,7 @@ class _PageModel:
     @staticmethod
     def __make_page_ascents(
         ascents: AscentsTable,
-        ascents_page: _Array,
+        ascents_page: NDArray[np.intp],
         num_pages: int,
     ) -> _SlicedAscents:
         """Slice ascents by pages."""
@@ -661,7 +661,7 @@ def _get_pages_gap(pages_timestamp: _Array) -> _Array:
         Time interval from each page to the next page.  The gap for the last
         page of each climber is undefined.
     """
-    pages_gap = np.array(pages_timestamp)
+    pages_gap: _Array = np.array(pages_timestamp)
     pages_gap[:-1] = pages_gap[1:] - pages_gap[:-1]
     return pages_gap
 
@@ -669,7 +669,9 @@ def _get_pages_gap(pages_timestamp: _Array) -> _Array:
 _Slice = Tuple[int, int]
 
 
-def _extract_slices(values: Union[List[int], _Array], num_slices: int) -> List[_Slice]:
+def _extract_slices(
+    values: Union[List[int], NDArray[np.intp]], num_slices: int
+) -> List[_Slice]:
     """Extract slices of contiguous IDs.
 
     Parameters

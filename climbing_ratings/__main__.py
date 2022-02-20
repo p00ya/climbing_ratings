@@ -314,7 +314,7 @@ def _write_page_ratings(
     filename: str,
     climber_field: str,
     dirname: str,
-    pages_climber: _Array,
+    pages_climber: NDArray[np.intp],
     page: PageRatingsTable,
 ) -> None:
     filename = os.path.join(dirname, filename)
@@ -328,13 +328,13 @@ def _write_page_ratings(
 
 
 def write_page_ratings(
-    dirname: str, pages_climber: _Array, page: PageRatingsTable
+    dirname: str, pages_climber: NDArray[np.intp], page: PageRatingsTable
 ) -> None:
     _write_page_ratings("page_ratings.csv", "climber", dirname, pages_climber, page)
 
 
 def write_style_page_ratings(
-    dirname: str, pages_climber: _Array, page: PageRatingsTable
+    dirname: str, pages_climber: NDArray[np.intp], page: PageRatingsTable
 ) -> None:
     _write_page_ratings(
         "style_page_ratings.csv", "climber_style", dirname, pages_climber, page

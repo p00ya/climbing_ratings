@@ -121,7 +121,7 @@ class Process:
         gradient = np.zeros_like(ratings)
         one_on_sigma_sq = self._one_on_sigma_sq
         add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
-        hd: _Array = np.copy(self._wiener_d2)  # type: ignore[no-untyped-call]
+        hd: _Array = np.copy(self._wiener_d2)
 
         # Bradley-Terry terms.
         gradient += bt_d1
@@ -247,7 +247,7 @@ def _invert_lu(
     d_ul = ul.d[1:]
 
     # d[i] d'[i+1]
-    np.copyto(d_arr, lu.d)  # type: ignore[no-untyped-call]
+    np.copyto(d_arr, lu.d)
     np.multiply(d, d_ul, d)
 
     # b[i] b'[i]

@@ -40,8 +40,8 @@ class NormalDistribution:
         sigma_sq
             Variance of the normal distribution.  Must be positive.
         """
-        self._mu = np.asarray(mu)
-        self._sigma_sq = np.asarray(sigma_sq)
+        self._mu: _Array = np.asarray(mu)
+        self._sigma_sq: _Array = np.asarray(sigma_sq)
 
     @property
     def sigma_sq(self) -> Union[float, ArrayLike]:

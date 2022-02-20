@@ -15,15 +15,25 @@
 # limitations under the License.
 
 import numpy as np
+from numpy.typing import NDArray
 import unittest
 from .. import process_helpers
 from .assertions import assert_close_get
 
 
+_Array = NDArray[np.float_]
+
+
 class TestProcessHelpers(unittest.TestCase):
     """Tests for the process_helpers extension."""
 
-    m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
+    # fmt: off
+    m: _Array = np.array([
+        1.0, -2.0,  0.0,
+        0.5,  2.0,  1.0,
+        0.0,  3.0, 11.0,
+    ]).reshape((3, 3))
+    # fmt: on
 
     def setUp(self) -> None:
         np.seterr(all="raise")
@@ -32,9 +42,9 @@ class TestProcessHelpers(unittest.TestCase):
     def test_lu_decompose(self) -> None:
         """Test that for (L, U) = lu_decompose(M), LU = M"""
         m = self.__class__.m
-        md = np.diag(m).copy()
-        mu = np.diag(m, 1).copy()
-        ml = np.diag(m, -1).copy()
+        md: _Array = np.diag(m).copy()
+        mu: _Array = np.diag(m, 1).copy()
+        ml: _Array = np.diag(m, -1).copy()
         tri_diagonal = process_helpers.TriDiagonal(md, mu, ml)
         lu = process_helpers.lu_decompose(tri_diagonal)
 
@@ -48,9 +58,9 @@ class TestProcessHelpers(unittest.TestCase):
     def test_ul_decompose(self) -> None:
         """Test that for (U', L') = ul_decompose(M), U'L' = M"""
         m = self.__class__.m
-        md = np.diag(m).copy()
-        mu = np.diag(m, 1).copy()
-        ml = np.diag(m, -1).copy()
+        md: _Array = np.diag(m).copy()
+        mu: _Array = np.diag(m, 1).copy()
+        ml: _Array = np.diag(m, -1).copy()
         tri_diagonal = process_helpers.TriDiagonal(md, mu, ml)
         ul = process_helpers.ul_decompose(tri_diagonal)
 
@@ -63,25 +73,25 @@ class TestProcessHelpers(unittest.TestCase):
 
     def test_add_wiener_gradient(self) -> None:
         """Test add_wiener_gradient()"""
-        one_on_sigma_sq = np.array([1.0])
-        ratings = np.array([1.0, 2.0])
+        one_on_sigma_sq: _Array = np.array([1.0])
+        ratings: _Array = np.array([1.0, 2.0])
         gradient = np.zeros(2)
         process_helpers.add_wiener_gradient(one_on_sigma_sq, ratings, gradient)
         self.assert_close([1.0, -1.0], gradient, "gradient")
 
     def test_solve_y(self) -> None:
         """Test solve_y()"""
-        g = np.array([10.0, 5.0, 32.0])
-        a = np.array([0.0, -0.1, 2.0])
+        g: _Array = np.array([10.0, 5.0, 32.0])
+        a: _Array = np.array([0.0, -0.1, 2.0])
         process_helpers.solve_y(g, a)
         y = a  # output parameter
         self.assert_close([10.0, 4.0, 40.0], y, "y")
 
     def test_solve_x(self) -> None:
         """Test solve_x()"""
-        b = np.array([-2, 1.0])
-        d = np.array([1.0, 3.0, 10.0])
-        y = np.array([10.0, 4.0, 40.0])
+        b: _Array = np.array([-2, 1.0])
+        d: _Array = np.array([1.0, 3.0, 10.0])
+        y: _Array = np.array([10.0, 4.0, 40.0])
         process_helpers.solve_x(b, d, y)
         x = y  # output parameter
         self.assert_close([10.0, 0.0, 4.0], x, "x")

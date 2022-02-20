@@ -16,10 +16,14 @@
 
 import unittest
 import numpy as np
+from numpy.typing import NDArray
 from .. import process
 from ..normal_distribution import NormalDistribution
 from ..process_helpers import TriDiagonalLU
 from .assertions import assert_close_get
+
+
+_Array = NDArray[np.float_]
 
 
 class TestProcessFunctions(unittest.TestCase):
@@ -31,10 +35,10 @@ class TestProcessFunctions(unittest.TestCase):
 
     def test_invert_lu_dot_g(self) -> None:
         """Test that for X = invert_lu_dot_g(LU, G), LU X = G"""
-        g = np.array([10.0, 5.0, 32.0])
-        d = np.array([1.0, 3.0, 10.0])
-        b = np.array([-2.0, 1.0])
-        a = np.array([0.1, -2.0])
+        g: _Array = np.array([10.0, 5.0, 32.0])
+        d: _Array = np.array([1.0, 3.0, 10.0])
+        b: _Array = np.array([-2.0, 1.0])
+        a: _Array = np.array([0.1, -2.0])
         lu = TriDiagonalLU(d, b, a)
         x = process._invert_lu_dot_g(lu, g)
 
@@ -48,7 +52,13 @@ class TestProcessFunctions(unittest.TestCase):
 
     def test_invert_lu(self) -> None:
         """Test invert_lu(LU, U'L') M = -I"""
-        m = np.array([1.0, -2.0, 0.0, 0.5, 2.0, 1.0, 0.0, 3.0, 11.0]).reshape((3, 3))
+        # fmt: off
+        m: _Array = np.array([
+            1.0, -2.0,  0.0,
+            0.5,  2.0,  1.0,
+            0.0,  3.0, 11.0,
+        ]).reshape((3, 3))
+        # fmt: on
         lu = TriDiagonalLU(
             np.array([1.0, 3.0, 10.0]), np.array([-2, 1.0]), np.array([0.5, 1.0])
         )
@@ -78,27 +88,27 @@ class TestProcess(unittest.TestCase):
 
     def test_init(self) -> None:
         """Test Process initializes one_on_sigma_sq and wiener_d2"""
-        gaps = np.array([1.0, 2.0])
+        gaps: _Array = np.array([1.0, 2.0])
         p = process.Process(10.0, self.initial_prior, gaps)
         self.assert_close([0.1, 0.05], p._one_on_sigma_sq, "one_on_sigma_sq")
         self.assert_close([-0.1, -0.15, -0.05], p._wiener_d2, "wiener_d2")
 
     def test_get_ratings_adjustment(self) -> None:
         """Test Process.get_ratings_adjustment"""
-        gaps = np.array([1.0])
+        gaps: _Array = np.array([1.0])
         ratings = np.log([6.0, 4.0])
-        bt_d1 = np.array([0.5, 1.0])
-        bt_d2 = np.array([-0.25, -0.625])
+        bt_d1: _Array = np.array([0.5, 1.0])
+        bt_d2: _Array = np.array([-0.25, -0.625])
         p = process.Process(1.0, self.initial_prior, gaps)
         delta = p.get_ratings_adjustment(ratings, bt_d1, bt_d2)
         self.assert_close([0.50918582, -0.55155649], delta, "delta")
 
     def test_get_covariance(self) -> None:
         """Test Process.get_covariance"""
-        gaps = np.array([1.0])
+        gaps: _Array = np.array([1.0])
         ratings = np.log([6.0, 4.0])
-        bt_d1 = np.array([0.5, 1.0])
-        bt_d2 = np.array([-0.25, -0.625])
+        bt_d1: _Array = np.array([0.5, 1.0])
+        bt_d2: _Array = np.array([-0.25, -0.625])
         p = process.Process(1.0, self.initial_prior, gaps)
         var = np.empty(2)
         cov = np.empty(1)

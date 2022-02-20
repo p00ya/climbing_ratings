@@ -15,9 +15,13 @@
 # limitations under the License.
 
 import numpy as np
+from numpy.typing import NDArray
 import unittest
 from ..normal_distribution import NormalDistribution
 from .assertions import assert_close_get
+
+
+_Array = NDArray[np.float_]
 
 
 class TestNormalDistribution(unittest.TestCase):
@@ -29,8 +33,8 @@ class TestNormalDistribution(unittest.TestCase):
 
     def test_get_derivatives_var_1(self) -> None:
         """Test NormalDistribution(mu, 1).get_derivatives()"""
-        mu = np.array([0.0, 1.0, 2.0])
-        x = np.array([0.0, 0.0, 0.0])
+        mu: _Array = np.array([0.0, 1.0, 2.0])
+        x: _Array = np.array([0.0, 0.0, 0.0])
         dist = NormalDistribution(mu, 1.0)
         d1, d2 = dist.get_derivatives(x)
         self.assert_close([0.0, 1.0, 2.0], d1, "d1")
@@ -38,7 +42,7 @@ class TestNormalDistribution(unittest.TestCase):
 
     def test_get_derivatives_var_2(self) -> None:
         """Test NormalDistribution(0, 2).get_derivatives()"""
-        x = np.array([0.0, 1.0, 2.0])
+        x: _Array = np.array([0.0, 1.0, 2.0])
         dist = NormalDistribution(0.0, 2.0)
         d1, d2 = dist.get_derivatives(x)
         self.assert_close([0.0, -0.5, -1.0], d1, "d1")
