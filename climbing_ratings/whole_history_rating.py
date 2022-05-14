@@ -212,6 +212,7 @@ class WholeHistoryRating:
     __slots__ = (
         "_bases",
         "_styles",
+        "_has_styles",
         "_route_ratings",
         "_route_var",
         "_route_ascents",
@@ -257,6 +258,7 @@ class WholeHistoryRating:
             hparams.style_prior_variance,
             hparams.style_wiener_variance,
         )
+        self._has_styles = len(style_pages) > 0
         self._route_ratings: _Array = np.array(routes_rating)
         self._route_var = np.empty_like(self._route_ratings)
         self._route_ascents = _make_route_ascents(
@@ -277,6 +279,7 @@ class WholeHistoryRating:
         whr: WholeHistoryRating = self.__class__.__new__(self.__class__)
         whr._bases = copy.copy(self._bases)
         whr._styles = copy.copy(self._styles)
+        whr._has_styles = self._has_styles
         whr._route_ratings = self._route_ratings.copy()
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
@@ -316,12 +319,12 @@ class WholeHistoryRating:
         return self._route_var
 
     def __get_page_bt_derivatives(
-        self, pages: "_PageModel", aux_pages: "_PageModel"
+        self, pages: "_PageModel", aux_pages: Optional["_PageModel"]
     ) -> Tuple[_Array, _Array]:
         """Gets the Bradley-Terry terms for page/style-page ratings.
 
         Gets the first and second derivative of the Bradley-Terry model with
-        respect to the player's natural rating.  Auxilliary ratings allow the
+        respect to the player's natural rating.  Auxiliary ratings allow the
         player to be modeled with either base-ratings or style-ratings.
 
         Parameters
@@ -329,7 +332,8 @@ class WholeHistoryRating:
         pages
             A slicing of ascents for the player's ratings.
         aux_pages
-            A slicing of ascents for the auxilliary ratings.
+            An optional slicing of ascents for the auxiliary ratings.  None is
+            equivalent to auxiliary ratings of 0 for all pages.
 
         Returns
         -------
@@ -342,9 +346,11 @@ class WholeHistoryRating:
         num_ascents = len(ascents.adversary)
 
         page_ratings = expand_to_slices(ratings, ascents.slices, num_ascents)
-        page_ratings += expand_to_slices_sparse(
-            aux_pages.ratings, aux_pages.ascents.slices, num_ascents
-        )
+
+        if aux_pages is not None:
+            page_ratings += expand_to_slices_sparse(
+                aux_pages.ratings, aux_pages.ascents.slices, num_ascents
+            )
 
         route_ratings = self.route_ratings[ascents.adversary]
 
@@ -356,7 +362,10 @@ class WholeHistoryRating:
         )
 
     def __update_page_ratings(
-        self, pages: "_PageModel", aux_pages: "_PageModel", only_variance: bool
+        self,
+        pages: "_PageModel",
+        aux_pages: Optional["_PageModel"],
+        only_variance: bool,
     ) -> None:
         """Update the ratings of all pages.
 
@@ -365,7 +374,8 @@ class WholeHistoryRating:
         pages
             Pages of the player to update.
         aux_pages
-            Auxilliary pages for the player.
+            Optional auxiliary pages for the player.  None is equivalent to an
+            auxiliary rating of 0 for all pages.
         only_variance
             If true, only updates the page variance and covariance.
             The ratings estimates are left unchanged.
@@ -402,7 +412,8 @@ class WholeHistoryRating:
             If true, only updates the base variance and covariance.
             The ratings estimates are left unchanged.
         """
-        self.__update_page_ratings(self._bases, self._styles, only_variance)
+        styles = self._styles if self._has_styles else None
+        self.__update_page_ratings(self._bases, styles, only_variance)
 
     def update_style_ratings(self, only_variance: bool = False) -> None:
         """Update the ratings of all style pages.
@@ -462,7 +473,8 @@ class WholeHistoryRating:
         # the routes.
         self.update_base_ratings()
         self.update_route_ratings()
-        self.update_style_ratings()
+        if self._has_styles:
+            self.update_style_ratings()
 
     def update_covariance(self) -> None:
         """Update covariance estimates for all routes and pages."""
