@@ -96,7 +96,6 @@ def get_bt_derivatives(
     list slices,
     double[::1] win,
     double[::1] player,
-    double[::1] aux,
     double[::1] adversary,
 ):
     """Get the derivatives of the log-likelihood for each player.
@@ -113,8 +112,6 @@ def get_bt_derivatives(
         ascent.
     player : contiguous ndarray
         Natural rating of the "player" for each ascent.
-    aux : contiguous ndarray
-        Auxiliary term of the player's rating for each ascent.
     adversary : contiguous ndarray
         Natural rating of the adversary for each ascent.
 
@@ -126,9 +123,7 @@ def get_bt_derivatives(
         "natural rating" of that player.
     """
     cdef long double[::1] d1_terms, d2_terms
-    d1_terms, d2_terms = _cget_bt_summation_terms(
-        win, player, aux, adversary
-    )
+    d1_terms, d2_terms = _cget_bt_summation_terms(win, player, adversary)
 
     cdef Py_ssize_t num_slices = len(slices)
 
@@ -155,7 +150,7 @@ def get_bt_derivatives(
 
 
 cdef tuple _cget_bt_summation_terms(
-    double[::1] win, double[::1] player, double[::1] aux, double[::1] adversary
+    double[::1] win, double[::1] player, double[::1] adversary
 ):
     """Get the Bradley-Terry derivative terms for each ascent.
 
@@ -169,8 +164,6 @@ cdef tuple _cget_bt_summation_terms(
         ascent.
     player : contiguous ndarray of longdouble
         Natural rating of the "player" for each ascent.
-    aux : contiguous ndarray of longdouble
-        Auxiliary term of the player's natural rating for each ascent.
     adversary : contiguous ndarray of longdouble
         Natural rating of the adversary for each ascent.
 
@@ -195,10 +188,10 @@ cdef tuple _cget_bt_summation_terms(
         #   = gamma_i / (gamma_i + gamma_k)
         #   = 1 / (exp(r_k - r_i) + 1)
         #
-        # We extend WHR by adding auxiliary terms to the player's natural
-        # rating:
+        # Or in terms of this function's parameters:
+        #
         # P(player beats adversary)
-        #   = 1 / (exp(adversary - (aux + player)) + 1)
+        #   = 1 / (exp(adversary - player) + 1)
         #
         # Then instead of using WHR Appendix A.1's factorization (with its A,
         # B, C, D and gamma terms), we evaluate the derivatives for each ascent.
@@ -210,7 +203,7 @@ cdef tuple _cget_bt_summation_terms(
         #   loss: -1 / (exp(winner - loser) + 1)
         # d^2 ln P / dr^2 = -1 / (2 (cosh(winner - loser) + 1))
 
-        t = <long double> aux[i] + player[i] - adversary[i]
+        t = <long double> player[i] - adversary[i]
         # t = winner - loser
         t *= win[i]
 
@@ -221,10 +214,10 @@ cdef tuple _cget_bt_summation_terms(
 
 
 def _get_bt_summation_terms(
-    double[::1] win, double[::1] player, double[::1] aux, double[::1] adversary
+    double[::1] win, double[::1] player, double[::1] adversary
 ):
     """Wraps _cget_bt_summation_terms() for testing"""
-    return _cget_bt_summation_terms(win, player, aux, adversary)
+    return _cget_bt_summation_terms(win, player, adversary)
 
 
 cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):

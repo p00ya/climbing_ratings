@@ -55,21 +55,10 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         """Test _get_bt_summation_terms()"""
         win: _Array = np.array([1.0, 1.0])
         player = np.log([1.0, 2.0])
-        aux = np.log([1.0, 1.0])
         adversary = np.log([1.0, 2.0])
-        d1, d2 = _get_bt_summation_terms(win, player, aux, adversary)
+        d1, d2 = _get_bt_summation_terms(win, player, adversary)
         self.assert_close([0.5, 0.5], d1, "d1")
         self.assert_close([-0.25, -0.25], d2, "d2")
-
-    def test_get_bt_summation_terms_auxiliary(self) -> None:
-        """Test _get_bt_summation_terms() with non-zero aux rating"""
-        win: _Array = np.array([1.0])
-        player = np.log([2.0])
-        aux = np.log([0.5])
-        adversary = np.log([1.0])
-        d1, d2 = _get_bt_summation_terms(win, player, aux, adversary)
-        self.assert_close([0.5], d1, "d1")
-        self.assert_close([-0.25], d2, "d2")
 
     def test_sum(self) -> None:
         """Test sum()"""
@@ -95,9 +84,8 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1)]
         win: _Array = np.array([1.0])
         player = np.log([1.0])
-        aux = np.log([1.0])
         adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
@@ -106,9 +94,8 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1)]
         win: _Array = np.array([-1.0])
         player = np.log([1.0])
-        aux = np.log([1.0])
         adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([-0.5], d1, "d1")
         self.assert_close([-0.25], d2, "d2")
 
@@ -117,31 +104,18 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 4)]
         win: _Array = np.array([-1.0, -1.0, -1.0, -1.0])
         player = np.log([4.0, 4.0, 4.0, 4.0])
-        aux = np.zeros([4])
         adversary = np.log([1.0, 1.0, 1.0, 1.0])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([-3.2], d1, "d1")
         self.assert_close([-0.64], d2, "d2")
-
-    def test_get_bt_derivatives_auxiliary(self) -> None:
-        """Test get_bt_derivatives() with non-zero aux rating"""
-        slices = [(0, 1)]
-        win: _Array = np.array([1.0])
-        player = np.log([2.0])
-        aux = np.log([0.5])
-        adversary = np.log([1.0])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
-        self.assert_close([0.5], d1, "d1")
-        self.assert_close([-0.25], d2, "d2")
 
     def test_get_bt_derivatives_no_ascents(self) -> None:
         """Test get_bt_derivatives() with no ascents"""
         slices = [(0, 0)]
         win = np.ones([0])
         player = np.log([])
-        aux = np.log([])
         adversary = np.log([])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([0.0], d1, "d1")
         self.assert_close([0.0], d2, "d2")
 
@@ -150,8 +124,7 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         slices = [(0, 1), (1, 4)]
         win: _Array = np.array([1.0, 1.0, 1.0, -1.0])
         player = np.log([6.0, 4.0, 4.0, 4.0])
-        aux = np.zeros([4])
         adversary = np.log([6.0, 4.0, 12.0, 12.0])
-        d1, d2 = get_bt_derivatives(slices, win, player, aux, adversary)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([0.5, 1.0], d1, "d1")
         self.assert_close([-0.25, -0.625], d2, "d2")

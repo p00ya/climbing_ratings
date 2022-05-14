@@ -36,13 +36,11 @@ def get_bt_derivatives(
     slices: List[_Slice],
     win: _Array,
     player: _Array,
-    aux: _Array,
     adversary: _Array,
 ) -> Tuple[_Array, _Array]: ...
 def _get_bt_summation_terms(
     win: _Array,
     player: _Array,
-    aux: _Array,
     adversary: _Array,
 ) -> Tuple[_Array, _Array]: ...
 def _sum(

@@ -339,12 +339,11 @@ class WholeHistoryRating:
         """
         ascents = pages.ascents
         ratings = pages.ratings
-        aux_ratings = aux_pages.ratings
         num_ascents = len(ascents.adversary)
 
         page_ratings = expand_to_slices(ratings, ascents.slices, num_ascents)
-        aux_ratings = expand_to_slices_sparse(
-            aux_ratings, aux_pages.ascents.slices, num_ascents
+        page_ratings += expand_to_slices_sparse(
+            aux_pages.ratings, aux_pages.ascents.slices, num_ascents
         )
 
         route_ratings = self.route_ratings[ascents.adversary]
@@ -353,7 +352,6 @@ class WholeHistoryRating:
             ascents.slices,
             ascents.win,
             page_ratings,
-            aux_ratings,
             route_ratings,
         )
 
@@ -440,7 +438,6 @@ class WholeHistoryRating:
             self._route_ascents.slices,
             self._route_ascents.win,
             route_ratings,
-            np.zeros_like(route_ratings),
             page_ratings,
         )
 
