@@ -27,24 +27,6 @@ NormalizeAscentType <- function(ascent_type) {
     dplyr::recode(hangdog = "dog")
 }
 
-#' Coerces `x[[idx]]` to an integer, replacing NULL with NA.
-#'
-#' @param x a list/vector of lists
-#' @param idx the element of the outer list
-#' @keywords internal
-.AsIntegerOrNA <- function(x, idx = 1) {
-  ifelse(is.null(x), NA, as.integer(x[[idx]]))
-}
-
-#' Coerces `x[[idx]]` to a character, replacing NULL with NA.
-#'
-#' @param x a list/vector of lists
-#' @param idx the element of the outer list
-#' @keywords internal
-.AsCharacterOrNA <- function(x, idx = 1) {
-  ifelse(is.null(x), NA, as.character(x[[idx]]))
-}
-
 #' Parses ascent data from JSON responses as returned by theCrag's ascent facet
 #' API.
 #'
@@ -72,7 +54,7 @@ ParseJsonAscents <- function(json) {
     dplyr::transmute(
       ascentId = FlattenChr(.data$id),
       route = FlattenChr(.data$routeID),
-      tick = NormalizeAscentType(FlattenChr(.data$tick)),
+      tick = FlattenChr(.data$tick),
       climber = FlattenChr(.data$accountID),
       timestamp = suppressWarnings(as.integer(as.POSIXct(
         FlattenChr(.data$date),
@@ -80,46 +62,14 @@ ParseJsonAscents <- function(json) {
         optional = TRUE
       ))),
       grade = FlattenInt(.data$gradeScore),
-      style = relevel(as.factor(FlattenChr(.data$cprStyle)), "Sport"),
+      style = FlattenChr(.data$cprStyle),
       .data$pitch
     ) %>%
-    purrr::pmap_dfr(function(ascentId, route, tick, climber, timestamp, grade,
-                             style, pitch, ...) {
-      if (is.null(pitch)) {
-        # Return a list rather than a data.frame here, because
-        # data.frame is horribly slow.
-        return(
-          list(
-            ascentId = ascentId,
-            tick = tick,
-            route = route,
-            grade = grade,
-            style = style,
-            climber = climber,
-            timestamp = timestamp
-          )
-        )
-      }
-      # Split an ascent of a multipitch route into multiple ascents
-      # corresponding to each pitch.  Suffix the ascent and route IDs, e.g.
-      # with a "P2" suffix for pitch 2.
-      purrr::map_dfr(pitch, function(p) {
-        list(
-          pitch.number = .AsIntegerOrNA(p, 1),
-          pitch.tick = .AsCharacterOrNA(p, 2)
-        )
-      }) %>%
-        tidyr::drop_na() %>%
-        dplyr::transmute(
-          ascentId = paste0(ascentId, "P", .data$pitch.number),
-          tick = NormalizeAscentType(unlist(.data$pitch.tick)),
-          route = paste0(route, "P", .data$pitch.number),
-          grade = grade,
-          style = style,
-          climber = climber,
-          timestamp = timestamp
-        )
-    })
+    ExpandPitches() %>%
+    dplyr::mutate(
+      tick = NormalizeAscentType(.data$tick),
+      style = relevel(as.factor(.data$style), "Sport")
+    )
 }
 
 #' Reads all ascent JSON in directory "dir".

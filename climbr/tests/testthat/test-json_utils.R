@@ -71,3 +71,161 @@ describe("FlattenChr", {
     expect_warning(FlattenChr(list(list("a")), 2L))
   })
 })
+
+describe("ExpandPitches", {
+  it("copies no-pitch ascent", {
+    df <- data.frame(
+      ascentId = "1",
+      route = "2",
+      tick = "onsight",
+      climber = "3",
+      timestamp = 5L,
+      grade = 7L,
+      style = "Sport",
+      pitch = I(list(NULL))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = "1",
+        route = "2",
+        tick = "onsight",
+        climber = "3",
+        timestamp = 5L,
+        grade = 7L,
+        style = "Sport"
+      )
+    )
+  })
+
+  it("drops pitch with no tick", {
+    df <- data.frame(
+      ascentId = "1",
+      route = "2",
+      tick = "onsight",
+      climber = "3",
+      timestamp = 5L,
+      grade = 7L,
+      style = "Sport",
+      pitch = I(list(list(list("1", NULL))))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = character(),
+        route = character(),
+        tick = character(),
+        climber = character(),
+        timestamp = integer(),
+        grade = integer(),
+        style = character()
+      )
+    )
+  })
+
+  it("drops pitch with no number", {
+    df <- data.frame(
+      ascentId = "1",
+      route = "2",
+      tick = "onsight",
+      climber = "3",
+      timestamp = 5L,
+      grade = 7L,
+      style = "Sport",
+      pitch = I(list(list(list(NULL, NULL))))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = character(),
+        route = character(),
+        tick = character(),
+        climber = character(),
+        timestamp = integer(),
+        grade = integer(),
+        style = character()
+      )
+    )
+  })
+
+  it("translates single pitch and tick", {
+    df <- data.frame(
+      ascentId = "1",
+      route = "2",
+      tick = "onsight",
+      climber = "3",
+      timestamp = 5L,
+      grade = 7L,
+      style = "Sport",
+      pitch = I(list(list(list("1", list("onsight")))))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = "1P1",
+        route = "2P1",
+        tick = "onsight",
+        climber = "3",
+        timestamp = 5L,
+        grade = 7L,
+        style = "Sport"
+      )
+    )
+  })
+
+  it("expands one ascent multiple pitches", {
+    df <- data.frame(
+      ascentId = "1",
+      route = "2",
+      tick = "onsight",
+      climber = "3",
+      timestamp = 5L,
+      grade = 7L,
+      style = "Sport",
+      pitch = I(list(list(
+        list("1", list("onsight")),
+        list("2", list("dog"))
+      )))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = c("1P1", "1P2"),
+        route = c("2P1", "2P2"),
+        tick = c("onsight", "dog"),
+        climber = c("3", "3"),
+        timestamp = c(5L, 5L),
+        grade = c(7L, 7L),
+        style = c("Sport", "Sport")
+      )
+    )
+  })
+
+  it("expands multipitch and no-pitch ascents", {
+    df <- data.frame(
+      ascentId = c("1", "21"),
+      route = c("2", "22"),
+      tick = c("onsight", "redpoint"),
+      climber = c("3", "23"),
+      timestamp = c(5L, 25L),
+      grade = c(7L, 27L),
+      style = c("Sport", "Sport"),
+      pitch = I(list(
+        list(list("1", list("onsight")), list("2", list("dog"))),
+        NULL
+      ))
+    )
+    expect_equal(
+      ExpandPitches(df),
+      data.frame(
+        ascentId = c("1P1", "1P2", "21"),
+        route = c("2P1", "2P2", "22"),
+        tick = c("onsight", "dog", "redpoint"),
+        climber = c("3", "3", "23"),
+        timestamp = c(5L, 5L, 25L),
+        grade = c(7L, 7L, 27L),
+        style = c("Sport", "Sport", "Sport")
+      )
+    )
+  })
+})

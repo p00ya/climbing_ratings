@@ -34,10 +34,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ExpandPitches
+DataFrame ExpandPitches(DataFrame df);
+RcppExport SEXP _climbr_ExpandPitches(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(ExpandPitches(df));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_climbr_FlattenInt", (DL_FUNC) &_climbr_FlattenInt, 2},
     {"_climbr_FlattenChr", (DL_FUNC) &_climbr_FlattenChr, 2},
+    {"_climbr_ExpandPitches", (DL_FUNC) &_climbr_ExpandPitches, 1},
     {NULL, NULL, 0}
 };
 

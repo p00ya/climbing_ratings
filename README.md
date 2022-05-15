@@ -127,7 +127,7 @@ Instead of reading the ascents data from logbook exports, it can instead be read
 source("01-data_prep_json.R")
 ```
 
-Note that processing the JSON can be quite slow (on the order of 1 hour for 1 million ascents!), so as a convenience, the results of the data preparation script can be read from a file:
+Note that processing the JSON can be quite slow (on the order of 1 minute for 1 million ascents), so as a convenience, the results of the data preparation script can be read from a file:
 
 ```R
 data_dir <- "data"

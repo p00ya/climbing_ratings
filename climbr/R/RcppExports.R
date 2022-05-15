@@ -21,3 +21,19 @@ FlattenChr <- function(lst, idx = 1L) {
     .Call('_climbr_FlattenChr', PACKAGE = 'climbr', lst, idx)
 }
 
+#' Expands ascents that have pitch information into separate ascents.
+#'
+#' Ascents without pitch information will be copied 1:1 to the output.
+#' Ascents with pitch information will have one ascent row in the output for
+#' each pitch that includes both a label and a tick type.  The route and
+#' ascent ID will have the pitch label appended to them, e.g. a "P1"
+#' suffix for pitch 1.
+#'
+#' @param df a data.frame with columns ascentId, route, tick, climber,
+#'     timestamp, grade, style, and pitch.
+#' @return a data.frame with columns ascentId, route, tick, climber,
+#'     timestamp, grade, and style.
+ExpandPitches <- function(df) {
+    .Call('_climbr_ExpandPitches', PACKAGE = 'climbr', df)
+}
+
