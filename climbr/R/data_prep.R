@@ -62,12 +62,12 @@ IsTickClean <- function(ticktype) {
 #' "tick", "grade", "style", "timestamp".
 #' @param min_time a POSIXct; ascents from before this time are removed.
 #' @param max_time a POSIXct; ascents from after this time are removed.
-CleanAscents <- function(df_raw, min_time = 0L, max_time = NULL) {
+CleanAscents <- function(df_raw, min_time = 0L, max_time = NA) {
   df <- df_raw %>%
     dplyr::mutate(clean = IsTickClean(.data$tick)) %>%
     tidyr::drop_na(.data$clean, .data$grade, .data$timestamp, .data$style) %>%
     dplyr::filter(min_time <= .data$timestamp) %>%
-    dplyr::filter(is.null(max_time) || .data$timestamp < max_time)
+    dplyr::filter(is.na(max_time) | .data$timestamp < max_time)
 
   # Summarise routes by their grade and number of ascents:
   routes <- df %>%
