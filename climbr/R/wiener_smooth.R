@@ -200,6 +200,7 @@ predict.WienerSmooth <- function(object, newdata = NULL, level = 0.9, ...) {
 #'
 #' @inheritParams ggplot2::stat_smooth
 #' @param wsq the Wiener variance.
+#' @param geom the ggplot2 geom.
 stat_wiener_smooth <- function(mapping = NULL, data = NULL,
                                geom = "smooth", position = "identity",
                                ...,

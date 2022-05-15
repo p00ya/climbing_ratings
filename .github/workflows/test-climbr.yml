@@ -86,6 +86,7 @@ jobs:
       shell: Rscript --vanilla {0}
     - name: Build and test
       run: |
+        devtools::document("climbr")
         devtools::check("climbr")
         testthat::test_dir("tests")
       shell: Rscript --vanilla {0}
