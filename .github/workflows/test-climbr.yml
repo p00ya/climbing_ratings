@@ -48,6 +48,9 @@ jobs:
       TZ: UTC
     steps:
     - uses: actions/checkout@v2
+    - name: C++ Lint
+      run: |
+        clang-format -n climbr/src/json_utils.cpp
     - uses: r-lib/actions/setup-r@v2
       with:
         r-version: ${{ matrix.r }}
