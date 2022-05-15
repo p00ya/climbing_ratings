@@ -17,6 +17,7 @@ Suggests:
     precrec,
     testthat (>= 2.1.0)
 Imports:
+    Rcpp (>= 1.0.0),
     dplyr (>= 1.0.1),
     ggplot2 (>= 3.0.0),
     magrittr,
@@ -26,5 +27,6 @@ Imports:
     stringr,
     tidyr,
     utils
+LinkingTo: Rcpp
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2

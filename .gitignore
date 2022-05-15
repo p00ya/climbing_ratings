@@ -5,7 +5,7 @@
 !/.github
 !/.travis.yml
 *.pyc
-*.c
+climbing_ratings/*.c
 *.so
 *.tar.gz
 /dist/
@@ -14,4 +14,5 @@
 /*.egg
 /data
 /climbr/man
+/climbr/**/*.o
 /tests/testdata/**/*.rds

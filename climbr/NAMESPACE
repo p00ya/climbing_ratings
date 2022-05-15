@@ -5,3 +5,7 @@ importFrom(magrittr, "%>%")
 importFrom(rlang, .data)
 import(stats)
 S3method(predict, WienerSmooth)
+useDynLib(climbr)
+# Workaround to initialize Rcpp; see:
+# http://adv-r.had.co.nz/Rcpp.html#rcpp-package
+importFrom(Rcpp, sourceCpp)

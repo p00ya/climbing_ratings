@@ -45,27 +45,6 @@ NormalizeAscentType <- function(ascent_type) {
   ifelse(is.null(x), NA, as.character(x[[idx]]))
 }
 
-#' Converts the list-of-singleton-integer-list structures typical of jsonlite to
-#' an atomic vector of integers.  NULLs are converted to NA.
-#'
-#' @param lst a list of lists
-#' @param idx the element of the outer list
-#' @keywords internal
-.FlattenInt <- function(lst, idx = 1) {
-  purrr::map_int(lst, .AsIntegerOrNA, idx = idx)
-}
-
-#' Converts the list-of-singleton-character-list structures typical of jsonlite
-#' to an atomic vector of characters.  NULLs are converted to NA.
-#'
-#' @param lst a list of lists
-#' @param idx the element of the outer list
-#' @keywords internal
-.FlattenChr <- function(lst, idx = 1) {
-  purrr::map_chr(lst, .AsCharacterOrNA, idx = idx)
-}
-
-
 #' Parses ascent data from JSON responses as returned by theCrag's ascent facet
 #' API.
 #'
@@ -91,17 +70,17 @@ ParseJsonAscents <- function(json) {
     )
   df_json %>%
     dplyr::transmute(
-      ascentId = .FlattenChr(.data$id),
-      route = .FlattenChr(.data$routeID),
-      tick = NormalizeAscentType(.FlattenChr(.data$tick)),
-      climber = .FlattenChr(.data$accountID),
+      ascentId = FlattenChr(.data$id),
+      route = FlattenChr(.data$routeID),
+      tick = NormalizeAscentType(FlattenChr(.data$tick)),
+      climber = FlattenChr(.data$accountID),
       timestamp = suppressWarnings(as.integer(as.POSIXct(
-        .FlattenChr(.data$date),
+        FlattenChr(.data$date),
         format = "%FT%H:%M:%SZ",
         optional = TRUE
       ))),
-      grade = .FlattenInt(.data$gradeScore),
-      style = relevel(as.factor(.FlattenChr(.data$cprStyle)), "Sport"),
+      grade = FlattenInt(.data$gradeScore),
+      style = relevel(as.factor(FlattenChr(.data$cprStyle)), "Sport"),
       .data$pitch
     ) %>%
     purrr::pmap_dfr(function(ascentId, route, tick, climber, timestamp, grade,

@@ -79,7 +79,7 @@ jobs:
     - name: Lint
       run: |
         remotes::install_cran("styler")
-        quit(status = any(styler::style_dir()$changed))
+        quit(status = any(styler::style_dir(exclude_files = "climbr/R/RcppExports.R")$changed))
       shell: Rscript --vanilla {0}
     - name: Build and test
       run: |

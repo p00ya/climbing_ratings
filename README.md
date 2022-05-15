@@ -87,10 +87,10 @@ Rscript --vanilla -e 'devtools::check("climbr")'
 
 ### R scripts
 
-A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  Most of the logic is in the `climbr` package, which can be used in-place (without installation) using the "devtools" package.  The scripts also use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  The packages can be installed from R:
+A collection of R scripts are used for data preparation and results analysis.  They can be sourced into an R session.  Most of the logic is in the `climbr` package, which can be used in-place (without installation) using the "devtools" package.  The scripts also use several libraries from the "tidyverse" collection.  Additionally, to read JSON data from theCrag API responses, the "jsonlite" package is required.  To perform cross-validation, the "caret" package is required.  Rcpp and a C++ toolchain are required to build some optimized data preparation code.  The packages can be installed from R:
 
 ```R
-install.packages(c("devtools", "tidyverse", "jsonlite", "caret"))
+install.packages(c("devtools", "tidyverse", "jsonlite", "caret", "Rcpp"))
 ```
 
 `01-data_prep.R` creates appropriate input CSV files for the `climbing_ratings` Python script.
