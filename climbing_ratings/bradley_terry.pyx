@@ -18,6 +18,8 @@ cimport numpy as cnp
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.math cimport fabs
 
+from cython.parallel import prange
+
 
 # Workaround for "expl" being missing from Cython's libc.math.
 # See: https://github.com/cython/cython/issues/3570
@@ -103,6 +105,8 @@ def get_bt_derivatives(
 
     A player is an abstraction for an entity with a rating; it will correspond
     to a page or a route.
+
+    Releases the GIL; must be called on the main thread.
 
     Parameters
     ----------
@@ -191,7 +195,7 @@ cdef void _cget_bt_summation_terms(
     """
     cdef Py_ssize_t i
     cdef long double t
-    for i in range(n):
+    for i in prange(n, nogil=True, schedule="static"):
         # From WHR 2.2 Bradley-Terry Model:
         #
         # P(player i beats player k)
@@ -212,13 +216,10 @@ cdef void _cget_bt_summation_terms(
         #   win:   1 / (exp(winner - loser) + 1)
         #   loss: -1 / (exp(winner - loser) + 1)
         # d^2 ln P / dr^2 = -1 / (2 (cosh(winner - loser) + 1))
-
-        t = <long double> player[i] - adversary[i]
-        # t = winner - loser
-        t *= win[i]
-
-        d1_terms[i] = win[i] / (expl(t) + 1.0)
-        d2_terms[i] = -0.5 / (coshl(t) + 1.0)
+        d1_terms[i] = (win[i] /
+            (expl((<long double> player[i] - adversary[i]) * win[i]) + 1.0))
+        d2_terms[i] = (-0.5 /
+            (coshl((<long double> player[i] - adversary[i]) * win[i]) + 1.0))
 
 
 def _get_bt_summation_terms(

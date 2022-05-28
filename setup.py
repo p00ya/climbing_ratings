@@ -17,6 +17,7 @@
 from setuptools import setup, Extension
 from Cython.Build import cythonize
 import numpy
+import distutils
 
 
 # setuptools.Extension kwargs for building Cython extensions.
@@ -37,9 +38,24 @@ bradley_terry = Extension(
     # Disable some maths optimizations that defeat precision-preserving
     # ordering.
     extra_compile_args=cython_ext["extra_compile_args"]
-    + ["-fno-associative-math", "-fno-reciprocal-math"],
+    + [
+        "-fno-associative-math",
+        "-fno-reciprocal-math",
+    ]
+    + (
+        # Apple's clang doesn't natively support OpenMP; the following will work
+        # with a third-party OpenMP library (e.g. libomp in Homebrew), though
+        # the CFLAGS and LDFLAGS environment variables should be set before
+        # running setup.py to include the appropriate directories with -I and -L
+        # respectively.
+        ["-Xpreprocessor"]
+        if distutils.util.get_platform().startswith("macos")
+        else []
+    )
+    + ["-fopenmp"],
     define_macros=cython_ext["define_macros"],
     include_dirs=cython_ext["include_dirs"],
+    libraries=["omp"],  # use "gomp" instead for GCC
 )
 
 process_helpers = Extension(
