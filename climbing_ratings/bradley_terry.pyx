@@ -174,6 +174,7 @@ cdef tuple _cget_bt_summation_terms(
         d2_terms contains the "d^2 ln P / dr^2" terms for each ascent.
     """
     cdef Py_ssize_t n = player.shape[0]
+    cdef Py_ssize_t i
 
     # Use extended precision to compensate for the loss of precision due to
     # exponentiation.
