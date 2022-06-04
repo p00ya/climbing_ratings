@@ -15,6 +15,7 @@
 # limitations under the License.
 
 cimport numpy as cnp
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.math cimport fabs
 
 
@@ -122,11 +123,16 @@ def get_bt_derivatives(
         Bradley-Terry log-likelihood a "player" wins, with respect to the
         "natural rating" of that player.
     """
-    cdef long double[::1] d1_terms, d2_terms
-    d1_terms, d2_terms = _cget_bt_summation_terms(win, player, adversary)
+    cdef Py_ssize_t n = player.shape[0]
+    cdef long double *d1_terms = <long double *> PyMem_Malloc(2 * n * sizeof(long double))
+    cdef long double *d2_terms = &d1_terms[n]
+
+    if not (d1_terms):
+        raise MemoryError()
+
+    _cget_bt_summation_terms(win, player, adversary, n, d1_terms, d2_terms)
 
     cdef Py_ssize_t num_slices = len(slices)
-
     cdef double[::1] d1 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
     cdef double[::1] d2 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
 
@@ -146,16 +152,26 @@ def get_bt_derivatives(
         d1[i] = _csum(d1_terms, start, end)
         d2[i] = _csum(d2_terms, start, end)
 
+    PyMem_Free(d1_terms)
+
     return (d1.base, d2.base)
 
 
-cdef tuple _cget_bt_summation_terms(
-    double[::1] win, double[::1] player, double[::1] adversary
+cdef void _cget_bt_summation_terms(
+    double[::1] win,
+    double[::1] player,
+    double[::1] adversary,
+    Py_ssize_t n,
+    long double *d1_terms,
+    long double *d2_terms,
 ):
     """Get the Bradley-Terry derivative terms for each ascent.
 
     A player is an abstraction for an entity with a rating; it will correspond
     to a page or a route.
+
+    Extended precision numbers are used to compensate for the loss of precision
+    due to exponentiation.
 
     Parameters
     ----------
@@ -166,21 +182,14 @@ cdef tuple _cget_bt_summation_terms(
         Natural rating of the "player" for each ascent.
     adversary : contiguous ndarray of longdouble
         Natural rating of the adversary for each ascent.
-
-    Returns
-    -------
-    (d1_terms : MemoryView, d2_terms : MemoryView)
-        d1_terms contains the "d ln P / dr" terms for each ascent.
-        d2_terms contains the "d^2 ln P / dr^2" terms for each ascent.
+    n : Py_ssize_t
+        Number of ascents.
+    d1_terms : long double *
+        Output array of the "d ln P / dr" terms for each ascent.
+    d2_terms : long double *
+        Output array of the "d^2 ln P / dr^2" terms for each ascent.
     """
-    cdef Py_ssize_t n = player.shape[0]
     cdef Py_ssize_t i
-
-    # Use extended precision to compensate for the loss of precision due to
-    # exponentiation.
-    cdef long double[::1] d1_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
-    cdef long double[::1] d2_terms = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
-
     cdef long double t
     for i in range(n):
         # From WHR 2.2 Bradley-Terry Model:
@@ -211,17 +220,19 @@ cdef tuple _cget_bt_summation_terms(
         d1_terms[i] = win[i] / (expl(t) + 1.0)
         d2_terms[i] = -0.5 / (coshl(t) + 1.0)
 
-    return (d1_terms, d2_terms)
-
 
 def _get_bt_summation_terms(
     double[::1] win, double[::1] player, double[::1] adversary
 ):
     """Wraps _cget_bt_summation_terms() for testing"""
-    return _cget_bt_summation_terms(win, player, adversary)
+    cdef Py_ssize_t n = player.shape[0]
+    cdef long double[::1] d1 = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
+    cdef long double[::1] d2 = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
+    _cget_bt_summation_terms(win, player, adversary, n, &d1[0], &d2[0])
+    return (d1, d2)
 
 
-cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):
+cdef long double _csum(const long double *x, Py_ssize_t start, Py_ssize_t end):
     """Compute the sum of x[start:end], with error compensation."""
     # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
     # this must be compiled with clang's "-fno-associative-math" or equivalent.
@@ -243,4 +254,4 @@ cdef long double _csum(const long double[::1] x, Py_ssize_t start, Py_ssize_t en
 
 def _sum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):
     """Wraps _csum() for testing"""
-    return _csum(x, start, end)
+    return _csum(&x[0], start, end)
