@@ -695,8 +695,11 @@ def _extract_slices(
     Returns
     -------
         Returns a list x such that x[i] is a tuple (start, end) where start is
-        the earliest index of the least value >= i, and end is the latest index
-        of the greatest value <= i.
+        the earliest index of the least value >= i, and end is one plus the
+        latest index of the greatest value <= i.
+
+        If "values" is monotonic, then "values[x[i][0]:x[i][1]]"
+        is the slice containing (and only containing) all values of "i".
     """
     slices: List[_Slice] = [None] * num_slices  # type: ignore
     start = end = 0
