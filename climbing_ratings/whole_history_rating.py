@@ -23,8 +23,7 @@ from .bradley_terry import (
     expand_to_slices_sparse,
     get_bt_derivatives,
 )
-from .normal_distribution import NormalDistribution
-from .process import Process
+from . import derivatives
 from numpy.typing import ArrayLike, NDArray
 from typing import List, NamedTuple, Optional, Tuple, Union, cast
 
@@ -242,7 +241,7 @@ class WholeHistoryRating:
         routes_rating
             Initial natural ratings for each route.
         """
-        self._bases = _PageModel(
+        self._bases = _Pages(
             ascents,
             pages,
             ascents.page,
@@ -250,7 +249,7 @@ class WholeHistoryRating:
             hparams.climber_prior_variance,
             hparams.climber_wiener_variance,
         )
-        self._styles = _PageModel(
+        self._styles = _Pages(
             ascents,
             style_pages,
             ascents.style_page,
@@ -264,7 +263,7 @@ class WholeHistoryRating:
         self._route_ascents = _make_route_ascents(
             self._bases.ascents, len(routes_rating)
         )
-        self._route_priors = NormalDistribution(
+        self._route_priors = derivatives.MultiNormalDistribution(
             self._route_ratings, hparams.route_prior_variance
         )
 
@@ -283,9 +282,7 @@ class WholeHistoryRating:
         whr._route_ratings = self._route_ratings.copy()
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
-        whr._route_priors = NormalDistribution(
-            self._route_ratings, self._route_priors.sigma_sq
-        )
+        whr._route_priors = self._route_priors
         return whr
 
     @property
@@ -319,7 +316,7 @@ class WholeHistoryRating:
         return self._route_var
 
     def __get_page_bt_derivatives(
-        self, pages: "_PageModel", aux_pages: Optional["_PageModel"]
+        self, pages: "_Pages", aux_pages: Optional["_Pages"]
     ) -> Tuple[_Array, _Array]:
         """Gets the Bradley-Terry terms for page/style-page ratings.
 
@@ -363,8 +360,8 @@ class WholeHistoryRating:
 
     def __update_page_ratings(
         self,
-        pages: "_PageModel",
-        aux_pages: Optional["_PageModel"],
+        pages: "_Pages",
+        aux_pages: Optional["_Pages"],
         only_variance: bool,
     ) -> None:
         """Update the ratings of all pages.
@@ -382,26 +379,10 @@ class WholeHistoryRating:
         """
         bt_d1, bt_d2 = self.__get_page_bt_derivatives(pages, aux_pages)
 
-        ratings = pages.ratings
-        for i, (start, end) in enumerate(pages.slices):
-            if start == end:
-                continue
-            climber = pages.processes[i]
-
-            if only_variance:
-                climber.get_covariance(
-                    ratings[start:end],
-                    bt_d1[start:end],
-                    bt_d2[start:end],
-                    pages.var[start:end],
-                    pages.cov[start : end - 1],
-                )
-            else:
-                delta = climber.get_ratings_adjustment(
-                    ratings[start:end], bt_d1[start:end], bt_d2[start:end]
-                )
-                # r2 = r1 - delta
-                ratings[start:end] -= delta
+        if only_variance:
+            pages.model.update_covariance(bt_d1, bt_d2)
+        else:
+            pages.model.update_ratings(bt_d1, bt_d2)
 
     def update_base_ratings(self, only_variance: bool = False) -> None:
         """Update the ratings of all (base) pages.
@@ -452,10 +433,9 @@ class WholeHistoryRating:
             page_ratings,
         )
 
-        # Prior terms.
-        prior_d1, prior_d2 = self._route_priors.get_derivatives(self._route_ratings)
-        d1 += prior_d1
-        d2 += prior_d2
+        # Gaussian prior terms.
+        self._route_priors.add_gradient(self._route_ratings, d1)
+        d2 += self._route_priors.d2()
 
         if only_variance:
             np.reciprocal(d2, self._route_var)
@@ -544,30 +524,20 @@ class _SlicedAscents(NamedTuple):
     win: _Array
 
 
-class _PageModel:
-    """Encapsulates the model for a particular page-slicing.
+class _Pages:
+    """Encapsulates the ascents and page ratings model for climbers.
 
-    This model generalizes over both base pages and style-pages.
+    One _Pages object may store the state for all pages for all climbers.
 
     Attributes
     ----------
-    ratings : _Array
-        Current estimate of the natural rating of each page.
-    var : _Array
-        Estimate of the variance of the natural rating of each page.
-    cov : _Array
-        Estimate of the covariance between the natural rating of each page and
-        the next page.  The covariance for the last page of each climber is
-        not meaningful.
     ascents : _SlicedAscents
         Ascents in page order.
-    slices : list of pairs
-        Start and end indices in ratings for each climber.
-    processes : list of Process
-        Process models (in the same order as slices).
+    model : PageModel
+        Estimation state for all pages.
     """
 
-    __slots__ = ("ratings", "var", "cov", "ascents", "slices", "processes")
+    __slots__ = ("ascents", "model")
 
     def __init__(
         self,
@@ -578,7 +548,7 @@ class _PageModel:
         prior_var: float,
         wiener_var: float,
     ):
-        """Initialize a _PageModel.
+        """Initialize a _Pages.
 
         Parameters
         ----------
@@ -599,29 +569,38 @@ class _PageModel:
         """
         num_pages = len(pages)
         num_climbers = 0 if len(pages.climber) == 0 else pages.climber[-1] + 1
-        self.ratings = np.full(num_pages, prior_mean)
-        self.var = np.empty(num_pages)
-        self.cov = np.zeros(num_pages)
         self.ascents = self.__make_page_ascents(ascents, ascents_page, num_pages)
-        self.slices = _extract_slices(pages.climber, num_climbers)
-        self.processes = self.__make_processes(
-            prior_var, wiener_var, pages, self.slices
-        )
+        slices = _extract_slices(pages.climber, num_climbers)
 
-    def __copy__(self) -> "_PageModel":
-        """Returns a copy of this table.
+        initial = derivatives.NormalDistribution(prior_mean, prior_var)
+        gaps = _get_pages_gap(pages.timestamp)
+        dslices = derivatives.Slices(slices)
+        w = derivatives.WienerProcess(gaps, dslices, wiener_var)
+        invariants = derivatives.PageInvariants(initial, w, dslices)
+        self.model = derivatives.PageModel(invariants, np.zeros(num_pages))
+
+    def __copy__(self) -> "_Pages":
+        """Returns a copy of the model.
 
         The ratings, var and cov arrays will be deep-copied, while the other
-        fields are shallow-copied.
+        (immutable) fields are shallow-copied.
         """
-        pages: _PageModel = self.__class__.__new__(self.__class__)
-        pages.ratings = self.ratings.copy()
-        pages.var = self.var.copy()
-        pages.cov = self.cov.copy()
+        pages: _Pages = self.__class__.__new__(self.__class__)
         pages.ascents = self.ascents
-        pages.slices = self.slices
-        pages.processes = self.processes
+        pages.model = copy.copy(self.model)
         return pages
+
+    @property
+    def ratings(self) -> _Array:
+        return self.model.ratings
+
+    @property
+    def var(self) -> _Array:
+        return self.model.var
+
+    @property
+    def cov(self) -> _Array:
+        return self.model.cov
 
     @staticmethod
     def __make_page_ascents(
@@ -635,21 +614,6 @@ class _PageModel:
         win: _Array = ascents.clean - 0.5
         np.sign(win, win)
         return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
-
-    @staticmethod
-    def __make_processes(
-        var: float,
-        wiener_var: float,
-        pages: PagesTable,
-        page_slices: List[Tuple[int, int]],
-    ) -> List[Process]:
-        """Make processes for each slice of pages."""
-        pages_gap = _get_pages_gap(pages.timestamp)
-        prior = NormalDistribution(np.array([0.0]), var)
-        return [
-            Process(wiener_var, prior, pages_gap[start : end - 1])
-            for (start, end) in page_slices
-        ]
 
     def ascent_ratings(self) -> _Array:
         """Page ratings for each ascent."""

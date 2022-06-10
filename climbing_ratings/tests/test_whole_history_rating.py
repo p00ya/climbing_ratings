@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+import copy
 import math
+import unittest
 import numpy as np
 from ..whole_history_rating import (
     AscentsTable,
@@ -212,6 +213,14 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
 
         self.whr.update_base_ratings(True)
         self.assert_close([0.49650051], page.var, "page.var")
+
+    def test_copy(self) -> None:
+        """Tests that copies of WholeHistoryRating have independent ratings"""
+        old = copy.copy(self.whr)
+        self.whr.update_base_ratings()
+        page = self.whr.page
+        self.assert_close([0.0], old.page.ratings, "old.page.ratings")
+        self.assert_close([1.2], self.whr._bases.model.ratings, "page.ratings")
 
 
 class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
@@ -417,4 +426,4 @@ class TestWholeHistoryRatingMultiplePagesAndStyles(unittest.TestCase):
         self.assert_close([0.87971224], page.ratings, "page.ratings")
 
         self.whr.update_base_ratings(True)
-        self.assert_close([0.61661873], page.var, "page.var")
+        self.assert_close([0.61661873, 0.0], page.var, "page.var")
