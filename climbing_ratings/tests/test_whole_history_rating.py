@@ -107,7 +107,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
         """Test WholeHistoryRating.update_base_ratings"""
         self.whr.update_base_ratings(True)
         page = self.whr.page
-        self.assert_close([0.0, 0.0], page.ratings, "page.ratings")
+        self.assert_close([0.0], page.ratings, "page.ratings")
         self.assert_close([0.4], page.var, "page.var")
 
     def test_update_route_ratings(self) -> None:
@@ -125,7 +125,7 @@ class TestWholeHistoryRatingStable(unittest.TestCase):
     def test_update_ratings(self) -> None:
         """Test WholeHistoryRating.update_ratings"""
         self.whr.update_ratings()
-        self.assert_close([0.0, 0.0], self.whr.page.ratings, "page.ratings")
+        self.assert_close([0.0], self.whr.page.ratings, "page.ratings")
         self.assert_close([0.0, 0.0, 0.0], self.whr.route_ratings, "route_ratings")
 
     def test_update_covariance(self) -> None:

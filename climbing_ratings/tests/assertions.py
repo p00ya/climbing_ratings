@@ -46,7 +46,7 @@ def assert_close(
         The name of the value for use in the failure message.
     """
     expected = np.array(expected)
-    if np.allclose(expected, actual):
+    if expected.shape == actual.shape and np.allclose(expected, actual):
         return
     msg = "expected {} = {}, got {}".format(name, expected, actual)
     raise test_case.failureException(msg)
