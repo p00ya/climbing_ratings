@@ -282,6 +282,38 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
         self.assert_close([0.5216223, 1.0962046], page.var, "page.var")
 
 
+class TestWholeHistoryRatingMultipleClimbers(unittest.TestCase):
+    """Tests for the WholeHistoryRating class with multiple climbers.
+
+    2 climbers, 1 page each, same routes but opposite outcomes.
+    """
+
+    def setUp(self) -> None:
+        np.seterr(all="raise")
+        self.assert_close = assert_close_get(self, self.__class__)
+        ascents = AscentsTable(
+            route=[0, 1, 2, 0, 1, 2],
+            clean=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+            page=[0, 0, 0, 1, 1, 1],
+            style_page=[-1, -1, -1, -1, -1, -1],
+        )
+        pages = PagesTable(climber=[0, 1], timestamp=[0.0, 0.0])
+        style_pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
+        routes_grade = [0.0, 0.0, 0.0]
+        self.whr = WholeHistoryRating(
+            _hparams, ascents, pages, style_pages, routes_grade
+        )
+
+    def test_update_base_ratings(self) -> None:
+        """Test WholeHistoryRating.update_base_ratings converges"""
+        self.whr.update_base_ratings()
+        page = self.whr.page
+        self.assert_close([0.85714286, -0.85714286], page.ratings, "page.ratings")
+
+        self.whr.update_base_ratings()
+        self.assert_close([0.87967237, -0.87967237], page.ratings, "page.ratings")
+
+
 class TestWholeHistoryRatingStyles(unittest.TestCase):
     """Tests for the WholeHistoryRating class with page-styles.
 
