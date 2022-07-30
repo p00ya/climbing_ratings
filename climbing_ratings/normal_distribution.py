@@ -23,37 +23,38 @@ from typing import Sequence, Tuple, Union
 _Array = NDArray[np.float_]
 
 
-_FloatLike = Union[float, _Array]
-
-
 class NormalDistribution:
-    """Models variables drawn from a Gaussian distribution."""
+    """Models variables drawn from a Gaussian distribution.
+
+    One NormalDistribution object can represent multiple distributions, each
+    with the same variance but different means.
+    """
 
     __slots__ = ("_mu", "_sigma_sq")
 
-    def __init__(self, mu: _FloatLike, sigma_sq: _FloatLike):
+    def __init__(self, mu: _Array, sigma_sq: float):
         """
         Parameters
         ----------
         mu
-            Mean of the normal distribution.
+            Mean of the normal distribution, for each distribution.
         sigma_sq
-            Variance of the normal distribution.  Must be positive.
+            Variance of all the normal distributions.  Must be positive.
         """
-        self._mu: _Array = np.asarray(mu)
-        self._sigma_sq: _Array = np.asarray(sigma_sq)
+        self._mu: _Array = mu
+        self._sigma_sq: float = sigma_sq
 
     @property
-    def sigma_sq(self) -> Union[float, ArrayLike]:
+    def sigma_sq(self) -> float:
         """The variance parameter."""
         return self._sigma_sq
 
-    def get_derivatives(self, x: _Array) -> Tuple[_Array, _Array]:
+    def get_derivatives(self, x: _Array) -> Tuple[_Array, float]:
         """Return the first and second derivative of the log-likelihood.
 
         This method is vectorized: it will pair the distribution parameters
         from the initialization to each value of "x", and return an array of
-        the same length.
+        the same length for the first derivative.
 
         Parameters
         ----------
@@ -62,6 +63,7 @@ class NormalDistribution:
 
         Returns
         -------
+        (NDArray, float)
             The first and second derivatives of the log-PDF, evaluated at x.
         """
         y: _Array = self._mu - x

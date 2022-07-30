@@ -38,12 +38,12 @@ class TestNormalDistribution(unittest.TestCase):
         dist = NormalDistribution(mu, 1.0)
         d1, d2 = dist.get_derivatives(x)
         self.assert_close([0.0, 1.0, 2.0], d1, "d1")
-        self.assert_close(-1.0, d2, "d2")
+        self.assertEqual(-1.0, d2, "d2")
 
     def test_get_derivatives_var_2(self) -> None:
         """Test NormalDistribution(0, 2).get_derivatives()"""
         x: _Array = np.array([0.0, 1.0, 2.0])
-        dist = NormalDistribution(0.0, 2.0)
+        dist = NormalDistribution(np.array([0.0]), 2.0)
         d1, d2 = dist.get_derivatives(x)
         self.assert_close([0.0, -0.5, -1.0], d1, "d1")
-        self.assert_close(-0.5, d2, "d2")
+        self.assertEqual(-0.5, d2, "d2")

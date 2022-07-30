@@ -84,7 +84,7 @@ class TestProcess(unittest.TestCase):
     def setUp(self) -> None:
         np.seterr(all="raise")
         self.assert_close = assert_close_get(self, self.__class__)
-        self.initial_prior = NormalDistribution(0.0, 1.0)
+        self.initial_prior = NormalDistribution(np.array([0.0]), 1.0)
 
     def test_init(self) -> None:
         """Test Process initializes one_on_sigma_sq and wiener_d2"""

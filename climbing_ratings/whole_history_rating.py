@@ -284,7 +284,7 @@ class WholeHistoryRating:
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
         whr._route_priors = NormalDistribution(
-            self._route_ratings, cast(_Array, self._route_priors.sigma_sq)
+            self._route_ratings, self._route_priors.sigma_sq
         )
         return whr
 
@@ -645,7 +645,7 @@ class _PageModel:
     ) -> List[Process]:
         """Make processes for each slice of pages."""
         pages_gap = _get_pages_gap(pages.timestamp)
-        prior = NormalDistribution(0.0, var)
+        prior = NormalDistribution(np.array([0.0]), var)
         return [
             Process(wiener_var, prior, pages_gap[start : end - 1])
             for (start, end) in page_slices
