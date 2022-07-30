@@ -37,8 +37,11 @@ class TestClimbingRatings(unittest.TestCase):
         tmpdir = ctx.name
         shutil.copy(self.get_golden(testdata, "ascents.csv"), tmpdir)
         shutil.copy(self.get_golden(testdata, "pages.csv"), tmpdir)
-        shutil.copy(self.get_golden(testdata, "style_pages.csv"), tmpdir)
         shutil.copy(self.get_golden(testdata, "routes.csv"), tmpdir)
+        style_pages = self.get_golden(testdata, "style_pages.csv")
+        if os.path.exists(style_pages):
+            shutil.copy(style_pages, tmpdir)
+
         return tmpdir
 
     def get_golden(self, testdata: str, filename: str) -> str:
@@ -87,6 +90,23 @@ class TestClimbingRatings(unittest.TestCase):
         self.assert_matches_golden(tmpdir, testdata, "page_ratings.csv")
         self.assert_matches_golden(tmpdir, testdata, "route_ratings.csv")
         self.assert_matches_golden(tmpdir, testdata, "style_page_ratings.csv")
+
+    def test_main_simple(self) -> None:
+        """Test climbing_ratings with simple data"""
+        testdata = os.path.join("tests", "testdata", "simple")
+        tmpdir = self.copy_inputdata(testdata)
+        cmd = [
+            sys.executable,
+            "-m",
+            "climbing_ratings",
+            "--max-iterations",
+            "1",
+            tmpdir,
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+
+        self.assert_matches_golden(tmpdir, testdata, "page_ratings.csv")
+        self.assert_matches_golden(tmpdir, testdata, "route_ratings.csv")
 
     def test_main_v3(self) -> None:
         """Test climbing_ratings backwards-compatibility with v3 data"""
