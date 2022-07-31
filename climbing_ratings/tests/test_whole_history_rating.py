@@ -314,6 +314,43 @@ class TestWholeHistoryRatingMultipleClimbers(unittest.TestCase):
         self.assert_close([0.87967237, -0.87967237], page.ratings, "page.ratings")
 
 
+class TestWholeHistoryRatingTestdataSimple(unittest.TestCase):
+    """Tests for the WholeHistoryRating class to match the integration test.
+
+    Uses the same inputs as the module integration test in
+    tests/test_climbing_ratings with the tests/testdata/simple inputs.  These
+    inputs aren't actually that "simple" compared to the trivial cases in the
+    other unit tests, but they're simple compared to real data.
+    """
+
+    def setUp(self) -> None:
+        np.seterr(all="raise")
+        self.assert_close = assert_close_get(self, self.__class__)
+        ascents = AscentsTable(
+            route=[0, 1, 2, 3, 3, 0, 0, 3],
+            clean=[1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0],
+            page=[0, 0, 0, 1, 1, 2, 2, 2],
+            style_page=[-1, -1, -1, -1, -1, -1, -1, -1],
+        )
+        pages = PagesTable(
+            climber=[0, 0, 1],
+            timestamp=[1438214400, 1496275200, 1498089600],
+        )
+        style_pages = PagesTable(climber=[], timestamp=[])
+        routes_grade = [0.0, 0.0, 0.0, 0.0]
+        # Default hyperparameters from __main__.
+        hparams = Hyperparameters(0.0, 4.0, 1.0 / 86400.0 / 364.0, 4.0, 1.0, 1.0)
+        self.whr = WholeHistoryRating(
+            hparams, ascents, pages, style_pages, routes_grade
+        )
+
+    def test_update_ratings(self) -> None:
+        """Test WholeHistoryRating.update_base_ratings"""
+        self.whr.update_ratings()
+        page = self.whr.page
+        self.assert_close([1.19047619, 0.61904762, 0.5], page.ratings, "page.ratings")
+
+
 class TestWholeHistoryRatingStyles(unittest.TestCase):
     """Tests for the WholeHistoryRating class with page-styles.
 

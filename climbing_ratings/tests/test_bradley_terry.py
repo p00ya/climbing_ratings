@@ -128,3 +128,13 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         d1, d2 = get_bt_derivatives(slices, win, player, adversary)
         self.assert_close([0.5, 1.0], d1, "d1")
         self.assert_close([-0.25, -0.625], d2, "d2")
+
+    def test_get_bt_derivatives_simple(self) -> None:
+        """Test get_bt_derivatives() with "simple" data"""
+        slices = [(0, 3), (3, 5)]
+        win: _Array = np.array([1.0, 1.0, 1.0, -1.0, 1.0])
+        player: _Array = np.zeros(5)
+        adversary: _Array = np.zeros(5)
+        d1, d2 = get_bt_derivatives(slices, win, player, adversary)
+        self.assert_close([1.5, 0.0], d1, "d1")
+        self.assert_close([-0.75, -0.5], d2, "d2")
