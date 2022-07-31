@@ -196,7 +196,7 @@ class TestWholeHistoryRatingUpdates(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0], timestamp=[0.0])
-        style_pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(
             _hparams, ascents, pages, style_pages, routes_grade
@@ -230,7 +230,7 @@ class TestWholeHistoryRatingUpdatesDifferentGrades(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0], timestamp=[0.0])
-        style_pages = PagesTable(climber=[0], timestamp=[0.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = np.log([1.0, 2.0, 2.0])
         self.whr = WholeHistoryRating(
             _hparams, ascents, pages, style_pages, routes_grade
@@ -264,7 +264,7 @@ class TestWholeHistoryRatingUpdatesMultipage(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
-        style_pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(
             _hparams, ascents, pages, style_pages, routes_grade
@@ -298,7 +298,7 @@ class TestWholeHistoryRatingMultipleClimbers(unittest.TestCase):
             style_page=[-1, -1, -1, -1, -1, -1],
         )
         pages = PagesTable(climber=[0, 1], timestamp=[0.0, 0.0])
-        style_pages = PagesTable(climber=[0, 0], timestamp=[0.0, 1.0])
+        style_pages = PagesTable(climber=[], timestamp=[])
         routes_grade = [0.0, 0.0, 0.0]
         self.whr = WholeHistoryRating(
             _hparams, ascents, pages, style_pages, routes_grade
