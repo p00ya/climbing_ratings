@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import numpy as np
-from ctypes import c_longdouble
 from numpy.typing import NDArray
 from typing import List, Tuple
 
@@ -55,8 +54,3 @@ def _get_bt_summation_terms(
     player: _Array,
     adversary: _Array,
 ) -> Tuple[_Array, _Array]: ...
-def _sum(
-    x: NDArray[np.longdouble],
-    start: int,
-    end: int,
-) -> c_longdouble: ...

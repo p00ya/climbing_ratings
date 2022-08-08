@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .csum cimport csum
 cimport numpy as cnp
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from libc.math cimport fabs
 
 
 # Workaround for "expl" being missing from Cython's libc.math.
@@ -24,7 +24,6 @@ from libc.math cimport fabs
 cdef extern from "<math.h>" nogil:
     long double coshl(long double)
     long double expl(long double)
-    long double fabsl(long double)
 
 
 cnp.import_array()
@@ -207,8 +206,8 @@ cdef class BradleyTerry():
             # Instead of using WHR Appendix A.1's factorization (with its A, B,
             # C, D and gamma terms), we sum the actual derivatives for each
             # ascent, which is more numerically stable.
-            self.d1[i] = _csum(self.d1_terms, start, end)
-            self.d2[i] = _csum(self.d2_terms, start, end)
+            self.d1[i] = csum(self.d1_terms, start, end)
+            self.d2[i] = csum(self.d2_terms, start, end)
 
         return (self.d1.base, self.d2.base)
 
@@ -286,28 +285,3 @@ def _get_bt_summation_terms(
     cdef long double[::1] d2 = cnp.PyArray_EMPTY(1, [n], cnp.NPY_LONGDOUBLE, 0)
     _cget_bt_summation_terms(win, player, adversary, n, &d1[0], &d2[0])
     return (d1, d2)
-
-
-cdef long double _csum(const long double *x, Py_ssize_t start, Py_ssize_t end):
-    """Compute the sum of x[start:end], with error compensation."""
-    # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
-    # this must be compiled with clang's "-fno-associative-math" or equivalent.
-    cdef long double s = 0.0
-    cdef Py_ssize_t i
-
-    cdef long double c = 0.0
-    cdef long double t
-    for i in range(start, end):
-        t = s + x[i]
-        if fabsl(s) >= fabsl(x[i]):
-            c += (s - t) + x[i]
-        else:
-            c += (x[i] - t) + s
-
-        s = t
-    return s + c
-
-
-def _sum(const long double[::1] x, Py_ssize_t start, Py_ssize_t end):
-    """Wraps _csum() for testing"""
-    return _csum(&x[0], start, end)

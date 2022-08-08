@@ -31,15 +31,19 @@ cython_ext = {
     "include_dirs": [numpy.get_include()],
 }
 
+csum = Extension(
+    "climbing_ratings.csum",
+    ["climbing_ratings/csum.pyx"],
+    # Disable some maths optimizations that defeat precision-preserving
+    # ordering.
+    extra_compile_args=(cython_ext["extra_compile_args"] + ["-fno-associative-math"]),
+    define_macros=cython_ext["define_macros"],
+)
+
 bradley_terry = Extension(
     "climbing_ratings.bradley_terry",
     ["climbing_ratings/bradley_terry.pyx"],
-    # Disable some maths optimizations that defeat precision-preserving
-    # ordering.
-    extra_compile_args=cython_ext["extra_compile_args"]
-    + ["-fno-associative-math", "-fno-reciprocal-math"],
-    define_macros=cython_ext["define_macros"],
-    include_dirs=cython_ext["include_dirs"],
+    **cython_ext,
 )
 
 derivatives = Extension(
@@ -85,7 +89,7 @@ if __name__ == "__main__":
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
-            [bradley_terry, derivatives],
+            [csum, bradley_terry, derivatives],
             compiler_directives={
                 "language_level": 3,
                 "boundscheck": False,

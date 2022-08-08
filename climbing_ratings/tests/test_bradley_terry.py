@@ -22,7 +22,6 @@ from ..bradley_terry import (
     expand_to_slices,
     expand_to_slices_sparse,
     _get_bt_summation_terms,
-    _sum,
 )
 from .assertions import assert_close_get
 
@@ -60,25 +59,6 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         d1, d2 = _get_bt_summation_terms(win, player, adversary)
         self.assert_close([0.5, 0.5], d1, "d1")
         self.assert_close([-0.25, -0.25], d2, "d2")
-
-    def test_sum(self) -> None:
-        """Test sum()"""
-        x: NDArray[np.longdouble] = np.array([1.0, 2.0, 4.0, 8.0], dtype="longdouble")
-        self.assertEqual(15.0, _sum(x, 0, 4))
-        self.assertEqual(0.0, _sum(x, 0, 0))
-        self.assertEqual(6.0, _sum(x, 1, 3))
-        self.assertEqual(7.0, _sum(x, 0, 3))
-
-    def test_sum_error(self) -> None:
-        """Test sum() error compensation with extended precision"""
-        # These values should detect uncompensated error for both double
-        # and extended precision floats.
-        x: NDArray[np.longdouble] = np.full([10], 0.1, dtype="longdouble")
-        self.assertEqual(1.0, _sum(x, 0, 10))
-        x = np.array([1e100, -1.0, -1e100, 1.0], dtype="longdouble")
-        self.assertEqual(0.0, _sum(x, 0, 4))
-        x = np.array([1e100, 1.0, -1e100, 1.0], dtype="longdouble")
-        self.assertEqual(2.0, _sum(x, 0, 4))
 
 
 class TestBradleyTerry(unittest.TestCase):
