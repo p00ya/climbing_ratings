@@ -30,8 +30,11 @@ cdef extern from "<math.h>" nogil:
 cnp.import_array()
 
 
-def expand_to_slices(double[::1] values, list slices, Py_ssize_t n):
+def expand_to_slices(double[::1] values, list slices, double[::1] out):
     """Expand normalized values to contiguous blocks.
+
+    A member of the output array x[i] will equal values[j] if
+    slices[j][0] <= i < slices[j][1].
 
     Parameters
     ----------
@@ -40,25 +43,17 @@ def expand_to_slices(double[::1] values, list slices, Py_ssize_t n):
     slices : list of pairs
         The (start, end) pairs corresponding to a slice in the output.  The
         implied slices must be contiguous and in ascending order.
-    n : Py_ssize_t
-        Size of the output array.
-
-    Returns
-    -------
-    ndarray
-        A member of the returned array x[i] will equal values[j] if
-        slices[j][0] <= i < slices[j][1].
+    out : ndarray
+        The output array.
     """
-    cdef double[::1] expanded = cnp.PyArray_EMPTY(1, [n], cnp.NPY_DOUBLE, 0)
-
     cdef Py_ssize_t j = 0
     cdef Py_ssize_t i, end
     for i, (_, end) in enumerate(slices):
         while j < end:
-            expanded[j] = values[i]
+            out[j] = values[i]
             j += 1
 
-    return expanded.base
+    return out.base
 
 
 def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
@@ -93,68 +88,129 @@ def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
     return expanded.base
 
 
-def get_bt_derivatives(
-    list slices,
-    double[::1] win,
-    double[::1] player,
-    double[::1] adversary,
-):
-    """Get the derivatives of the log-likelihood for each player.
+cdef class BradleyTerry():
+    """Transient state for calculating Bradley-Terry derivatives.
 
-    A player is an abstraction for an entity with a rating; it will correspond
-    to a page or a route.
-
-    Parameters
-    ----------
-    slices : list of pairs
-        (start, end) indices representing slices of the ascents for each player.
-    win : contiguous ndarray
-        1.0 if the ascent was a "win" for the player, -1.0 otherwise, for each
-        ascent.
-    player : contiguous ndarray
-        Natural rating of the "player" for each ascent.
-    adversary : contiguous ndarray
-        Natural rating of the adversary for each ascent.
-
-    Returns
-    -------
-    (d1 : ndarray, d2 : ndarray)
-        A pair of ndarrays of the first and second derivative of the
-        Bradley-Terry log-likelihood a "player" wins, with respect to the
-        "natural rating" of that player.
+    The buffers may be re-used across multiple iterations.  Re-use is just a
+    performance optimization: results from previous iterations do not affect
+    get_derivatives.
     """
-    cdef Py_ssize_t n = player.shape[0]
-    cdef long double *d1_terms = <long double *> PyMem_Malloc(2 * n * sizeof(long double))
-    cdef long double *d2_terms = &d1_terms[n]
 
-    if not (d1_terms):
-        raise MemoryError()
+    # Ratings by ascent.
+    cdef double[::1] ratings
 
-    _cget_bt_summation_terms(win, player, adversary, n, d1_terms, d2_terms)
+    # Derivative terms by ascent.
+    cdef long double *d1_terms
+    cdef long double *d2_terms
 
-    cdef Py_ssize_t num_slices = len(slices)
-    cdef double[::1] d1 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
-    cdef double[::1] d2 = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_DOUBLE, 0)
+    # Derivatives by player.
+    cdef double[::1] d1
+    cdef double[::1] d2
 
-    cdef Py_ssize_t start, end
-    cdef int i
-    cdef tuple pair
-    for i, pair in enumerate(slices):
-        start, end = pair
-        if start == end:
-            d1[i] = 0.0
-            d2[i] = 0.0
-            continue
+    def __init__(self, Py_ssize_t num_ascents, Py_ssize_t num_players):
+        """
+        Parameters
+        ----------
+        num_ascents
+            Number of ascents.
+        num_players
+            Number of players.
+        """
+        self.ratings = cnp.PyArray_EMPTY(1, [num_ascents], cnp.NPY_DOUBLE, 0)
 
-        # Instead of using WHR Appendix A.1's factorization (with its A, B, C,
-        # D and gamma terms), we sum the actual derivatives for each ascent,
-        # which is more numerically stable.
-        d1[i] = _csum(d1_terms, start, end)
-        d2[i] = _csum(d2_terms, start, end)
+        cdef long double *p
+        p = <long double *> PyMem_Malloc(num_ascents * sizeof(long double))
+        if not (p):
+            raise MemoryError()
+        self.d1_terms = p
 
-    PyMem_Free(d1_terms)
+        p = <long double *> PyMem_Malloc(num_ascents * sizeof(long double))
+        if not (p):
+            raise MemoryError()
+        self.d2_terms = p
 
-    return (d1.base, d2.base)
+        self.d1 = cnp.PyArray_EMPTY(1, [num_players], cnp.NPY_DOUBLE, 0)
+        self.d2 = cnp.PyArray_EMPTY(1, [num_players], cnp.NPY_DOUBLE, 0)
+
+    def __dealloc__(self):
+        PyMem_Free(self.d1_terms)
+        PyMem_Free(self.d2_terms)
+
+    @property
+    def ratings(self):
+        """The ratings of the player for each ascent."""
+        return self.ratings.base
+
+    def get_derivatives(
+        self,
+        list slices,
+        double[::1] win,
+        double[::1] adversary,
+    ):
+        """Get the derivatives of the log-likelihood for each player.
+
+        A player is an abstraction for an entity with a rating; it will
+        correspond to a page or a route.
+
+        The player ratings should be set using fill_from_slices prior to calling
+        this method.
+
+        Parameters
+        ----------
+        slices : list of pairs
+            (start, end) indices representing slices of the ascents for each
+            player.
+        win : contiguous ndarray
+            1.0 if the ascent was a "win" for the player, -1.0 otherwise, for
+            each ascent.
+        adversary : contiguous ndarray
+            Natural rating of the adversary for each ascent.
+
+        Returns
+        -------
+        (d1 : ndarray, d2 : ndarray)
+            A pair of ndarrays of the first and second derivative of the
+            Bradley-Terry log-likelihood a "player" wins, with respect to the
+            "natural rating" of that player.
+        """
+        cdef Py_ssize_t num_ascents = self.ratings.shape[0]
+        cdef Py_ssize_t num_players = self.d1.shape[0]
+
+        if len(slices) != num_players:
+            raise IndexError(f"len(slices) {len(slices)} != {num_players}")
+
+        if win.shape[0] != num_ascents:
+            raise IndexError(f"len(win) {win.shape[0]} != {num_ascents}")
+
+        if adversary.shape[0] != num_ascents:
+            raise IndexError(f"len(adversary) {adversary.shape[0]} != {num_ascents}")
+
+        _cget_bt_summation_terms(
+            win,
+            self.ratings,
+            adversary,
+            num_ascents,
+            self.d1_terms,
+            self.d2_terms,
+        )
+
+        cdef Py_ssize_t start, end
+        cdef int i
+        cdef tuple pair
+        for i, pair in enumerate(slices):
+            start, end = pair
+            if start == end:
+                self.d1[i] = 0.0
+                self.d2[i] = 0.0
+                continue
+
+            # Instead of using WHR Appendix A.1's factorization (with its A, B,
+            # C, D and gamma terms), we sum the actual derivatives for each
+            # ascent, which is more numerically stable.
+            self.d1[i] = _csum(self.d1_terms, start, end)
+            self.d2[i] = _csum(self.d2_terms, start, end)
+
+        return (self.d1.base, self.d2.base)
 
 
 cdef void _cget_bt_summation_terms(

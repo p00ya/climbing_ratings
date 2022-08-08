@@ -19,9 +19,9 @@ import copy
 import itertools
 import numpy as np
 from .bradley_terry import (
+    BradleyTerry,
     expand_to_slices,
     expand_to_slices_sparse,
-    get_bt_derivatives,
 )
 from . import derivatives
 from numpy.typing import ArrayLike, NDArray
@@ -216,6 +216,7 @@ class WholeHistoryRating:
         "_route_var",
         "_route_ascents",
         "_route_priors",
+        "_route_bt",
     )
 
     def __init__(
@@ -266,6 +267,7 @@ class WholeHistoryRating:
         self._route_priors = derivatives.MultiNormalDistribution(
             self._route_ratings, hparams.route_prior_variance
         )
+        self._route_bt = BradleyTerry(len(ascents), len(routes_rating))
 
     def __copy__(self) -> "WholeHistoryRating":
         """Copies a snapshot of the current model estimates.
@@ -283,6 +285,7 @@ class WholeHistoryRating:
         whr._route_var = self._route_var.copy()
         whr._route_ascents = self._route_ascents
         whr._route_priors = self._route_priors
+        whr._route_bt = self._route_bt
         return whr
 
     @property
@@ -342,19 +345,22 @@ class WholeHistoryRating:
         ratings = pages.ratings
         num_ascents = len(ascents.adversary)
 
-        page_ratings = expand_to_slices(ratings, ascents.slices, num_ascents)
+        expand_to_slices(ratings, ascents.slices, pages.bradley_terry.ratings)
 
         if aux_pages is not None:
-            page_ratings += expand_to_slices_sparse(
-                aux_pages.ratings, aux_pages.ascents.slices, num_ascents
+            np.add(
+                pages.bradley_terry.ratings,
+                expand_to_slices_sparse(
+                    aux_pages.ratings, aux_pages.ascents.slices, num_ascents
+                ),
+                pages.bradley_terry.ratings,
             )
 
         route_ratings = self.route_ratings[ascents.adversary]
 
-        return get_bt_derivatives(
+        return pages.bradley_terry.get_derivatives(
             ascents.slices,
             ascents.win,
-            page_ratings,
             route_ratings,
         )
 
@@ -417,19 +423,18 @@ class WholeHistoryRating:
             The ratings estimates are left unchanged.
         """
 
-        route_ratings = expand_to_slices(
+        expand_to_slices(
             self._route_ratings,
             self._route_ascents.slices,
-            len(self._route_ascents.adversary),
+            self._route_bt.ratings,
         )
 
         page_ratings = self._bases.ratings[self._route_ascents.adversary]
 
         # Bradley-Terry terms.
-        d1, d2 = get_bt_derivatives(
+        d1, d2 = self._route_bt.get_derivatives(
             self._route_ascents.slices,
             self._route_ascents.win,
-            route_ratings,
             page_ratings,
         )
 
@@ -533,11 +538,13 @@ class _Pages:
     ----------
     ascents : _SlicedAscents
         Ascents in page order.
+    bradley_terry :  BradleyTerry
+        Bradley-Terry estimation state for all ascents.
     model : PageModel
         Estimation state for all pages.
     """
 
-    __slots__ = ("ascents", "model")
+    __slots__ = ("ascents", "bradley_terry", "model")
 
     def __init__(
         self,
@@ -570,6 +577,7 @@ class _Pages:
         num_pages = len(pages)
         num_climbers = 0 if len(pages.climber) == 0 else pages.climber[-1] + 1
         self.ascents = self.__make_page_ascents(ascents, ascents_page, num_pages)
+        self.bradley_terry = BradleyTerry(len(ascents), num_pages)
         slices = _extract_slices(pages.climber, num_climbers)
 
         initial = derivatives.NormalDistribution(prior_mean, prior_var)
@@ -583,10 +591,11 @@ class _Pages:
         """Returns a copy of the model.
 
         The ratings, var and cov arrays will be deep-copied, while the other
-        (immutable) fields are shallow-copied.
+        (immutable or transient) fields are shallow-copied.
         """
         pages: _Pages = self.__class__.__new__(self.__class__)
         pages.ascents = self.ascents
+        pages.bradley_terry = self.bradley_terry
         pages.model = copy.copy(self.model)
         return pages
 

@@ -25,13 +25,25 @@ _Slice = Tuple[int, int]
 def expand_to_slices(
     values: _Array,
     slices: List[_Slice],
-    n: int,
+    out: _Array,
 ) -> _Array: ...
 def expand_to_slices_sparse(
     values: _Array,
     slices: List[_Slice],
     n: int,
 ) -> _Array: ...
+
+class BradleyTerry:
+    def __init__(self, num_ascents: int, num_players: int) -> None: ...
+    @property
+    def ratings(self) -> _Array: ...
+    def get_derivatives(
+        self,
+        slices: List[_Slice],
+        win: _Array,
+        adversary: _Array,
+    ) -> Tuple[_Array, _Array]: ...
+
 def get_bt_derivatives(
     slices: List[_Slice],
     win: _Array,
