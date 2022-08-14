@@ -18,6 +18,7 @@ import numpy as np
 from collections.abc import Sized
 from numpy.typing import NDArray
 from typing import List, Tuple
+from .slices import Slices
 
 _Array = NDArray[np.float_]
 
@@ -45,10 +46,6 @@ class WienerProcess:
     ) -> None: ...
     def _add_gradient(self, ratings: _Array, gradient: _Array) -> None: ...
     def as_tuple(self) -> Tuple[_Array, _Array]: ...
-
-class Slices(Sized):
-    def __init__(self, slices: List[Tuple[int, int]]) -> None: ...
-    def __len__(self) -> int: ...
 
 class PageInvariants:
     def __init__(

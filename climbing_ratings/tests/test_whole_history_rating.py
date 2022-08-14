@@ -18,6 +18,7 @@ import copy
 import math
 import unittest
 import numpy as np
+from ..slices import Slices
 from ..whole_history_rating import (
     AscentsTable,
     Hyperparameters,
@@ -50,26 +51,29 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
     def test_make_route_ascents(self) -> None:
         """Test _make_route_ascents()"""
         page_ascents = _SlicedAscents(
-            slices=[(0, 5)],
+            slices=Slices([(0, 5)]),
             adversary=np.asarray([0, 1, 0, 1, 0]),
             win=np.asarray([-1, -1, 1, -1, -1]),
         )
 
         ascents = _make_route_ascents(page_ascents, 2)
-        self.assertSequenceEqual([(0, 3), (3, 5)], ascents.slices)
+        self.assertSequenceEqual([(0, 3), (3, 5)], list(ascents.slices))
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
         self.assertSequenceEqual([1, -1, 1, 1, 1], ascents.win.tolist())
 
     def test_make_route_ascents_sparse(self) -> None:
         """Test _make_route_ascents() for routes without ascents"""
         page_ascents = _SlicedAscents(
-            slices=[(0, 5)],
+            slices=Slices([(0, 5)]),
             adversary=np.asarray([1, 2, 1, 2, 1]),
             win=np.asarray([-1, -1, 1, -1, -1]),
         )
 
         ascents = _make_route_ascents(page_ascents, 4)
-        self.assertSequenceEqual([(0, 0), (0, 3), (3, 5), (5, 5)], ascents.slices)
+        self.assertSequenceEqual(
+            [(0, 0), (0, 3), (3, 5), (5, 5)],
+            list(ascents.slices),
+        )
         self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
         self.assertSequenceEqual([1, -1, 1, 1, 1], ascents.win.tolist())
 

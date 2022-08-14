@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from .csum cimport csum
+from .slices cimport Slices
 cimport numpy as cnp
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
@@ -29,7 +30,7 @@ cdef extern from "<math.h>" nogil:
 cnp.import_array()
 
 
-def expand_to_slices(double[::1] values, list slices, double[::1] out):
+def expand_to_slices(double[::1] values, Slices slices, double[::1] out):
     """Expand normalized values to contiguous blocks.
 
     A member of the output array x[i] will equal values[j] if
@@ -47,15 +48,15 @@ def expand_to_slices(double[::1] values, list slices, double[::1] out):
     """
     cdef Py_ssize_t j = 0
     cdef Py_ssize_t i, end
-    for i, (_, end) in enumerate(slices):
-        while j < end:
+    for i in range(slices.end.shape[0]):
+        while j < slices.end[i]:
             out[j] = values[i]
             j += 1
 
     return out.base
 
 
-def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
+def expand_to_slices_sparse(double[::1] values, Slices slices, Py_ssize_t n):
     """Expand normalized values to non-overlapping blocks.
 
     Parameters
@@ -79,7 +80,9 @@ def expand_to_slices_sparse(double[::1] values, list slices, Py_ssize_t n):
     cdef Py_ssize_t j
     cdef Py_ssize_t i, start, end
     cdef double v
-    for i, (start, end) in enumerate(slices):
+    for i in range(slices.start.shape[0]):
+        start = slices.start[i]
+        end = slices.end[i]
         v = values[i]
         for j in range(start, end):
             expanded[j] = v
@@ -106,15 +109,23 @@ cdef class BradleyTerry():
     cdef double[::1] d1
     cdef double[::1] d2
 
-    def __init__(self, Py_ssize_t num_ascents, Py_ssize_t num_players):
+    # Ascent slices for each player.
+    cdef Slices slices
+
+    def __init__(self, Slices slices, Py_ssize_t num_ascents, Py_ssize_t num_players):
         """
         Parameters
         ----------
+        slices
+            The ranges of ascents for each player.
         num_ascents
             Number of ascents.
         num_players
             Number of players.
         """
+        if len(slices) != num_players:
+            raise IndexError(f"len(slices) {len(slices)} != {num_players}")
+
         self.ratings = cnp.PyArray_EMPTY(1, [num_ascents], cnp.NPY_DOUBLE, 0)
 
         cdef long double *p
@@ -131,6 +142,8 @@ cdef class BradleyTerry():
         self.d1 = cnp.PyArray_EMPTY(1, [num_players], cnp.NPY_DOUBLE, 0)
         self.d2 = cnp.PyArray_EMPTY(1, [num_players], cnp.NPY_DOUBLE, 0)
 
+        self.slices = slices
+
     def __dealloc__(self):
         PyMem_Free(self.d1_terms)
         PyMem_Free(self.d2_terms)
@@ -142,7 +155,6 @@ cdef class BradleyTerry():
 
     def get_derivatives(
         self,
-        list slices,
         double[::1] win,
         double[::1] adversary,
     ):
@@ -156,7 +168,7 @@ cdef class BradleyTerry():
 
         Parameters
         ----------
-        slices : list of pairs
+        slices : Slices
             (start, end) indices representing slices of the ascents for each
             player.
         win : contiguous ndarray
@@ -175,9 +187,6 @@ cdef class BradleyTerry():
         cdef Py_ssize_t num_ascents = self.ratings.shape[0]
         cdef Py_ssize_t num_players = self.d1.shape[0]
 
-        if len(slices) != num_players:
-            raise IndexError(f"len(slices) {len(slices)} != {num_players}")
-
         if win.shape[0] != num_ascents:
             raise IndexError(f"len(win) {win.shape[0]} != {num_ascents}")
 
@@ -194,10 +203,10 @@ cdef class BradleyTerry():
         )
 
         cdef Py_ssize_t start, end
-        cdef int i
-        cdef tuple pair
-        for i, pair in enumerate(slices):
-            start, end = pair
+        cdef Py_ssize_t i
+        for i in range(self.slices.start.shape[0]):
+            start = self.slices.start[i]
+            end = self.slices.end[i]
             if start == end:
                 self.d1[i] = 0.0
                 self.d2[i] = 0.0

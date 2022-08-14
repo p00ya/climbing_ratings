@@ -52,6 +52,12 @@ derivatives = Extension(
     **cython_ext,
 )
 
+slices = Extension(
+    "climbing_ratings.slices",
+    ["climbing_ratings/slices.pyx"],
+    **cython_ext,
+)
+
 long_description = """
 climbing_ratings is a library for estimating ratings for the sport of rock
 climbing.  The ratings can be used to predict route difficulty and climber
@@ -89,7 +95,7 @@ if __name__ == "__main__":
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
-            [csum, bradley_terry, derivatives],
+            [csum, bradley_terry, derivatives, slices],
             compiler_directives={
                 "language_level": 3,
                 "boundscheck": False,

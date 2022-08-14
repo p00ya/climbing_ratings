@@ -24,6 +24,7 @@ from .bradley_terry import (
     expand_to_slices_sparse,
 )
 from . import derivatives
+from .slices import Slices
 from numpy.typing import ArrayLike, NDArray
 from typing import List, NamedTuple, Optional, Tuple, Union, cast
 
@@ -267,7 +268,11 @@ class WholeHistoryRating:
         self._route_priors = derivatives.MultiNormalDistribution(
             self._route_ratings, hparams.route_prior_variance
         )
-        self._route_bt = BradleyTerry(len(ascents), len(routes_rating))
+        self._route_bt = BradleyTerry(
+            self._route_ascents.slices,
+            len(ascents),
+            len(routes_rating),
+        )
 
     def __copy__(self) -> "WholeHistoryRating":
         """Copies a snapshot of the current model estimates.
@@ -359,7 +364,6 @@ class WholeHistoryRating:
         route_ratings = self.route_ratings[ascents.adversary]
 
         return pages.bradley_terry.get_derivatives(
-            ascents.slices,
             ascents.win,
             route_ratings,
         )
@@ -433,7 +437,6 @@ class WholeHistoryRating:
 
         # Bradley-Terry terms.
         d1, d2 = self._route_bt.get_derivatives(
-            self._route_ascents.slices,
             self._route_ascents.win,
             page_ratings,
         )
@@ -515,8 +518,8 @@ class _SlicedAscents(NamedTuple):
     Attributes
     ----------
     slices
-        (start, end) pairs defining the slice in the player-ordered ascents,
-        for each player.
+        Slices defining the slice in the player-ordered ascents, for each
+        player.
     adversary
         The index of the adversary for each player-ordered ascent.
     win
@@ -524,7 +527,7 @@ class _SlicedAscents(NamedTuple):
         for each ascent.
     """
 
-    slices: List[Tuple[int, int]]
+    slices: Slices
     adversary: _Array
     win: _Array
 
@@ -577,14 +580,13 @@ class _Pages:
         num_pages = len(pages)
         num_climbers = 0 if len(pages.climber) == 0 else pages.climber[-1] + 1
         self.ascents = self.__make_page_ascents(ascents, ascents_page, num_pages)
-        self.bradley_terry = BradleyTerry(len(ascents), num_pages)
-        slices = _extract_slices(pages.climber, num_climbers)
+        self.bradley_terry = BradleyTerry(self.ascents.slices, len(ascents), num_pages)
 
         initial = derivatives.NormalDistribution(prior_mean, prior_var)
         gaps = _get_pages_gap(pages.timestamp)
-        dslices = derivatives.Slices(slices)
-        w = derivatives.WienerProcess(gaps, dslices, wiener_var)
-        invariants = derivatives.PageInvariants(initial, w, dslices)
+        slices = Slices(_extract_slices(pages.climber, num_climbers))
+        w = derivatives.WienerProcess(gaps, slices, wiener_var)
+        invariants = derivatives.PageInvariants(initial, w, slices)
         self.model = derivatives.PageModel(invariants, np.zeros(num_pages))
 
     def __copy__(self) -> "_Pages":
@@ -622,12 +624,16 @@ class _Pages:
         # Transform {0, 1} clean values to {-1, 1} win values.
         win: _Array = ascents.clean - 0.5
         np.sign(win, win)
-        return _SlicedAscents(ascents_page_slices, np.array(ascents.route), win)
+        return _SlicedAscents(Slices(ascents_page_slices), np.array(ascents.route), win)
 
     def ascent_ratings(self) -> _Array:
         """Page ratings for each ascent."""
         num_ascents = len(self.ascents.adversary)
-        return expand_to_slices_sparse(self.ratings, self.ascents.slices, num_ascents)
+        return expand_to_slices_sparse(
+            self.ratings,
+            self.ascents.slices,
+            num_ascents,
+        )
 
 
 def _get_pages_gap(pages_timestamp: _Array) -> _Array:
@@ -750,7 +756,7 @@ def _make_route_ascents(ascents: _SlicedAscents, num_routes: int) -> _SlicedAsce
             rascents_page[ascent_to_rascent[a]] = page
 
     return _SlicedAscents(
-        rascents_route_slices,
+        Slices(rascents_route_slices),
         np.array(rascents_page, dtype=np.intp),
         np.array(rascents_win),
     )

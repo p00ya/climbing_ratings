@@ -19,6 +19,7 @@ import numpy as np
 from numpy.typing import NDArray
 import unittest
 from .. import derivatives
+from ..slices import Slices
 from .assertions import assert_close_get
 
 
@@ -202,7 +203,7 @@ class TestWienerProcess(unittest.TestCase):
     def test_init(self) -> None:
         """Test WienerProcess initializes one_on_sigma_sq and d2"""
         gaps: _Array = np.array([1.0, 0.0])
-        slices = derivatives.Slices([(0, 2)])
+        slices = Slices([(0, 2)])
         w = derivatives.WienerProcess(gaps, slices, 10.0)
         one_on_sigma_sq, d2 = w.as_tuple()
         self.assert_close([0.1, 0.0], one_on_sigma_sq, "one_on_sigma_sq")
@@ -211,7 +212,7 @@ class TestWienerProcess(unittest.TestCase):
     def test_init_two_slices(self) -> None:
         """Test WienerProcess initialization with 2 slices"""
         gaps: _Array = np.array([1.0, 0.0, 2.0, 0.0])
-        slices = derivatives.Slices([(0, 2), (2, 4)])
+        slices = Slices([(0, 2), (2, 4)])
         w = derivatives.WienerProcess(gaps, slices, 10.0)
         one_on_sigma_sq, d2 = w.as_tuple()
         self.assert_close(
@@ -224,7 +225,7 @@ class TestWienerProcess(unittest.TestCase):
     def test_add_gradient(self) -> None:
         """Test add_gradient()"""
         gaps: _Array = np.array([1.0, 0.0])
-        slices = derivatives.Slices([(0, 2)])
+        slices = Slices([(0, 2)])
         w = derivatives.WienerProcess(gaps, slices, 1.0)
 
         gradient = np.zeros(2)
@@ -243,7 +244,7 @@ class TestPageInvariants(unittest.TestCase):
         """Test len(model)"""
         initial = derivatives.NormalDistribution(0.0, 1.0)
         gaps: _Array = np.array([1.0, 1.0])
-        slices = derivatives.Slices([(0, 2)])
+        slices = Slices([(0, 2)])
         w = derivatives.WienerProcess(gaps, slices, 1.0)
         model = derivatives.PageInvariants(initial, w, slices)
 
@@ -257,7 +258,7 @@ class TestPageModel(unittest.TestCase):
 
         initial = derivatives.NormalDistribution(0.0, 1.0)
         gaps: _Array = np.array([1.0, 0.0])
-        slices = derivatives.Slices([(0, 2)])
+        slices = Slices([(0, 2)])
         w = derivatives.WienerProcess(gaps, slices, 1.0)
         self.invariants = derivatives.PageInvariants(initial, w, slices)
 
@@ -304,7 +305,7 @@ class TestPageModelMultipleProcesses(unittest.TestCase):
 
         initial = derivatives.NormalDistribution(0.0, 1.0)
         gaps: _Array = np.array([1.0, 0.0, 1.0, 0.0])
-        slices = derivatives.Slices([(0, 2), (2, 4)])
+        slices = Slices([(0, 2), (2, 4)])
         w = derivatives.WienerProcess(gaps, slices, 1.0)
         self.invariants = derivatives.PageInvariants(initial, w, slices)
 
@@ -351,7 +352,7 @@ class TestPageModelSimple(unittest.TestCase):
 
         initial = derivatives.NormalDistribution(0.0, 4.0)
         gaps: _Array = np.array([58060800.0, 0.0])
-        slices = derivatives.Slices([(0, 2)])
+        slices = Slices([(0, 2)])
         w = derivatives.WienerProcess(gaps, slices, 1.0 / 86400.0 / 364.0)
         self.invariants = derivatives.PageInvariants(initial, w, slices)
 

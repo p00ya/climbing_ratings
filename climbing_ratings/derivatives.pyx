@@ -22,6 +22,8 @@ numpy.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from .slices cimport Slices
 cimport numpy as cnp
 from libc.math cimport log
 
@@ -97,33 +99,6 @@ cdef class TriDiagonalLU:
     def as_tuple(self):
         """Return a tuple (d, b, a) of the diagonal and sub-diagonals."""
         return (self.d.base, self.b.base, self.a.base)
-
-
-cdef class Slices:
-    """The start and end indices of pages for a process."""
-    cdef Py_ssize_t[::1] start
-    cdef Py_ssize_t[::1] end
-
-    def __init__(self, list slices):
-        """Initialize slices.
-
-        Parameters
-        ----------
-        page_slices : List[Tuple[Int, Int]]
-            Start and end indices for each process.
-        """
-        cdef Py_ssize_t num_slices = len(slices)
-        self.start = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_INTP, 0)
-        self.end = cnp.PyArray_EMPTY(1, [num_slices], cnp.NPY_INTP, 0)
-        cdef Py_ssize_t i, start, end
-        cdef tuple pair
-        for i, pair in enumerate(slices):
-            start, end = pair
-            self.start[i] = start
-            self.end[i] = end
-
-    def __len__(self):
-        return self.start.shape[0]
 
 
 cdef inline double gaussian_gradient(double mu, double sigma_sq, double x) nogil:
