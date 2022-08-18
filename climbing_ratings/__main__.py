@@ -3,7 +3,7 @@
 
 Should be called as:
 
-    run_estimation.py DATA_DIR
+    python3 -m climbing_ratings DATA_DIR
 
 DATA_DIR should be a directory containing the files 'ascents.csv', 'routes.csv',
 'pages.csv', and 'style_pages.csv'.  The three files 'route_ratings.csv',
