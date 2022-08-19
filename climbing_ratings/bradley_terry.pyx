@@ -23,7 +23,6 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Free
 # Workaround for "expl" being missing from Cython's libc.math.
 # See: https://github.com/cython/cython/issues/3570
 cdef extern from "<math.h>" nogil:
-    long double coshl(long double)
     long double expl(long double)
 
 
@@ -254,7 +253,7 @@ cdef void _cget_bt_summation_terms(
         Output array of the "d^2 ln P / dr^2" terms for each ascent.
     """
     cdef Py_ssize_t i
-    cdef long double t
+    cdef long double t, u
     for i in range(n):
         # From WHR 2.2 Bradley-Terry Model:
         #
@@ -275,14 +274,16 @@ cdef void _cget_bt_summation_terms(
         # d ln P / dr =
         #   win:   1 / (exp(winner - loser) + 1)
         #   loss: -1 / (exp(winner - loser) + 1)
-        # d^2 ln P / dr^2 = -1 / (2 (cosh(winner - loser) + 1))
+        # d^2 ln P / dr^2 = exp(winner - loser) / (exp(winner - loser) + 1)^2
 
         t = <long double> player[i] - adversary[i]
-        # t = winner - loser
+        # t = exp(winner - loser)
         t *= win[i]
+        t = expl(t)
+        u = 1.0 / (t + 1.0)
 
-        d1_terms[i] = win[i] / (expl(t) + 1.0)
-        d2_terms[i] = -0.5 / (coshl(t) + 1.0)
+        d1_terms[i] = win[i] * u
+        d2_terms[i] = -t * u * u
 
 
 def _get_bt_summation_terms(
