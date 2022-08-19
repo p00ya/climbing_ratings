@@ -274,7 +274,7 @@ cdef void _cget_bt_summation_terms(
         # d ln P / dr =
         #   win:   1 / (exp(winner - loser) + 1)
         #   loss: -1 / (exp(winner - loser) + 1)
-        # d^2 ln P / dr^2 = exp(winner - loser) / (exp(winner - loser) + 1)^2
+        # d^2 ln P / dr^2 = -exp(winner - loser) / (exp(winner - loser) + 1)^2
 
         t = <long double> player[i] - adversary[i]
         # t = exp(winner - loser)
