@@ -53,3 +53,100 @@ describe("TransformGrade", {
     )
   })
 })
+
+describe("CleanAscents", {
+  it("adds clean column", {
+    df_raw <- data.frame(
+      ascentId = c("A", "B"),
+      route = factor(c("R", "R")),
+      climber = factor(c("C", "C")),
+      tick = factor(c("clean", "dog")),
+      grade = c(22L, 22L),
+      timestamp = c(0L, 0L),
+      style = c(1L, 1L)
+    )
+
+    expect_equal(
+      CleanAscents(df_raw),
+      data.frame(
+        ascentId = c("A", "B"),
+        route = factor(c("R", "R")),
+        climber = factor(c("C", "C")),
+        tick = factor(c("clean", "dog")),
+        grade = c(22L, 22L),
+        timestamp = c(0L, 0L),
+        style = c(1L, 1L),
+        clean = c(TRUE, FALSE)
+      )
+    )
+  })
+
+  it("drops routes with a single ascent", {
+    df_raw <- data.frame(
+      ascentId = "A",
+      route = factor("R"),
+      climber = factor("C"),
+      tick = factor("dog"),
+      grade = 22L,
+      timestamp = 0L,
+      style = 1L
+    )
+
+    expect_equal(nrow(CleanAscents(df_raw)), 0L)
+  })
+
+  it("drops climbers who only log ticks", {
+    df_raw <- data.frame(
+      ascentId = c("A", "B"),
+      route = factor(c("R", "R")),
+      climber = factor(c("C", "C")),
+      tick = factor(c("clean", "clean")),
+      grade = c(22L, 22L),
+      timestamp = c(0L, 0L),
+      style = c(1L, 1L)
+    )
+
+    expect_equal(nrow(CleanAscents(df_raw)), 0L)
+  })
+
+  it("removes rows with NA", {
+    df_raw <- data.frame(
+      ascentId = c("clean", "dog", "notick", "nograde", "notime", "nostyle"),
+      route = factor(rep("R", 6)),
+      climber = factor(rep("C", 6)),
+      tick = factor(c("clean", "dog", NA, "dog", "dog", "dog")),
+      grade = c(22L, 22L, 22L, NA, 22L, 22L),
+      timestamp = c(0L, 0L, 0L, 0L, NA, 0L),
+      style = c(1L, 1L, 1L, 1L, 1L, NA)
+    )
+
+    expect_equal(CleanAscents(df_raw)$ascentId, c("clean", "dog"))
+  })
+
+  it("removes rows outside time bracket", {
+    df_raw <- data.frame(
+      ascentId = c("clean", "dog", "tooearly", "toolate"),
+      route = factor(rep("R", 4)),
+      climber = factor(rep("C", 4)),
+      tick = factor(rep("dog", 4)),
+      grade = rep(22L, 4),
+      timestamp = c(0L, 0L, -2L, 2L),
+      style = rep(1L, 4)
+    )
+
+    expect_equal(CleanAscents(df_raw, -1, 2)$ascentId, c("clean", "dog"))
+  })
+
+  it("adds base style", {
+    df_raw <- data.frame(
+      ascentId = c("A", "B"),
+      route = factor(c("R", "R")),
+      climber = factor(c("C", "C")),
+      tick = factor(c("clean", "dog")),
+      grade = c(22L, 22L),
+      timestamp = c(0L, 0L)
+    )
+
+    expect_equal(CleanAscents(df_raw)$style, c(1L, 1L))
+  })
+})

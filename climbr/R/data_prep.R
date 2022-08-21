@@ -54,16 +54,22 @@ IsTickClean <- function(ticktype) {
 #'
 #' Removes unclassifiable ascents, removes routes with less than 2 ascents, adds
 #' a "clean" column, and re-orders the route levels so the first route has the
-#' most ascents at the most common grade.
+#' most ascents at the most common grade.  If the input was missing a style
+#' column, the base style will be added to all ascents.
 #'
 #' Also prints a summary of the resulting data.
 #'
 #' @param df_raw data frame with the columns "ascentId", "route", "climber",
-#' "tick", "grade", "style", "timestamp".
+#' "tick", "grade", "timestamp".  It can optionally have the column "style".
 #' @param min_time a POSIXct; ascents from before this time are removed.
 #' @param max_time a POSIXct; ascents from after this time are removed.
 CleanAscents <- function(df_raw, min_time = 0L, max_time = NA) {
-  df <- df_raw %>%
+  df <- df_raw
+  if (!("style" %in% colnames(df))) {
+    df$style <- 1L
+  }
+
+  df <- df %>%
     dplyr::mutate(clean = IsTickClean(.data$tick)) %>%
     tidyr::drop_na(.data$clean, .data$grade, .data$timestamp, .data$style) %>%
     dplyr::filter(min_time <= .data$timestamp) %>%
@@ -109,14 +115,18 @@ CleanAscents <- function(df_raw, min_time = 0L, max_time = NA) {
     ) %>%
     dplyr::select(-.data$clean_p)
 
+  # Apply previous filters to the routes too.
+  routes <- routes %>% dplyr::inner_join(df, by = "route")
+
   # Recompute factors from the preprocessed data.
-  df <- df %>%
-    dplyr::mutate(
-      route = .data$route %>%
-        droplevels() %>%
-        relevel(ref = as.character(routes[[1, 1]])),
-      climber = droplevels(.data$climber)
-    )
+  df <- df %>% dplyr::mutate(
+    climber = droplevels(.data$climber)
+  )
+  if (nrow(df) > 1L) {
+    df$route <- df$route %>%
+      droplevels() %>%
+      relevel(ref = as.character(routes[[1, 1]]))
+  }
 
   df
 }
