@@ -112,6 +112,40 @@ PlotRouteRating <- function(df_routes) {
     )
 }
 
+#' Plots the rating PDFs for each route.
+#'
+#' This will only produce a nice graph for a small number of routes.
+#'
+#' @param df_routes a data frame with route, r and var columns.
+#' @param alpha significance level for bounds of the graph.
+PlotRoutesProbabilityDensity <- function(df_routes, alpha = 0.001) {
+  df <- df_routes %>% dplyr::transmute(
+    route = .data$route,
+    mean = .data$r,
+    sd = sqrt(.data$var)
+  )
+
+  # Adds a geom for the route's rating PDF to the given plot.
+  AddPDFGeom <- function(plot, row) {
+    plot + ggplot2::geom_function(
+      fun = stats::dnorm,
+      ggplot2::aes(colour = row$route),
+      args = list(mean = row$mean, sd = row$sd)
+    )
+  }
+
+  minx <- min(stats::qnorm(alpha / 2, df$mean, df$sd))
+  maxx <- max(stats::qnorm(1 - alpha / 2, df$mean, df$sd))
+
+  Reduce(
+    AddPDFGeom,
+    split(df, seq(nrow(df_routes))),
+    init = ggplot2::ggplot() +
+      ggplot2::xlim(minx, maxx) +
+      ggplot2::labs(x = "rating", y = "probability density", col = "route")
+  )
+}
+
 #' Plots the ratings distribution for pages and routes.
 #'
 #' @param df_pages a data frame.
