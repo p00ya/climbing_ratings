@@ -4,9 +4,7 @@ The ratings are based on ascent success data.  Each ascent is classified as succ
 
 This system uses a quantitative, evidence-based approach to grading climbs, since the grades can be continuously revised based on ascent data.  The system's basis in a statistical model also means that its accuracy can be measured and compared to other systems. 
 
-A climber's guide to how the system works can be found on the [Vertical Life magazine](https://www.verticallifemag.com.au/2020/08/making-the-grade/) website.
-
-Grades based on this system have been integrated into [theCrag.com](https://thecrag.com).  They can be found next to the "grAId" in the "Grade Citation" section of the route information.
+Grades based on this system have been integrated into [theCrag.com](https://thecrag.com/article/graid).  They can be found next to the "grAId" in the "Grade Citation" section of the route information.
 
 Results of analyzing a database of Australian ascents with the Climbing Ratings software are discussed in the paper:
 
