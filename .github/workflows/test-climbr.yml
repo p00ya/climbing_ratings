@@ -47,7 +47,7 @@ jobs:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       TZ: UTC
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: C++ Lint
       run: |
         clang-format -n climbr/src/json_utils.cpp
@@ -61,7 +61,7 @@ jobs:
         writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
       shell: Rscript {0}
     - name: Configure R package cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ env.R_LIBS_USER }}
         key: R-${{ hashFiles('.github/R-version') }}-${{ hashFiles('.github/depends.Rds') }}
