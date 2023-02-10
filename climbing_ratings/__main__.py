@@ -232,7 +232,7 @@ class TableReader:
         # d[name] is the index of column "name" in the input table.
         d = dict([(name, i) for i, name in enumerate(header)])
         index = []
-        for (name, _, default) in self._colspecs:
+        for name, _, default in self._colspecs:
             if name in d:
                 index.append(d[name])
             else:
