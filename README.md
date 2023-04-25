@@ -65,6 +65,8 @@ The `climbing_ratings` module can be run as an estimation script.  It reads in a
 python3 -m climbing_ratings data
 ```
 
+To understand the format for the data files, see the documentation in `climbing_ratings/__main__.py` and the examples in `tests/testdata`.
+
 For legacy reasons, the `02-run_estimation.py` script provides a stub as an alternate way to call the estimation script.
 
 It will typically run in less than 5 seconds per 100,000 ascents (measured on an Intel Core i5-8210Y).
