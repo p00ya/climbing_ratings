@@ -20,7 +20,7 @@ cdef extern from "<math.h>" nogil:
     long double fabsl(long double)
 
 
-cdef long double csum(const long double *x, Py_ssize_t start, Py_ssize_t end) nogil:
+cdef long double csum(const long double *x, Py_ssize_t start, Py_ssize_t end) nogil noexcept:
     """Compute the sum of x[start:end], with error compensation."""
     # Neumaier's improved Kahan–Babuška summation algorithm.  To be effective,
     # this must be compiled with clang's "-fno-associative-math" or equivalent.
