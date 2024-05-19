@@ -101,12 +101,12 @@ cdef class TriDiagonalLU:
         return (self.d.base, self.b.base, self.a.base)
 
 
-cdef inline double gaussian_gradient(double mu, double sigma_sq, double x) nogil noexcept:
+cdef inline double gaussian_gradient(double mu, double sigma_sq, double x) noexcept nogil:
     """Inline implementation of NormalDistribution.gradient."""
     return (mu - x) / sigma_sq
 
 
-cdef inline double gaussian_d2(double sigma_sq) nogil noexcept:
+cdef inline double gaussian_d2(double sigma_sq) noexcept nogil:
     """Inline implementation of NormalDistribution.d2."""
     return -1.0 / sigma_sq
 
@@ -237,7 +237,7 @@ cdef class WienerProcess:
         self,
         double[::1] ratings,
         double[::1] gradient,
-    ) nogil noexcept:
+    ) noexcept nogil:
         """Add terms from the Wiener prior to the gradient.
 
         Parameters
@@ -296,11 +296,11 @@ cdef class PageInvariants:
         self.slices = slices
 
 
-cdef inline Py_ssize_t num_pages(PageInvariants invariants) nogil noexcept:
+cdef inline Py_ssize_t num_pages(PageInvariants invariants) noexcept nogil:
     return invariants.wiener.one_on_sigma_sq.shape[0]
 
 
-cdef inline Py_ssize_t num_slices(PageInvariants invariants) nogil noexcept:
+cdef inline Py_ssize_t num_slices(PageInvariants invariants) noexcept nogil:
     return invariants.slices.start.shape[0]
 
 
