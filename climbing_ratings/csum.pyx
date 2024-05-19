@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Workaround for "fabsl" being missing from old Cython's libc.math.
-# See: https://github.com/cython/cython/issues/3570
-cdef extern from "<math.h>" nogil:
-    long double fabsl(long double)
+from libc.math cimport fabsl
 
 
 cdef long double csum(const long double *x, Py_ssize_t start, Py_ssize_t end) nogil noexcept:

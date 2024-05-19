@@ -18,12 +18,7 @@ from .csum cimport csum
 from .slices cimport Slices
 cimport numpy as cnp
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-
-
-# Workaround for "expl" being missing from Cython's libc.math.
-# See: https://github.com/cython/cython/issues/3570
-cdef extern from "<math.h>" nogil:
-    long double expl(long double)
+from libc.math cimport expl
 
 
 cnp.import_array()

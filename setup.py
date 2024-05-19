@@ -91,7 +91,7 @@ if __name__ == "__main__":
         platforms=["POSIX"],
         python_requires=">=3.7",
         install_requires=["numpy>=1.21"],
-        setup_requires=["Cython", "numpy>=1.21"],
+        setup_requires=["Cython>=3.0.0", "numpy>=1.21"],
         test_suite="climbing_ratings.tests.test_suite",
         tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
