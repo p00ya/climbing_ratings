@@ -1,0 +1,2 @@
+# Empty pyproject.toml to satisfy github setup-python action.
+# Dependencies are specified in setup.py and the github actions.
