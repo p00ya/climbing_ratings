@@ -25,7 +25,6 @@ numpy.
 
 from .slices cimport Slices
 cimport numpy as cnp
-from libc.math cimport log
 
 cnp.import_array()
 
@@ -52,7 +51,7 @@ cdef class TriDiagonal:
     def __init__(self, double[::1] d, double[::1] u, double[::1] l):
         self.d = d
         self.u = u
-        self.l = l
+        self.l = l  # no-cython-lint: E741 allow variable name "l"
 
     def as_tuple(self):
         """Return a tuple (d, u, l) of the diagonal and sub-diagonals."""
@@ -101,7 +100,11 @@ cdef class TriDiagonalLU:
         return (self.d.base, self.b.base, self.a.base)
 
 
-cdef inline double gaussian_gradient(double mu, double sigma_sq, double x) noexcept nogil:
+cdef inline double gaussian_gradient(
+    double mu,
+    double sigma_sq,
+    double x
+) noexcept nogil:
     """Inline implementation of NormalDistribution.gradient."""
     return (mu - x) / sigma_sq
 
@@ -539,7 +542,12 @@ cdef class PageModel:
     def _hessian(self):
         return self.h.as_tuple()
 
-cpdef void lu_decompose(TriDiagonal h, TriDiagonalLU lu, Py_ssize_t start, Py_ssize_t end):
+cpdef void lu_decompose(
+    TriDiagonal h,
+    TriDiagonalLU lu,
+    Py_ssize_t start,
+    Py_ssize_t end
+):
     """Decompose a tri-diagonal matrix into LU form.
 
     Parameters

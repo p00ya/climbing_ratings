@@ -14,4 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef long double csum(const long double *x, Py_ssize_t start, Py_ssize_t end) noexcept nogil
+cdef long double csum(
+    const long double *x,
+    Py_ssize_t start,
+    Py_ssize_t end
+) noexcept nogil

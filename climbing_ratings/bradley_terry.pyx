@@ -43,7 +43,8 @@ def expand_to_slices(double[::1] values, Slices slices, double[::1] out):
     cdef Py_ssize_t j = 0
     cdef Py_ssize_t i, end
     for i in range(slices.end.shape[0]):
-        while j < slices.end[i]:
+        end = slices.end[i]
+        while j < end:
             out[j] = values[i]
             j += 1
 
@@ -179,7 +180,6 @@ cdef class BradleyTerry():
             "natural rating" of that player.
         """
         cdef Py_ssize_t num_ascents = self.ratings.shape[0]
-        cdef Py_ssize_t num_players = self.d1.shape[0]
 
         if win.shape[0] != num_ascents:
             raise IndexError(f"len(win) {win.shape[0]} != {num_ascents}")
