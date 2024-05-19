@@ -46,12 +46,9 @@ jobs:
         cache: 'pip'
     - name: Install dependencies
       run: |
-        pip3 install Cython numpy pytest black mypy setuptools
+        pip3 install Cython numpy pytest mypy setuptools
         python3 setup.py develop
         pip3 freeze --all
-    - name: Lint
-      run: |
-        python3 -m black --check climbing_ratings setup.py tests/*.py
     - name: Build and test
       run: |
         python3 setup.py build_ext --inplace
@@ -64,3 +61,18 @@ jobs:
         else
           echo "skipping type checking; needs Python 3.9"
         fi
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+    - name: Install dependencies
+      run: |
+        pip3 install black cython-lint
+    - name: black
+      run: |
+        python3 -m black --check climbing_ratings setup.py tests/*.py
+    - name: cython-lint
+      run: |
+        cython-lint .
