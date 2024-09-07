@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v4
@@ -55,11 +55,11 @@ jobs:
         python3 -X dev -m pytest
     - name: mypy
       run: |
-        if dpkg --compare-versions "${{ matrix.python-version }}" ge "3.9" ; then
+        if dpkg --compare-versions "${{ matrix.python-version }}" ge "3.10" ; then
           python3 -m mypy --strict -p climbing_ratings
           python3 -m mypy --strict tests/test_climbing_ratings.py
         else
-          echo "skipping type checking; needs Python 3.9"
+          echo "skipping type checking; needs Python 3.10+"
         fi
   lint:
     runs-on: ubuntu-latest

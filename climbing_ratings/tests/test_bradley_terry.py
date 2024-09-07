@@ -27,7 +27,7 @@ from ..slices import Slices
 from .assertions import assert_close_get
 
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 
 class TestBradleyTerryFunctions(unittest.TestCase):

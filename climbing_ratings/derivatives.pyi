@@ -20,7 +20,7 @@ from numpy.typing import NDArray
 from typing import List, Tuple
 from .slices import Slices
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 class TriDiagonal:
     def __init__(self, d: _Array, u: _Array, l: _Array) -> None: ...

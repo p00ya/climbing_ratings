@@ -20,7 +20,7 @@ import unittest
 from ..csum import _csum
 
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 
 class TestCsumFunctions(unittest.TestCase):

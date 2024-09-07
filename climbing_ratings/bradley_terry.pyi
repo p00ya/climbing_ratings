@@ -19,7 +19,7 @@ from numpy.typing import NDArray
 from typing import List, Tuple
 from .slices import Slices
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 def expand_to_slices(
     values: _Array,

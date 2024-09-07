@@ -29,7 +29,7 @@ from numpy.typing import ArrayLike, NDArray
 from typing import List, NamedTuple, Optional, Tuple, Union, cast
 
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 
 class Hyperparameters(NamedTuple):
@@ -129,7 +129,7 @@ class AscentsTable:
 
     def __len__(self) -> int:
         """Return the number of ascents in the table."""
-        return self.route.shape[0]
+        return cast(int, self.route.shape[0])
 
 
 class PagesTable:
@@ -165,7 +165,7 @@ class PagesTable:
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
-        return self.climber.shape[0]
+        return cast(int, self.climber.shape[0])
 
 
 class PageRatingsTable(NamedTuple):

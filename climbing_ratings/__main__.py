@@ -147,7 +147,7 @@ from numpy.typing import NDArray
 from typing import Any, Callable, List, Tuple, cast
 
 
-_Array = NDArray[np.float_]
+_Array = NDArray[np.float64]
 
 
 class TableReader:
