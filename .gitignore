@@ -6,6 +6,9 @@
 !/.travis.yml
 *.pyc
 climbing_ratings/*.c
+climbing_ratings/*.html
+*.Rcheck
+*.prof
 *.so
 *.tar.gz
 /dist/
