@@ -74,3 +74,55 @@ def assert_close_get(
     # https://docs.python.org/3.8/howto/descriptor.html#functions-and-methods)
     # and other callables (like C functions).
     return assert_close.__get__(test_case, owner)  # type: ignore
+
+
+def assert_array_equal(
+    test_case: unittest.TestCase,
+    expected: ArrayLike,
+    actual: NDArray[Any],
+    name: str,
+) -> None:
+    """Raise an exception if expected does not equal actual.
+
+    Equality is checked "approximately".
+
+    Parameters
+    ----------
+    test_case
+        The test case to raise an assertion on.
+    expected
+        The expected value.
+    actual
+        The actual value.
+    name
+        The name of the value for use in the failure message.
+    """
+    expected = np.array(expected)
+    if np.array_equiv(expected, actual):
+        return
+    msg = "expected {} = {}, got {}".format(name, expected, actual)
+    raise test_case.failureException(msg)
+
+
+def assert_array_equal_get(
+    test_case: unittest.TestCase, owner: type
+) -> Callable[[ArrayLike, NDArray[Any], str], None]:
+    """Returns assert_close bound to a particular test case.
+
+    Parameters
+    ----------
+    test_case
+        The instance to bind to.
+    owner
+        The owner class.
+
+    Returns
+    -------
+        A callable for assert_array_equal that is bound to the given test case.
+    """
+    # This is a workaround for the mypy error
+    # 'Callable... has no attribute "__get__"'', because mypy can't distinguish
+    # between functions (which are guaranteed to have a __get__ method, see
+    # https://docs.python.org/3.8/howto/descriptor.html#functions-and-methods)
+    # and other callables (like C functions).
+    return assert_array_equal.__get__(test_case, owner)  # type: ignore

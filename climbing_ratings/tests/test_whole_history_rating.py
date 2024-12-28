@@ -28,7 +28,7 @@ from ..whole_history_rating import (
     _extract_slices,
     _make_route_ascents,
 )
-from .assertions import assert_close_get
+from .assertions import assert_array_equal_get, assert_close_get
 
 
 # Hyperparameters defaults.
@@ -37,6 +37,9 @@ _hparams = Hyperparameters(0.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 
 class TestWholeHistoryRatingFunctions(unittest.TestCase):
     """Tests for functions in the whole_history_rating module"""
+
+    def setUp(self) -> None:
+        self.assert_array_equal = assert_array_equal_get(self, self.__class__)
 
     def test_extract_slices(self) -> None:
         """Test _extract_slices()"""
@@ -58,8 +61,8 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
 
         ascents = _make_route_ascents(page_ascents, 2)
         self.assertSequenceEqual([(0, 3), (3, 5)], list(ascents.slices))
-        self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
-        self.assertSequenceEqual([1, -1, 1, 1, 1], ascents.win.tolist())
+        self.assert_array_equal([0, 0, 0, 0, 0], ascents.adversary, "adversary")
+        self.assert_array_equal([1, -1, 1, 1, 1], ascents.win, "win")
 
     def test_make_route_ascents_sparse(self) -> None:
         """Test _make_route_ascents() for routes without ascents"""
@@ -74,8 +77,8 @@ class TestWholeHistoryRatingFunctions(unittest.TestCase):
             [(0, 0), (0, 3), (3, 5), (5, 5)],
             list(ascents.slices),
         )
-        self.assertSequenceEqual([0, 0, 0, 0, 0], ascents.adversary.tolist())
-        self.assertSequenceEqual([1, -1, 1, 1, 1], ascents.win.tolist())
+        self.assert_array_equal([0, 0, 0, 0, 0], ascents.adversary, "adversary")
+        self.assert_array_equal([1, -1, 1, 1, 1], ascents.win, "win")
 
 
 class TestWholeHistoryRatingStable(unittest.TestCase):

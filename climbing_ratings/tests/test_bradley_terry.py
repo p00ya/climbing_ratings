@@ -43,14 +43,14 @@ class TestBradleyTerryFunctions(unittest.TestCase):
         values: _Array = np.array([1.0, 10.0])
         expanded = np.empty([5])
         expand_to_slices(values, slices, expanded)
-        self.assertSequenceEqual([1.0, 1.0, 10.0, 10.0, 10.0], expanded.tolist())
+        self.assert_close([1.0, 1.0, 10.0, 10.0, 10.0], expanded, "expanded")
 
     def test_expand_to_slices_sparse(self) -> None:
         """Test expand_to_slices_sparse()"""
         slices = Slices([(1, 2), (3, 4)])
         values: _Array = np.array([1.0, 10.0])
         expanded = expand_to_slices_sparse(values, slices, 5)
-        self.assertSequenceEqual([0.0, 1.0, 0.0, 10.0, 0.0], expanded.tolist())
+        self.assert_close([0.0, 1.0, 0.0, 10.0, 0.0], expanded, "expanded")
 
     def test_get_bt_summation_terms(self) -> None:
         """Test _get_bt_summation_terms()"""
