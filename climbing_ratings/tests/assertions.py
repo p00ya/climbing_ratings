@@ -27,7 +27,7 @@ __unittest = True
 def assert_close(
     test_case: unittest.TestCase,
     expected: ArrayLike,
-    actual: NDArray[np.float64],
+    actual: NDArray[np.floating[Any]],
     name: str,
 ) -> None:
     """Raise an exception if expected does not equal actual.
@@ -54,7 +54,7 @@ def assert_close(
 
 def assert_close_get(
     test_case: unittest.TestCase, owner: type
-) -> Callable[[ArrayLike, NDArray[np.float64], str], None]:
+) -> Callable[[ArrayLike, NDArray[np.floating[Any]], str], None]:
     """Returns assert_close bound to a particular test case.
 
     Parameters
