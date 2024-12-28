@@ -129,7 +129,7 @@ class AscentsTable:
 
     def __len__(self) -> int:
         """Return the number of ascents in the table."""
-        return cast(int, self.route.shape[0])
+        return self.route.shape[0]
 
 
 class PagesTable:
@@ -165,7 +165,7 @@ class PagesTable:
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
-        return cast(int, self.climber.shape[0])
+        return self.climber.shape[0]
 
 
 class PageRatingsTable(NamedTuple):
@@ -528,7 +528,7 @@ class _SlicedAscents(NamedTuple):
     """
 
     slices: Slices
-    adversary: _Array
+    adversary: NDArray[np.intp]
     win: _Array
 
 
@@ -622,7 +622,7 @@ class _Pages:
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
         # Transform {0, 1} clean values to {-1, 1} win values.
-        win: _Array = ascents.clean - 0.5
+        win: _Array = cast(_Array, ascents.clean - 0.5)
         np.sign(win, win)
         return _SlicedAscents(Slices(ascents_page_slices), np.array(ascents.route), win)
 
@@ -688,7 +688,7 @@ def _extract_slices(
             if prev != -1:
                 slices[prev] = (start, end)
 
-            prev = value
+            prev = value  # type: ignore
             start = j
 
         end = j + 1
@@ -746,7 +746,7 @@ def _make_route_ascents(ascents: _SlicedAscents, num_routes: int) -> _SlicedAsce
             # Routes with no ascents:
             rascents_route_slices.extend([(end, end)] * (route - i - 1))
 
-            i = route
+            i = int(route)
             start = j
 
         end = j + 1
