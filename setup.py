@@ -58,42 +58,9 @@ slices = Extension(
     **cython_ext,
 )
 
-long_description = """
-climbing_ratings is a library for estimating ratings for the sport of rock
-climbing.  The ratings can be used to predict route difficulty and climber
-performance on a particular route.
-
-The algorithms are based on the Whole-History Rating system."""
-
 if __name__ == "__main__":
+    # See also pyproject.toml.
     setup(
-        name="climbing_ratings",
-        author="Dean Scarff",
-        author_email=("dos" + chr(64) + "scarff.id.au"),
-        description="Estimate climber and route ratings from ascents data",
-        long_description=long_description,
-        version="4.2.3",
-        url="https://github.com/p00ya/climbing_ratings",
-        classifiers=[
-            "Development Status :: 5 - Production/Stable",
-            "Intended Audience :: Developers",
-            "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: Apache Software License",
-            "Operating System :: POSIX",
-            "Programming Language :: Cython",
-            "Programming Language :: Python :: 3",
-            "Topic :: Software Development :: Libraries :: Python Modules",
-        ],
-        license="Apache License 2.0",
-        packages=["climbing_ratings", "climbing_ratings.tests"],
-        include_package_data=False,
-        package_data={"climbing_ratings": ["*.pyi", "*.pyx"]},
-        platforms=["POSIX"],
-        python_requires=">=3.9",
-        install_requires=["numpy>=2.0.0"],
-        setup_requires=["Cython>=3.0.0", "numpy>=2.0.0"],
-        test_suite="climbing_ratings.tests.test_suite",
-        tests_require=["numpy", "pytest"],
         ext_modules=cythonize(
             [csum, bradley_terry, derivatives, slices],
             compiler_directives={

@@ -31,29 +31,28 @@ Results of analyzing a database of Australian ascents with an earlier version of
 
 The estimation algorithms are implemented in Python and Cython, in the `climbing_ratings` package.  Some effort has been taken to optimize parts of the code for speed, namely by leveraging numpy for vectorized operations and using Cython to reduce Python overheads and allow C compilers to generate vectorized CPU instructions.
 
-Python 3.9+ with pip is required.  The additional dependencies can be installed with:
-
-```sh
-python3 -m pip install Cython numpy pytest
-```
+Python 3.9+ with pip is required.
 
 The package can be built for the local system using:
 
 ```sh
+python3 -m venv develop
+source develop/bin/activate
 export CFLAGS="-march=native -mtune=native"
-python3 setup.py build
-python3 setup.py build_ext --inplace
+pip3 install -e .
 ```
 
 Unit tests can be run using:
 
 ```sh
+pip3 install -e ".[test]"
 python3 -X dev -W error -m pytest climbing_ratings
 ```
 
 Type checking can be run with `mypy`:
 
 ```sh
+pip3 install mypy
 python3 -m mypy -p climbing_ratings
 ```
 

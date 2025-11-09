@@ -1,2 +1,44 @@
-# Empty pyproject.toml to satisfy github setup-python action.
-# Dependencies are specified in setup.py and the github actions.
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "Cython>=3.0.0",
+    "numpy>=2.0.0"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "climbing_ratings"
+version = "4.2.3"
+description = "Estimate climber and route ratings from ascents data"
+authors = [
+  { name = "Dean Scarff" }
+]
+license = { text = "Apache License 2.0" }
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "numpy>=2.0.0",
+]
+# See also setup.py (for building Cython modules).
+
+[project.urls]
+Homepage = "https://github.com/p00ya/climbing_ratings"
+
+[project.optional-dependencies]
+test = ["numpy", "pytest"]
+
+[tool.setuptools]
+packages = ["climbing_ratings", "climbing_ratings.tests"]
+
+[tool.setuptools.package-data]
+climbing_ratings = ["*.pyi", "*.pyx"]

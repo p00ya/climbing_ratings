@@ -44,18 +44,23 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-    - name: Install dependencies
+    - name: Create venv
       run: |
-        pip3 install Cython numpy pytest mypy setuptools
-        python3 setup.py develop
-        pip3 freeze --all
-    - name: Build and test
+        python3 -m venv develop
+    - name: Install and build
       run: |
-        python3 setup.py build_ext --inplace
+        source develop/bin/activate
+        pip3 install -e .
+    - name: Test
+      run: |
+        source develop/bin/activate
+        pip3 install -e ".[test]"
         python3 -X dev -m pytest
     - name: mypy
       run: |
         if dpkg --compare-versions "${{ matrix.python-version }}" ge "3.10" ; then
+          source develop/bin/activate
+          pip3 install mypy
           python3 -m mypy --strict -p climbing_ratings
           python3 -m mypy --strict tests/test_climbing_ratings.py
         else
