@@ -25,11 +25,12 @@ from .bradley_terry import (
 )
 from . import derivatives
 from .slices import Slices
-from numpy.typing import ArrayLike, NDArray
-from typing import List, NamedTuple, Optional, Tuple, Union, cast
+from numpy.typing import ArrayLike
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 
-_Array = NDArray[np.float64]
+_Array = np.ndarray[tuple[int], np.dtype[np.float64]]
+_IntpArray = np.ndarray[tuple[int], np.dtype[np.intp]]
 
 
 class Hyperparameters(NamedTuple):
@@ -122,14 +123,14 @@ class AscentsTable:
         style_page
             The 0-based ID of the style-page for each ascent.
         """
-        self.route: NDArray[np.intp] = np.array(route, np.intp)
+        self.route: _IntpArray = np.array(route, np.intp)
         self.clean: _Array = np.array(clean, float)
-        self.page: NDArray[np.intp] = np.array(page, np.intp)
-        self.style_page: NDArray[np.intp] = np.array(style_page, np.intp)
+        self.page: _IntpArray = np.array(page, np.intp)
+        self.style_page: _IntpArray = np.array(style_page, np.intp)
 
     def __len__(self) -> int:
         """Return the number of ascents in the table."""
-        return cast(int, self.route.shape[0])
+        return self.route.shape[0]
 
 
 class PagesTable:
@@ -160,12 +161,12 @@ class PagesTable:
         timestamp
             The time of the ascents for each page.
         """
-        self.climber: NDArray[np.intp] = np.asarray(climber, np.intp)
+        self.climber: _IntpArray = np.asarray(climber, np.intp)
         self.timestamp: _Array = np.asarray(timestamp, float)
 
     def __len__(self) -> int:
         """Return the number of pages in the table."""
-        return cast(int, self.climber.shape[0])
+        return self.climber.shape[0]
 
 
 class PageRatingsTable(NamedTuple):
@@ -505,7 +506,7 @@ class WholeHistoryRating:
         x += 1.0
         np.log(x, x)
 
-        return cast(float, -np.sum(x))
+        return -np.sum(x)
 
 
 class _SlicedAscents(NamedTuple):
@@ -528,7 +529,7 @@ class _SlicedAscents(NamedTuple):
     """
 
     slices: Slices
-    adversary: NDArray[np.intp]
+    adversary: _IntpArray
     win: _Array
 
 
@@ -553,7 +554,7 @@ class _Pages:
         self,
         ascents: AscentsTable,
         pages: PagesTable,
-        ascents_page: NDArray[np.intp],
+        ascents_page: _IntpArray,
         prior_mean: float,
         prior_var: float,
         wiener_var: float,
@@ -616,13 +617,13 @@ class _Pages:
     @staticmethod
     def __make_page_ascents(
         ascents: AscentsTable,
-        ascents_page: NDArray[np.intp],
+        ascents_page: _IntpArray,
         num_pages: int,
     ) -> _SlicedAscents:
         """Slice ascents by pages."""
         ascents_page_slices = _extract_slices(ascents_page, num_pages)
         # Transform {0, 1} clean values to {-1, 1} win values.
-        win: _Array = cast(_Array, ascents.clean - 0.5)
+        win: _Array = ascents.clean - 0.5
         np.sign(win, win)
         return _SlicedAscents(Slices(ascents_page_slices), np.array(ascents.route), win)
 
@@ -658,7 +659,7 @@ _Slice = Tuple[int, int]
 
 
 def _extract_slices(
-    values: Union[List[int], NDArray[np.intp]], num_slices: int
+    values: Union[List[int], _IntpArray], num_slices: int
 ) -> List[_Slice]:
     """Extract slices of contiguous IDs.
 

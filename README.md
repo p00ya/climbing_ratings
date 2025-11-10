@@ -49,7 +49,7 @@ pip3 install -e ".[test]"
 python3 -X dev -W error -m pytest climbing_ratings
 ```
 
-Type checking can be run with `mypy`:
+Type checking can be run with `mypy`.  It needs at least Python 3.11 and numpy 2.3.0.
 
 ```sh
 pip3 install mypy

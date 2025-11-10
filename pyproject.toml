@@ -41,8 +41,3 @@ packages = ["climbing_ratings", "climbing_ratings.tests"]
 
 [tool.setuptools.package-data]
 climbing_ratings = ["*.pyi", "*.pyx"]
-
-[tool.mypy]
-# numpy type inference is unstable, requiring different casts between versions.
-# Don't treat redundant casts as errors.
-disable_error_code = ["redundant-cast", "unused-ignore"]

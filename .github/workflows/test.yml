@@ -59,13 +59,13 @@ jobs:
         python3 -X dev -m pytest
     - name: mypy
       run: |
-        if dpkg --compare-versions "${{ matrix.python-version }}" ge "3.10" ; then
+        if dpkg --compare-versions "${{ matrix.python-version }}" ge "3.11" ; then
           source develop/bin/activate
           pip3 install mypy
           python3 -m mypy -p climbing_ratings
           python3 -m mypy tests/test_climbing_ratings.py
         else
-          echo "skipping type checking; needs Python 3.10+"
+          echo "skipping type checking; needs Python 3.11+"
         fi
   lint:
     runs-on: ubuntu-latest
