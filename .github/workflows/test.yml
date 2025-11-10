@@ -50,6 +50,7 @@ jobs:
     - name: Install and build
       run: |
         source develop/bin/activate
+        pip3 install --upgrade pip
         pip3 install -e .
     - name: Test
       run: |
